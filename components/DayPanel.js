@@ -4,6 +4,8 @@ import { useState } from 'react';
 import { format } from 'date-fns';
 import { supabase } from '../lib/supabaseClient';
 
+const EMOTIONS = ['disciplined', 'confident', 'hesitant', 'fomo', 'revenge', 'bored', 'anxious'];
+
 const emptyForm = {
   symbol: '',
   direction: 'long',
@@ -13,8 +15,24 @@ const emptyForm = {
   entry_time: '',
   exit_time: '',
   pnl: '',
+  stop_loss: '',
+  take_profit: '',
+  tags: '',
+  emotion: '',
   notes: '',
 };
+
+function rMultiple(trade) {
+  const entry = Number(trade.entry_price);
+  const stop = Number(trade.stop_loss);
+  const pnl = Number(trade.pnl);
+  if (!entry || !stop || entry === stop) return null;
+  const size = Number(trade.size) || 1;
+  const riskPerUnit = Math.abs(entry - stop);
+  const riskAmount = riskPerUnit * size;
+  if (!riskAmount) return null;
+  return pnl / riskAmount;
+}
 
 export default function DayPanel({ date, trades, userId, onChanged, onClose }) {
   const [form, setForm] = useState(emptyForm);
@@ -41,6 +59,10 @@ export default function DayPanel({ date, trades, userId, onChanged, onClose }) {
       entry_time: trade.entry_time ? trade.entry_time.slice(0, 16) : '',
       exit_time: trade.exit_time ? trade.exit_time.slice(0, 16) : '',
       pnl: trade.pnl,
+      stop_loss: trade.stop_loss ?? '',
+      take_profit: trade.take_profit ?? '',
+      tags: Array.isArray(trade.tags) ? trade.tags.join(', ') : '',
+      emotion: trade.emotion ?? '',
       notes: trade.notes ?? '',
     });
   }
@@ -55,6 +77,11 @@ export default function DayPanel({ date, trades, userId, onChanged, onClose }) {
     setError('');
     setSaving(true);
 
+    const tagsArray = form.tags
+      .split(',')
+      .map((t) => t.trim())
+      .filter(Boolean);
+
     const payload = {
       user_id: userId,
       symbol: form.symbol.toUpperCase(),
@@ -65,6 +92,10 @@ export default function DayPanel({ date, trades, userId, onChanged, onClose }) {
       entry_time: form.entry_time ? new Date(form.entry_time).toISOString() : null,
       exit_time: form.exit_time ? new Date(form.exit_time).toISOString() : null,
       pnl: form.pnl === '' ? 0 : parseFloat(form.pnl),
+      stop_loss: form.stop_loss === '' ? null : parseFloat(form.stop_loss),
+      take_profit: form.take_profit === '' ? null : parseFloat(form.take_profit),
+      tags: tagsArray.length ? tagsArray : null,
+      emotion: form.emotion || null,
       notes: form.notes,
     };
 
@@ -101,26 +132,46 @@ export default function DayPanel({ date, trades, userId, onChanged, onClose }) {
 
       {trades.length > 0 && (
         <div className="space-y-2 mb-5">
-          {trades.map((t) => (
-            <div key={t.id} className="flex items-center justify-between bg-gray-800 rounded-lg px-3 py-2 text-sm">
-              <div>
-                <span className="font-medium">{t.symbol}</span>{' '}
-                <span className="text-gray-500">{t.direction}</span>
+          {trades.map((t) => {
+            const r = rMultiple(t);
+            return (
+              <div key={t.id} className="bg-gray-800 rounded-lg px-3 py-2 text-sm">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <span className="font-medium">{t.symbol}</span>{' '}
+                    <span className="text-gray-500">{t.direction}</span>
+                  </div>
+                  <div className={`font-semibold ${t.pnl > 0 ? 'text-green-400' : t.pnl < 0 ? 'text-red-400' : 'text-gray-400'}`}>
+                    {t.pnl > 0 ? '+' : ''}
+                    {Number(t.pnl).toFixed(2)}
+                    {r !== null && <span className="text-gray-500 font-normal ml-1">({r >= 0 ? '+' : ''}{r.toFixed(2)}R)</span>}
+                  </div>
+                  <div className="flex gap-2">
+                    <button onClick={() => startEdit(t)} className="text-blue-400 hover:text-blue-300 text-xs">
+                      Edit
+                    </button>
+                    <button onClick={() => handleDelete(t.id)} className="text-red-400 hover:text-red-300 text-xs">
+                      Delete
+                    </button>
+                  </div>
+                </div>
+                {(t.tags?.length > 0 || t.emotion) && (
+                  <div className="flex flex-wrap gap-1 mt-2">
+                    {t.emotion && (
+                      <span className="text-[10px] px-2 py-0.5 rounded-full bg-purple-900/50 text-purple-300">
+                        {t.emotion}
+                      </span>
+                    )}
+                    {t.tags?.map((tag) => (
+                      <span key={tag} className="text-[10px] px-2 py-0.5 rounded-full bg-gray-700 text-gray-300">
+                        {tag}
+                      </span>
+                    ))}
+                  </div>
+                )}
               </div>
-              <div className={`font-semibold ${t.pnl > 0 ? 'text-green-400' : t.pnl < 0 ? 'text-red-400' : 'text-gray-400'}`}>
-                {t.pnl > 0 ? '+' : ''}
-                {Number(t.pnl).toFixed(2)}
-              </div>
-              <div className="flex gap-2">
-                <button onClick={() => startEdit(t)} className="text-blue-400 hover:text-blue-300 text-xs">
-                  Edit
-                </button>
-                <button onClick={() => handleDelete(t.id)} className="text-red-400 hover:text-red-300 text-xs">
-                  Delete
-                </button>
-              </div>
-            </div>
-          ))}
+            );
+          })}
         </div>
       )}
 
@@ -165,6 +216,25 @@ export default function DayPanel({ date, trades, userId, onChanged, onClose }) {
 
         <div className="grid grid-cols-2 gap-3">
           <input
+            placeholder="Stop loss"
+            type="number"
+            step="any"
+            value={form.stop_loss}
+            onChange={(e) => setForm({ ...form, stop_loss: e.target.value })}
+            className="bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-sm"
+          />
+          <input
+            placeholder="Take profit"
+            type="number"
+            step="any"
+            value={form.take_profit}
+            onChange={(e) => setForm({ ...form, take_profit: e.target.value })}
+            className="bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-sm"
+          />
+        </div>
+
+        <div className="grid grid-cols-2 gap-3">
+          <input
             placeholder="Size / lots"
             type="number"
             step="any"
@@ -203,6 +273,29 @@ export default function DayPanel({ date, trades, userId, onChanged, onClose }) {
             />
           </div>
         </div>
+
+        <div>
+          <label className="block text-xs text-gray-500 mb-1">Emotion / mindset</label>
+          <select
+            value={form.emotion}
+            onChange={(e) => setForm({ ...form, emotion: e.target.value })}
+            className="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-sm"
+          >
+            <option value="">— none —</option>
+            {EMOTIONS.map((em) => (
+              <option key={em} value={em}>
+                {em}
+              </option>
+            ))}
+          </select>
+        </div>
+
+        <input
+          placeholder="Tags, comma separated (e.g. breakout, trend-following)"
+          value={form.tags}
+          onChange={(e) => setForm({ ...form, tags: e.target.value })}
+          className="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-sm"
+        />
 
         <textarea
           placeholder="Notes / lessons learned"
