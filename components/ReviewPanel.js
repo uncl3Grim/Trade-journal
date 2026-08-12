@@ -11,6 +11,7 @@ import {
   isWithinInterval,
 } from 'date-fns';
 import EquityCurve from './EquityCurve';
+import { rMultiple } from '../lib/tradeMath';
 
 function summarize(trades, start, end) {
   const inRange = trades.filter((t) =>
@@ -21,6 +22,9 @@ function summarize(trades, start, end) {
   const wins = closed.filter((t) => Number(t.pnl) > 0);
   const winRate = closed.length ? (wins.length / closed.length) * 100 : 0;
 
+  const rValues = closed.map((t) => rMultiple(t)).filter((r) => r !== null);
+  const totalR = rValues.reduce((sum, r) => sum + r, 0);
+
   const byDay = {};
   for (const t of closed) {
     const key = format(new Date(t.entry_time), 'yyyy-MM-dd');
@@ -30,7 +34,7 @@ function summarize(trades, start, end) {
   const bestDay = dayEntries.length ? dayEntries.reduce((a, b) => (b[1] > a[1] ? b : a)) : null;
   const worstDay = dayEntries.length ? dayEntries.reduce((a, b) => (b[1] < a[1] ? b : a)) : null;
 
-  return { totalPnl, winRate, tradeCount: closed.length, bestDay, worstDay };
+  return { totalPnl, winRate, tradeCount: closed.length, bestDay, worstDay, totalR };
 }
 
 function PeriodCard({ label, current, previous, rangeLabel }) {
@@ -51,23 +55,30 @@ function PeriodCard({ label, current, previous, rangeLabel }) {
           </div>
         </div>
         <div>
+          <div className="text-xs text-gray-500 mb-1">Total R</div>
+          <div className={`text-xl font-semibold ${current.totalR >= 0 ? 'text-green-400' : 'text-red-400'}`}>
+            {current.totalR >= 0 ? '+' : ''}
+            {current.totalR.toFixed(2)}R
+          </div>
+        </div>
+        <div>
           <div className="text-xs text-gray-500 mb-1">Win Rate</div>
-          <div className="text-xl font-semibold text-gray-200">{current.winRate.toFixed(1)}%</div>
+          <div className="text-lg font-medium text-gray-200">{current.winRate.toFixed(1)}%</div>
         </div>
         <div>
           <div className="text-xs text-gray-500 mb-1">Trades</div>
           <div className="text-lg font-medium text-gray-300">{current.tradeCount}</div>
         </div>
-        <div>
-          <div className="text-xs text-gray-500 mb-1">vs. previous period</div>
-          <div className={`text-lg font-medium ${delta >= 0 ? 'text-green-400' : 'text-red-400'}`}>
-            {delta >= 0 ? '+' : ''}
-            {delta.toFixed(2)}
-          </div>
-        </div>
       </div>
 
       <div className="border-t border-gray-800 pt-3 space-y-1 text-sm">
+        <div className="flex justify-between">
+          <span className="text-gray-500">vs. previous period</span>
+          <span className={delta >= 0 ? 'text-green-400' : 'text-red-400'}>
+            {delta >= 0 ? '+' : ''}
+            {delta.toFixed(2)}
+          </span>
+        </div>
         <div className="flex justify-between">
           <span className="text-gray-500">Best day</span>
           <span className="text-green-400">
