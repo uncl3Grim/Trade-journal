@@ -76,6 +76,9 @@ export default function JournalPage() {
         <h1 className="text-xl font-semibold">Trade Journal</h1>
         <div className="flex items-center gap-3">
           <span className="text-sm text-gray-500">{user?.email}</span>
+  <button onClick={() => router.push('/broker')} className="text-sm text-gray-400 hover:text-gray-200">
+  Broker
+</button>
           <button onClick={handleSignOut} className="text-sm text-gray-400 hover:text-gray-200">
             Sign out
           </button>
