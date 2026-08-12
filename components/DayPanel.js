@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { format } from 'date-fns';
 import { supabase } from '../lib/supabaseClient';
 import { rMultiple } from '../lib/tradeMath';
@@ -37,7 +37,15 @@ export default function DayPanel({ date, trades, userId, onChanged, onClose }) {
   const [editingId, setEditingId] = useState(null);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
-
+// Reset the form whenever a different day is selected, so a half-filled
+  // or previously-edited trade doesn't carry over into the new day.
+  useEffect(() => {
+    if (date) {
+      setEditingId(null);
+      setForm({ ...emptyForm, entry_time: `${format(date, 'yyyy-MM-dd')}T09:30` });
+      setError('');
+    }
+  }, [date]);
   if (!date) {
     return (
       <div className="bg-gray-900 border border-gray-800 rounded-xl p-6 text-gray-500 text-sm">
