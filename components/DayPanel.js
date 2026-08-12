@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import { format } from 'date-fns';
 import { supabase } from '../lib/supabaseClient';
+import { rMultiple } from '../lib/tradeMath';
 
 const EMOTIONS = ['disciplined', 'confident', 'hesitant', 'fomo', 'revenge', 'bored', 'anxious'];
 
@@ -22,16 +23,13 @@ const emptyForm = {
   notes: '',
 };
 
-function rMultiple(trade) {
-  const entry = Number(trade.entry_price);
-  const stop = Number(trade.stop_loss);
-  const pnl = Number(trade.pnl);
-  if (!entry || !stop || entry === stop) return null;
-  const size = Number(trade.size) || 1;
-  const riskPerUnit = Math.abs(entry - stop);
-  const riskAmount = riskPerUnit * size;
-  if (!riskAmount) return null;
-  return pnl / riskAmount;
+function Field({ label, children }) {
+  return (
+    <div>
+      <label className="block text-xs text-gray-500 mb-1">{label}</label>
+      {children}
+    </div>
+  );
 }
 
 export default function DayPanel({ date, trades, userId, onChanged, onClose }) {
@@ -177,105 +175,112 @@ export default function DayPanel({ date, trades, userId, onChanged, onClose }) {
 
       <form onSubmit={handleSubmit} className="space-y-3">
         <div className="grid grid-cols-2 gap-3">
-          <input
-            placeholder="Symbol (e.g. EURUSD)"
-            value={form.symbol}
-            onChange={(e) => setForm({ ...form, symbol: e.target.value })}
-            required
-            className="bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-sm"
-          />
-          <select
-            value={form.direction}
-            onChange={(e) => setForm({ ...form, direction: e.target.value })}
-            className="bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-sm"
-          >
-            <option value="long">Long</option>
-            <option value="short">Short</option>
-          </select>
+          <Field label="Symbol">
+            <input
+              placeholder="e.g. EURUSD"
+              value={form.symbol}
+              onChange={(e) => setForm({ ...form, symbol: e.target.value })}
+              required
+              className="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-sm"
+            />
+          </Field>
+          <Field label="Direction">
+            <select
+              value={form.direction}
+              onChange={(e) => setForm({ ...form, direction: e.target.value })}
+              className="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-sm"
+            >
+              <option value="long">Long</option>
+              <option value="short">Short</option>
+            </select>
+          </Field>
         </div>
 
         <div className="grid grid-cols-2 gap-3">
-          <input
-            placeholder="Entry price"
-            type="number"
-            step="any"
-            value={form.entry_price}
-            onChange={(e) => setForm({ ...form, entry_price: e.target.value })}
-            required
-            className="bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-sm"
-          />
-          <input
-            placeholder="Exit price"
-            type="number"
-            step="any"
-            value={form.exit_price}
-            onChange={(e) => setForm({ ...form, exit_price: e.target.value })}
-            className="bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-sm"
-          />
+          <Field label="Entry price">
+            <input
+              type="number"
+              step="any"
+              value={form.entry_price}
+              onChange={(e) => setForm({ ...form, entry_price: e.target.value })}
+              required
+              className="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-sm"
+            />
+          </Field>
+          <Field label="Exit price">
+            <input
+              type="number"
+              step="any"
+              value={form.exit_price}
+              onChange={(e) => setForm({ ...form, exit_price: e.target.value })}
+              className="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-sm"
+            />
+          </Field>
         </div>
 
         <div className="grid grid-cols-2 gap-3">
-          <input
-            placeholder="Stop loss"
-            type="number"
-            step="any"
-            value={form.stop_loss}
-            onChange={(e) => setForm({ ...form, stop_loss: e.target.value })}
-            className="bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-sm"
-          />
-          <input
-            placeholder="Take profit"
-            type="number"
-            step="any"
-            value={form.take_profit}
-            onChange={(e) => setForm({ ...form, take_profit: e.target.value })}
-            className="bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-sm"
-          />
+          <Field label="Stop loss">
+            <input
+              type="number"
+              step="any"
+              value={form.stop_loss}
+              onChange={(e) => setForm({ ...form, stop_loss: e.target.value })}
+              className="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-sm"
+            />
+          </Field>
+          <Field label="Take profit">
+            <input
+              type="number"
+              step="any"
+              value={form.take_profit}
+              onChange={(e) => setForm({ ...form, take_profit: e.target.value })}
+              className="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-sm"
+            />
+          </Field>
         </div>
 
         <div className="grid grid-cols-2 gap-3">
-          <input
-            placeholder="Size / lots"
-            type="number"
-            step="any"
-            value={form.size}
-            onChange={(e) => setForm({ ...form, size: e.target.value })}
-            required
-            className="bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-sm"
-          />
-          <input
-            placeholder="P&L"
-            type="number"
-            step="any"
-            value={form.pnl}
-            onChange={(e) => setForm({ ...form, pnl: e.target.value })}
-            className="bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-sm"
-          />
+          <Field label="Size / lots">
+            <input
+              type="number"
+              step="any"
+              value={form.size}
+              onChange={(e) => setForm({ ...form, size: e.target.value })}
+              required
+              className="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-sm"
+            />
+          </Field>
+          <Field label="P&L">
+            <input
+              type="number"
+              step="any"
+              value={form.pnl}
+              onChange={(e) => setForm({ ...form, pnl: e.target.value })}
+              className="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-sm"
+            />
+          </Field>
         </div>
 
         <div className="grid grid-cols-2 gap-3">
-          <div>
-            <label className="block text-xs text-gray-500 mb-1">Entry time</label>
+          <Field label="Entry time">
             <input
               type="datetime-local"
               value={form.entry_time}
               onChange={(e) => setForm({ ...form, entry_time: e.target.value })}
               className="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-sm"
             />
-          </div>
-          <div>
-            <label className="block text-xs text-gray-500 mb-1">Exit time</label>
+          </Field>
+          <Field label="Exit time">
             <input
               type="datetime-local"
               value={form.exit_time}
               onChange={(e) => setForm({ ...form, exit_time: e.target.value })}
               className="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-sm"
             />
-          </div>
+          </Field>
         </div>
 
-        <div>
-          <label className="block text-xs text-gray-500 mb-1">Emotion / mindset</label>
+        <Field label="Emotion / mindset">
           <select
             value={form.emotion}
             onChange={(e) => setForm({ ...form, emotion: e.target.value })}
@@ -288,22 +293,25 @@ export default function DayPanel({ date, trades, userId, onChanged, onClose }) {
               </option>
             ))}
           </select>
-        </div>
+        </Field>
 
-        <input
-          placeholder="Tags, comma separated (e.g. breakout, trend-following)"
-          value={form.tags}
-          onChange={(e) => setForm({ ...form, tags: e.target.value })}
-          className="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-sm"
-        />
+        <Field label="Tags (comma separated)">
+          <input
+            placeholder="e.g. breakout, trend-following"
+            value={form.tags}
+            onChange={(e) => setForm({ ...form, tags: e.target.value })}
+            className="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-sm"
+          />
+        </Field>
 
-        <textarea
-          placeholder="Notes / lessons learned"
-          value={form.notes}
-          onChange={(e) => setForm({ ...form, notes: e.target.value })}
-          rows={3}
-          className="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-sm"
-        />
+        <Field label="Notes / lessons learned">
+          <textarea
+            value={form.notes}
+            onChange={(e) => setForm({ ...form, notes: e.target.value })}
+            rows={3}
+            className="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-sm"
+          />
+        </Field>
 
         {error && <p className="text-sm text-red-400">{error}</p>}
 
