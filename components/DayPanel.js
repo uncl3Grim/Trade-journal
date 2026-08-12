@@ -18,6 +18,7 @@ const emptyForm = {
   pnl: '',
   stop_loss: '',
   take_profit: '',
+  risk_amount: '',
   tags: '',
   emotion: '',
   notes: '',
@@ -37,8 +38,7 @@ export default function DayPanel({ date, trades, userId, onChanged, onClose }) {
   const [editingId, setEditingId] = useState(null);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
-// Reset the form whenever a different day is selected, so a half-filled
-  // or previously-edited trade doesn't carry over into the new day.
+
   useEffect(() => {
     if (date) {
       setEditingId(null);
@@ -46,6 +46,7 @@ export default function DayPanel({ date, trades, userId, onChanged, onClose }) {
       setError('');
     }
   }, [date]);
+
   if (!date) {
     return (
       <div className="bg-gray-900 border border-gray-800 rounded-xl p-6 text-gray-500 text-sm">
@@ -67,6 +68,7 @@ export default function DayPanel({ date, trades, userId, onChanged, onClose }) {
       pnl: trade.pnl,
       stop_loss: trade.stop_loss ?? '',
       take_profit: trade.take_profit ?? '',
+      risk_amount: trade.risk_amount ?? '',
       tags: Array.isArray(trade.tags) ? trade.tags.join(', ') : '',
       emotion: trade.emotion ?? '',
       notes: trade.notes ?? '',
@@ -100,6 +102,7 @@ export default function DayPanel({ date, trades, userId, onChanged, onClose }) {
       pnl: form.pnl === '' ? 0 : parseFloat(form.pnl),
       stop_loss: form.stop_loss === '' ? null : parseFloat(form.stop_loss),
       take_profit: form.take_profit === '' ? null : parseFloat(form.take_profit),
+      risk_amount: form.risk_amount === '' ? null : parseFloat(form.risk_amount),
       tags: tagsArray.length ? tagsArray : null,
       emotion: form.emotion || null,
       notes: form.notes,
@@ -268,6 +271,17 @@ export default function DayPanel({ date, trades, userId, onChanged, onClose }) {
             />
           </Field>
         </div>
+
+        <Field label="Risk amount ($) — optional, overrides the price-based R calc (recommended for non-forex instruments)">
+          <input
+            type="number"
+            step="any"
+            placeholder="e.g. 20"
+            value={form.risk_amount}
+            onChange={(e) => setForm({ ...form, risk_amount: e.target.value })}
+            className="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-sm"
+          />
+        </Field>
 
         <div className="grid grid-cols-2 gap-3">
           <Field label="Entry time">
