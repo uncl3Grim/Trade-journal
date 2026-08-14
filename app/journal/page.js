@@ -9,6 +9,7 @@ import DayPanel from '../../components/DayPanel';
 import StatsBar from '../../components/StatsBar';
 import ImportCSV from '../../components/ImportCSV';
 import ReviewPanel from '../../components/ReviewPanel';
+import RiskSettings from '../../components/RiskSettings';
 
 export default function JournalPage() {
   const router = useRouter();
@@ -19,6 +20,9 @@ export default function JournalPage() {
   const [selectedDate, setSelectedDate] = useState(null);
   const [loading, setLoading] = useState(true);
   const [tab, setTab] = useState('calendar');
+  const [accounts, setAccounts] = useState([]);
+  const [selectedAccount, setSelectedAccount] = useState('all');
+  const [defaultRiskAmount, setDefaultRiskAmount] = useState(null);
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
@@ -35,37 +39,68 @@ export default function JournalPage() {
     return () => listener.subscription.unsubscribe();
   }, [router]);
 
+  useEffect(() => {
+    if (!user) return;
+    supabase
+      .from('broker_connections')
+      .select('id, broker_server, broker_type, mt5_login')
+      .order('created_at', { ascending: true })
+      .then(({ data }) => setAccounts(data || []));
+
+    supabase
+      .from('user_settings')
+      .select('default_risk_amount')
+      .eq('user_id', user.id)
+      .maybeSingle()
+      .then(({ data }) => setDefaultRiskAmount(data?.default_risk_amount ?? null));
+  }, [user]);
+
+  const applyAccountFilter = useCallback(
+    (query) => {
+      if (selectedAccount === 'manual') return query.is('broker_connection_id', null);
+      if (selectedAccount !== 'all') return query.eq('broker_connection_id', selectedAccount);
+      return query;
+    },
+    [selectedAccount]
+  );
+
   const loadTrades = useCallback(async () => {
     if (!user) return;
     setLoading(true);
     const rangeStart = startOfWeek(startOfMonth(month));
     const rangeEnd = endOfWeek(endOfMonth(month));
 
-    const { data, error } = await supabase
+    let query = supabase
       .from('trades')
       .select('*')
       .gte('entry_time', rangeStart.toISOString())
       .lte('entry_time', rangeEnd.toISOString())
       .order('entry_time', { ascending: true });
 
+    query = applyAccountFilter(query);
+
+    const { data, error } = await query;
     if (!error) setTrades(data || []);
     setLoading(false);
-  }, [user, month]);
+  }, [user, month, applyAccountFilter]);
 
   const loadReviewTrades = useCallback(async () => {
     if (!user) return;
     const rangeStart = startOfMonth(subM(new Date(), 2));
     const rangeEnd = endOfMonth(new Date());
 
-    const { data, error } = await supabase
+    let query = supabase
       .from('trades')
       .select('*')
       .gte('entry_time', rangeStart.toISOString())
       .lte('entry_time', rangeEnd.toISOString())
       .order('entry_time', { ascending: true });
 
+    query = applyAccountFilter(query);
+
+    const { data, error } = await query;
     if (!error) setReviewTrades(data || []);
-  }, [user]);
+  }, [user, applyAccountFilter]);
 
   useEffect(() => {
     loadTrades();
@@ -107,27 +142,46 @@ export default function JournalPage() {
         </div>
       </div>
 
-      <div className="flex gap-2 mb-6">
-        <button
-          onClick={() => setTab('calendar')}
-          className={`px-4 py-1.5 rounded-lg text-sm font-medium ${
-            tab === 'calendar' ? 'bg-blue-600 text-white' : 'bg-gray-800 text-gray-400 hover:text-gray-200'
-          }`}
-        >
-          Calendar
-        </button>
-        <button
-          onClick={() => setTab('review')}
-          className={`px-4 py-1.5 rounded-lg text-sm font-medium ${
-            tab === 'review' ? 'bg-blue-600 text-white' : 'bg-gray-800 text-gray-400 hover:text-gray-200'
-          }`}
-        >
-          Review
-        </button>
+      <div className="flex items-center justify-between mb-6 flex-wrap gap-3">
+        <div className="flex gap-2">
+          <button
+            onClick={() => setTab('calendar')}
+            className={`px-4 py-1.5 rounded-lg text-sm font-medium ${
+              tab === 'calendar' ? 'bg-blue-600 text-white' : 'bg-gray-800 text-gray-400 hover:text-gray-200'
+            }`}
+          >
+            Calendar
+          </button>
+          <button
+            onClick={() => setTab('review')}
+            className={`px-4 py-1.5 rounded-lg text-sm font-medium ${
+              tab === 'review' ? 'bg-blue-600 text-white' : 'bg-gray-800 text-gray-400 hover:text-gray-200'
+            }`}
+          >
+            Review
+          </button>
+        </div>
+
+        {accounts.length > 0 && (
+          <select
+            value={selectedAccount}
+            onChange={(e) => setSelectedAccount(e.target.value)}
+            className="bg-gray-800 border border-gray-700 rounded-lg px-3 py-1.5 text-sm"
+          >
+            <option value="all">All accounts</option>
+            <option value="manual">Manual entries only</option>
+            {accounts.map((a) => (
+              <option key={a.id} value={a.id}>
+                {a.broker_server} ({a.mt5_login})
+              </option>
+            ))}
+          </select>
+        )}
       </div>
 
       {tab === 'calendar' && (
         <>
+          <RiskSettings userId={user?.id} onSaved={setDefaultRiskAmount} />
           <StatsBar trades={trades} />
 
           <ImportCSV userId={user?.id} onImported={loadTrades} />
@@ -155,6 +209,8 @@ export default function JournalPage() {
                 date={selectedDate}
                 trades={selectedDayTrades}
                 userId={user?.id}
+                accounts={accounts}
+                defaultRiskAmount={defaultRiskAmount}
                 onChanged={loadTrades}
                 onClose={() => setSelectedDate(null)}
               />
@@ -163,7 +219,7 @@ export default function JournalPage() {
         </>
       )}
 
-      {tab === 'review' && <ReviewPanel trades={reviewTrades} />}
+      {tab === 'review' && <ReviewPanel trades={reviewTrades} defaultRiskAmount={defaultRiskAmount} />}
     </div>
   );
 }
