@@ -22,6 +22,7 @@ const emptyForm = {
   tags: '',
   emotion: '',
   notes: '',
+  account_id: '',
 };
 
 function Field({ label, children }) {
@@ -33,7 +34,7 @@ function Field({ label, children }) {
   );
 }
 
-export default function DayPanel({ date, trades, userId, onChanged, onClose }) {
+export default function DayPanel({ date, trades, userId, accounts = [], defaultRiskAmount, onChanged, onClose }) {
   const [form, setForm] = useState(emptyForm);
   const [editingId, setEditingId] = useState(null);
   const [saving, setSaving] = useState(false);
@@ -72,6 +73,7 @@ export default function DayPanel({ date, trades, userId, onChanged, onClose }) {
       tags: Array.isArray(trade.tags) ? trade.tags.join(', ') : '',
       emotion: trade.emotion ?? '',
       notes: trade.notes ?? '',
+      account_id: trade.broker_connection_id ?? '',
     });
   }
 
@@ -106,6 +108,7 @@ export default function DayPanel({ date, trades, userId, onChanged, onClose }) {
       tags: tagsArray.length ? tagsArray : null,
       emotion: form.emotion || null,
       notes: form.notes,
+      broker_connection_id: form.account_id || null,
     };
 
     let res;
@@ -142,7 +145,7 @@ export default function DayPanel({ date, trades, userId, onChanged, onClose }) {
       {trades.length > 0 && (
         <div className="space-y-2 mb-5">
           {trades.map((t) => {
-            const r = rMultiple(t);
+            const r = rMultiple(t, defaultRiskAmount);
             return (
               <div key={t.id} className="bg-gray-800 rounded-lg px-3 py-2 text-sm">
                 <div className="flex items-center justify-between">
@@ -185,6 +188,23 @@ export default function DayPanel({ date, trades, userId, onChanged, onClose }) {
       )}
 
       <form onSubmit={handleSubmit} className="space-y-3">
+        {accounts.length > 0 && (
+          <Field label="Account">
+            <select
+              value={form.account_id}
+              onChange={(e) => setForm({ ...form, account_id: e.target.value })}
+              className="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-sm"
+            >
+              <option value="">Manual (no account)</option>
+              {accounts.map((a) => (
+                <option key={a.id} value={a.id}>
+                  {a.broker_server} ({a.mt5_login})
+                </option>
+              ))}
+            </select>
+          </Field>
+        )}
+
         <div className="grid grid-cols-2 gap-3">
           <Field label="Symbol">
             <input
@@ -272,11 +292,11 @@ export default function DayPanel({ date, trades, userId, onChanged, onClose }) {
           </Field>
         </div>
 
-        <Field label="Risk amount ($) — optional, overrides the price-based R calc (recommended for non-forex instruments)">
+        <Field label={`Risk amount ($) — optional, overrides default${defaultRiskAmount ? ` ($${defaultRiskAmount})` : ''} and price-based calc`}>
           <input
             type="number"
             step="any"
-            placeholder="e.g. 20"
+            placeholder={defaultRiskAmount ? `Using default: ${defaultRiskAmount}` : 'e.g. 20'}
             value={form.risk_amount}
             onChange={(e) => setForm({ ...form, risk_amount: e.target.value })}
             className="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-sm"
