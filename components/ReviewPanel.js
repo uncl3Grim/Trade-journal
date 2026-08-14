@@ -1,5 +1,6 @@
 'use client';
 
+import { useState } from 'react';
 import {
   startOfWeek,
   endOfWeek,
@@ -13,7 +14,7 @@ import {
 import EquityCurve from './EquityCurve';
 import { rMultiple } from '../lib/tradeMath';
 
-function summarize(trades, start, end) {
+function summarize(trades, start, end, defaultRiskAmount) {
   const inRange = trades.filter((t) =>
     isWithinInterval(new Date(t.entry_time), { start, end })
   );
@@ -22,7 +23,7 @@ function summarize(trades, start, end) {
   const wins = closed.filter((t) => Number(t.pnl) > 0);
   const winRate = closed.length ? (wins.length / closed.length) * 100 : 0;
 
-  const rValues = closed.map((t) => rMultiple(t)).filter((r) => r !== null);
+  const rValues = closed.map((t) => rMultiple(t, defaultRiskAmount)).filter((r) => r !== null);
   const totalR = rValues.reduce((sum, r) => sum + r, 0);
 
   const byDay = {};
@@ -37,14 +38,15 @@ function summarize(trades, start, end) {
   return { totalPnl, winRate, tradeCount: closed.length, bestDay, worstDay, totalR };
 }
 
-function PeriodCard({ label, current, previous, rangeLabel }) {
+function PeriodCard({ label, current, previous, rangeLabel, control }) {
   const delta = current.totalPnl - previous.totalPnl;
   return (
     <div className="bg-gray-900 border border-gray-800 rounded-xl p-5">
-      <div className="flex items-baseline justify-between mb-4">
+      <div className="flex items-center justify-between mb-4">
         <h3 className="font-semibold">{label}</h3>
-        <span className="text-xs text-gray-500">{rangeLabel}</span>
+        {control}
       </div>
+      <div className="text-xs text-gray-500 mb-4">{rangeLabel}</div>
 
       <div className="grid grid-cols-2 gap-3 mb-4">
         <div>
@@ -96,39 +98,66 @@ function PeriodCard({ label, current, previous, rangeLabel }) {
   );
 }
 
-export default function ReviewPanel({ trades }) {
+function isoWeekToDate(isoWeekStr) {
+  const [yearStr, weekStr] = isoWeekStr.split('-W');
+  const year = Number(yearStr);
+  const week = Number(weekStr);
+  const jan4 = new Date(year, 0, 4);
+  const weekStart = startOfWeek(jan4, { weekStartsOn: 1 });
+  const d = new Date(weekStart);
+  d.setDate(d.getDate() + (week - 1) * 7);
+  return d;
+}
+
+export default function ReviewPanel({ trades, defaultRiskAmount }) {
   const now = new Date();
+  const [weekAnchor, setWeekAnchor] = useState(now);
+  const [monthAnchor, setMonthAnchor] = useState(now);
 
-  const weekStart = startOfWeek(now);
-  const weekEnd = endOfWeek(now);
-  const lastWeekStart = startOfWeek(subWeeks(now, 1));
-  const lastWeekEnd = endOfWeek(subWeeks(now, 1));
+  const weekStart = startOfWeek(weekAnchor);
+  const weekEnd = endOfWeek(weekAnchor);
+  const lastWeekStart = startOfWeek(subWeeks(weekAnchor, 1));
+  const lastWeekEnd = endOfWeek(subWeeks(weekAnchor, 1));
 
-  const monthStart = startOfMonth(now);
-  const monthEnd = endOfMonth(now);
-  const lastMonthStart = startOfMonth(subMonths(now, 1));
-  const lastMonthEnd = endOfMonth(subMonths(now, 1));
+  const monthStart = startOfMonth(monthAnchor);
+  const monthEnd = endOfMonth(monthAnchor);
+  const lastMonthStart = startOfMonth(subMonths(monthAnchor, 1));
+  const lastMonthEnd = endOfMonth(subMonths(monthAnchor, 1));
 
-  const thisWeek = summarize(trades, weekStart, weekEnd);
-  const lastWeek = summarize(trades, lastWeekStart, lastWeekEnd);
-  const thisMonth = summarize(trades, monthStart, monthEnd);
-  const lastMonth = summarize(trades, lastMonthStart, lastMonthEnd);
+  const thisWeek = summarize(trades, weekStart, weekEnd, defaultRiskAmount);
+  const lastWeek = summarize(trades, lastWeekStart, lastWeekEnd, defaultRiskAmount);
+  const thisMonth = summarize(trades, monthStart, monthEnd, defaultRiskAmount);
+  const lastMonth = summarize(trades, lastMonthStart, lastMonthEnd, defaultRiskAmount);
 
   return (
     <div>
       <EquityCurve trades={trades} />
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
         <PeriodCard
-          label="This Week"
+          label="Week"
           current={thisWeek}
           previous={lastWeek}
           rangeLabel={`${format(weekStart, 'MMM d')} – ${format(weekEnd, 'MMM d')}`}
+          control={
+            <input
+              type="week"
+              onChange={(e) => e.target.value && setWeekAnchor(isoWeekToDate(e.target.value))}
+              className="bg-gray-800 border border-gray-700 rounded-lg px-2 py-1 text-xs"
+            />
+          }
         />
         <PeriodCard
-          label="This Month"
+          label="Month"
           current={thisMonth}
           previous={lastMonth}
-          rangeLabel={format(now, 'MMMM yyyy')}
+          rangeLabel={format(monthAnchor, 'MMMM yyyy')}
+          control={
+            <input
+              type="month"
+              onChange={(e) => e.target.value && setMonthAnchor(new Date(e.target.value + '-01'))}
+              className="bg-gray-800 border border-gray-700 rounded-lg px-2 py-1 text-xs"
+            />
+          }
         />
       </div>
     </div>
