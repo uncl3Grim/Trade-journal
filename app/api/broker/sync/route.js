@@ -2,7 +2,7 @@ import { createClient } from '@supabase/supabase-js';
 import { getAccountStatus, getHistoricalTrades } from '../../../../lib/metaapi';
 import { myfxbookLogin, myfxbookGetHistory, parseMyfxbookDate } from '../../../../lib/myfxbook';
 
-async function syncMt5(supabase, userId, connection) {
+async function syncMt5(connection) {
   const status = await getAccountStatus(connection.metaapi_account_id);
   if (status.connectionStatus !== 'CONNECTED') {
     throw new Error(
@@ -17,7 +17,6 @@ async function syncMt5(supabase, userId, connection) {
   return (mt5Trades || [])
     .filter((t) => t.type === 'DEAL_TYPE_BUY' || t.type === 'DEAL_TYPE_SELL')
     .map((t) => ({
-      user_id: userId,
       symbol: t.symbol,
       direction: t.type === 'DEAL_TYPE_BUY' ? 'long' : 'short',
       entry_price: t.openPrice ?? t.price,
@@ -30,12 +29,11 @@ async function syncMt5(supabase, userId, connection) {
     }));
 }
 
-async function syncMyfxbook(userId, connection) {
+async function syncMyfxbook(connection) {
   const session = await myfxbookLogin(connection.myfxbook_email, connection.myfxbook_password);
   const history = await myfxbookGetHistory(session, connection.myfxbook_account_id);
 
   return (history || []).map((t) => ({
-    user_id: userId,
     symbol: t.symbol,
     direction: (t.action || '').toLowerCase().includes('sell') ? 'short' : 'long',
     entry_price: t.openPrice,
@@ -87,12 +85,18 @@ export async function POST(request) {
       return Response.json({ error: 'Broker connection not found' }, { status: 404 });
     }
 
-    const rows =
+    const rawRows =
       connection.broker_type === 'myfxbook'
-        ? await syncMyfxbook(userId, connection)
-        : await syncMt5(supabase, userId, connection);
+        ? await syncMyfxbook(connection)
+        : await syncMt5(connection);
 
-    const validRows = rows.filter((r) => r.entry_time && r.symbol);
+    const validRows = rawRows
+      .filter((r) => r.entry_time && r.symbol)
+      .map((r) => ({
+        ...r,
+        user_id: userId,
+        broker_connection_id: connectionId,
+      }));
 
     if (validRows.length > 0) {
       const { error: insertError } = await supabase.from('trades').upsert(validRows, {
