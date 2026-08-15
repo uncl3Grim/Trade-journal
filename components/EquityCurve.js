@@ -20,7 +20,7 @@ export default function EquityCurve({ trades }) {
 
   if (data.length === 0) {
     return (
-      <div className="bg-gray-900 border border-gray-800 rounded-xl p-5 mb-6 text-sm text-gray-500">
+      <div className="bg-white border border-gray-200 rounded-2xl shadow-sm p-5 mb-6 text-sm text-gray-400">
         No closed trades yet to chart.
       </div>
     );
@@ -29,22 +29,22 @@ export default function EquityCurve({ trades }) {
   const isUp = data[data.length - 1].balance >= 0;
 
   return (
-    <div className="bg-gray-900 border border-gray-800 rounded-xl p-5 mb-6">
-      <h3 className="font-semibold mb-4">Equity Curve</h3>
+    <div className="bg-white border border-gray-200 rounded-2xl shadow-sm p-5 mb-6">
+      <h3 className="font-semibold mb-4 text-gray-900">Equity Curve</h3>
       <div className="h-64">
         <ResponsiveContainer width="100%" height="100%">
           <LineChart data={data} margin={{ top: 5, right: 10, left: 0, bottom: 0 }}>
-            <CartesianGrid strokeDasharray="3 3" stroke="#1f2937" />
-            <XAxis dataKey="date" stroke="#6b7280" fontSize={12} />
-            <YAxis stroke="#6b7280" fontSize={12} />
+            <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
+            <XAxis dataKey="date" stroke="#9ca3af" fontSize={12} />
+            <YAxis stroke="#9ca3af" fontSize={12} />
             <Tooltip
-              contentStyle={{ background: '#111827', border: '1px solid #374151', borderRadius: 8 }}
-              labelStyle={{ color: '#9ca3af' }}
+              contentStyle={{ background: '#ffffff', border: '1px solid #e5e7eb', borderRadius: 8 }}
+              labelStyle={{ color: '#6b7280' }}
             />
             <Line
               type="monotone"
               dataKey="balance"
-              stroke={isUp ? '#4ade80' : '#f87171'}
+              stroke={isUp ? '#16a34a' : '#ef4444'}
               strokeWidth={2}
               dot={false}
             />
