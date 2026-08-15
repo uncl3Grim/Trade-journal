@@ -35,9 +35,9 @@ export default function RiskSettings({ userId, onSaved }) {
   if (!loaded) return null;
 
   return (
-    <div className="bg-gray-900 border border-gray-800 rounded-xl p-4 mb-6 flex items-end gap-3">
+    <div className="bg-white border border-gray-200 rounded-2xl shadow-sm p-4 mb-6 flex items-end gap-3">
       <div className="flex-1">
-        <label className="block text-xs text-gray-500 mb-1">
+        <label className="block text-xs text-gray-400 mb-1">
           Default risk per trade ($) — used for R-multiple when a trade doesn't specify its own
         </label>
         <input
@@ -46,13 +46,13 @@ export default function RiskSettings({ userId, onSaved }) {
           placeholder="e.g. 20"
           value={amount}
           onChange={(e) => setAmount(e.target.value)}
-          className="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-sm"
+          className="w-full bg-white border border-gray-300 rounded-xl px-3 py-2 text-sm text-gray-900 focus:border-indigo-500 outline-none"
         />
       </div>
       <button
         onClick={handleSave}
         disabled={saving}
-        className="bg-blue-600 hover:bg-blue-500 disabled:opacity-50 rounded-lg px-4 py-2 text-sm font-medium"
+        className="bg-indigo-600 hover:bg-indigo-500 disabled:opacity-50 text-white rounded-xl px-4 py-2 text-sm font-medium"
       >
         {saving ? 'Saving...' : 'Save'}
       </button>
