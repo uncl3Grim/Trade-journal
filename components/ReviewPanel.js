@@ -41,55 +41,55 @@ function summarize(trades, start, end, defaultRiskAmount) {
 function PeriodCard({ label, current, previous, rangeLabel, control }) {
   const delta = current.totalPnl - previous.totalPnl;
   return (
-    <div className="bg-gray-900 border border-gray-800 rounded-xl p-5">
+    <div className="bg-white border border-gray-200 rounded-2xl shadow-sm p-5">
       <div className="flex items-center justify-between mb-4">
-        <h3 className="font-semibold">{label}</h3>
+        <h3 className="font-semibold text-gray-900">{label}</h3>
         {control}
       </div>
-      <div className="text-xs text-gray-500 mb-4">{rangeLabel}</div>
+      <div className="text-xs text-gray-400 mb-4">{rangeLabel}</div>
 
       <div className="grid grid-cols-2 gap-3 mb-4">
         <div>
-          <div className="text-xs text-gray-500 mb-1">P&L</div>
-          <div className={`text-xl font-semibold ${current.totalPnl >= 0 ? 'text-green-400' : 'text-red-400'}`}>
+          <div className="text-xs text-gray-400 mb-1">P&L</div>
+          <div className={`text-xl font-semibold ${current.totalPnl >= 0 ? 'text-green-600' : 'text-red-500'}`}>
             {current.totalPnl >= 0 ? '+' : ''}
             {current.totalPnl.toFixed(2)}
           </div>
         </div>
         <div>
-          <div className="text-xs text-gray-500 mb-1">Total R</div>
-          <div className={`text-xl font-semibold ${current.totalR >= 0 ? 'text-green-400' : 'text-red-400'}`}>
+          <div className="text-xs text-gray-400 mb-1">Total R</div>
+          <div className={`text-xl font-semibold ${current.totalR >= 0 ? 'text-green-600' : 'text-red-500'}`}>
             {current.totalR >= 0 ? '+' : ''}
             {current.totalR.toFixed(2)}R
           </div>
         </div>
         <div>
-          <div className="text-xs text-gray-500 mb-1">Win Rate</div>
-          <div className="text-lg font-medium text-gray-200">{current.winRate.toFixed(1)}%</div>
+          <div className="text-xs text-gray-400 mb-1">Win Rate</div>
+          <div className="text-lg font-medium text-gray-900">{current.winRate.toFixed(1)}%</div>
         </div>
         <div>
-          <div className="text-xs text-gray-500 mb-1">Trades</div>
-          <div className="text-lg font-medium text-gray-300">{current.tradeCount}</div>
+          <div className="text-xs text-gray-400 mb-1">Trades</div>
+          <div className="text-lg font-medium text-gray-700">{current.tradeCount}</div>
         </div>
       </div>
 
-      <div className="border-t border-gray-800 pt-3 space-y-1 text-sm">
+      <div className="border-t border-gray-100 pt-3 space-y-1 text-sm">
         <div className="flex justify-between">
-          <span className="text-gray-500">vs. previous period</span>
-          <span className={delta >= 0 ? 'text-green-400' : 'text-red-400'}>
+          <span className="text-gray-400">vs. previous period</span>
+          <span className={delta >= 0 ? 'text-green-600' : 'text-red-500'}>
             {delta >= 0 ? '+' : ''}
             {delta.toFixed(2)}
           </span>
         </div>
         <div className="flex justify-between">
-          <span className="text-gray-500">Best day</span>
-          <span className="text-green-400">
+          <span className="text-gray-400">Best day</span>
+          <span className="text-green-600">
             {current.bestDay ? `${current.bestDay[0]}  +${current.bestDay[1].toFixed(2)}` : '—'}
           </span>
         </div>
         <div className="flex justify-between">
-          <span className="text-gray-500">Worst day</span>
-          <span className="text-red-400">
+          <span className="text-gray-400">Worst day</span>
+          <span className="text-red-500">
             {current.worstDay ? `${current.worstDay[0]}  ${current.worstDay[1].toFixed(2)}` : '—'}
           </span>
         </div>
@@ -142,7 +142,7 @@ export default function ReviewPanel({ trades, defaultRiskAmount }) {
             <input
               type="week"
               onChange={(e) => e.target.value && setWeekAnchor(isoWeekToDate(e.target.value))}
-              className="bg-gray-800 border border-gray-700 rounded-lg px-2 py-1 text-xs"
+              className="bg-white border border-gray-300 rounded-lg px-2 py-1 text-xs text-gray-700"
             />
           }
         />
@@ -155,7 +155,7 @@ export default function ReviewPanel({ trades, defaultRiskAmount }) {
             <input
               type="month"
               onChange={(e) => e.target.value && setMonthAnchor(new Date(e.target.value + '-01'))}
-              className="bg-gray-800 border border-gray-700 rounded-lg px-2 py-1 text-xs"
+              className="bg-white border border-gray-300 rounded-lg px-2 py-1 text-xs text-gray-700"
             />
           }
         />
