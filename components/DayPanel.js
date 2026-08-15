@@ -28,7 +28,7 @@ const emptyForm = {
 function Field({ label, children }) {
   return (
     <div>
-      <label className="block text-xs text-gray-500 mb-1">{label}</label>
+      <label className="block text-xs text-gray-400 mb-1">{label}</label>
       {children}
     </div>
   );
@@ -50,7 +50,7 @@ export default function DayPanel({ date, trades, userId, accounts = [], defaultR
 
   if (!date) {
     return (
-      <div className="bg-gray-900 border border-gray-800 rounded-xl p-6 text-gray-500 text-sm">
+      <div className="bg-white border border-gray-200 rounded-2xl shadow-sm p-6 text-gray-400 text-sm">
         Select a day on the calendar to view or log trades.
       </div>
     );
@@ -134,10 +134,10 @@ export default function DayPanel({ date, trades, userId, accounts = [], defaultR
   }
 
   return (
-    <div className="bg-gray-900 border border-gray-800 rounded-xl p-5">
+    <div className="bg-white border border-gray-200 rounded-2xl shadow-sm p-5">
       <div className="flex items-center justify-between mb-4">
-        <h2 className="font-semibold">{format(date, 'EEEE, MMM d, yyyy')}</h2>
-        <button onClick={onClose} className="text-gray-500 hover:text-gray-300 text-sm">
+        <h2 className="font-semibold text-gray-900">{format(date, 'EEEE, MMM d, yyyy')}</h2>
+        <button onClick={onClose} className="text-gray-400 hover:text-gray-600 text-sm">
           Close
         </button>
       </div>
@@ -147,22 +147,22 @@ export default function DayPanel({ date, trades, userId, accounts = [], defaultR
           {trades.map((t) => {
             const r = rMultiple(t, defaultRiskAmount);
             return (
-              <div key={t.id} className="bg-gray-800 rounded-lg px-3 py-2 text-sm">
+              <div key={t.id} className="bg-gray-50 border border-gray-100 rounded-xl px-3 py-2 text-sm">
                 <div className="flex items-center justify-between">
                   <div>
-                    <span className="font-medium">{t.symbol}</span>{' '}
-                    <span className="text-gray-500">{t.direction}</span>
+                    <span className="font-medium text-gray-900">{t.symbol}</span>{' '}
+                    <span className="text-gray-400">{t.direction}</span>
                   </div>
-                  <div className={`font-semibold ${t.pnl > 0 ? 'text-green-400' : t.pnl < 0 ? 'text-red-400' : 'text-gray-400'}`}>
+                  <div className={`font-semibold ${t.pnl > 0 ? 'text-green-600' : t.pnl < 0 ? 'text-red-500' : 'text-gray-500'}`}>
                     {t.pnl > 0 ? '+' : ''}
                     {Number(t.pnl).toFixed(2)}
-                    {r !== null && <span className="text-gray-500 font-normal ml-1">({r >= 0 ? '+' : ''}{r.toFixed(2)}R)</span>}
+                    {r !== null && <span className="text-gray-400 font-normal ml-1">({r >= 0 ? '+' : ''}{r.toFixed(2)}R)</span>}
                   </div>
                   <div className="flex gap-2">
-                    <button onClick={() => startEdit(t)} className="text-blue-400 hover:text-blue-300 text-xs">
+                    <button onClick={() => startEdit(t)} className="text-indigo-600 hover:text-indigo-500 text-xs">
                       Edit
                     </button>
-                    <button onClick={() => handleDelete(t.id)} className="text-red-400 hover:text-red-300 text-xs">
+                    <button onClick={() => handleDelete(t.id)} className="text-red-500 hover:text-red-400 text-xs">
                       Delete
                     </button>
                   </div>
@@ -170,12 +170,12 @@ export default function DayPanel({ date, trades, userId, accounts = [], defaultR
                 {(t.tags?.length > 0 || t.emotion) && (
                   <div className="flex flex-wrap gap-1 mt-2">
                     {t.emotion && (
-                      <span className="text-[10px] px-2 py-0.5 rounded-full bg-purple-900/50 text-purple-300">
+                      <span className="text-[10px] px-2 py-0.5 rounded-full bg-purple-100 text-purple-700">
                         {t.emotion}
                       </span>
                     )}
                     {t.tags?.map((tag) => (
-                      <span key={tag} className="text-[10px] px-2 py-0.5 rounded-full bg-gray-700 text-gray-300">
+                      <span key={tag} className="text-[10px] px-2 py-0.5 rounded-full bg-gray-200 text-gray-600">
                         {tag}
                       </span>
                     ))}
@@ -193,7 +193,7 @@ export default function DayPanel({ date, trades, userId, accounts = [], defaultR
             <select
               value={form.account_id}
               onChange={(e) => setForm({ ...form, account_id: e.target.value })}
-              className="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-sm"
+              className="w-full bg-white border border-gray-300 rounded-xl px-3 py-2 text-sm text-gray-900"
             >
               <option value="">Manual (no account)</option>
               {accounts.map((a) => (
@@ -212,14 +212,14 @@ export default function DayPanel({ date, trades, userId, accounts = [], defaultR
               value={form.symbol}
               onChange={(e) => setForm({ ...form, symbol: e.target.value })}
               required
-              className="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-sm"
+              className="w-full bg-white border border-gray-300 rounded-xl px-3 py-2 text-sm text-gray-900"
             />
           </Field>
           <Field label="Direction">
             <select
               value={form.direction}
               onChange={(e) => setForm({ ...form, direction: e.target.value })}
-              className="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-sm"
+              className="w-full bg-white border border-gray-300 rounded-xl px-3 py-2 text-sm text-gray-900"
             >
               <option value="long">Long</option>
               <option value="short">Short</option>
@@ -235,7 +235,7 @@ export default function DayPanel({ date, trades, userId, accounts = [], defaultR
               value={form.entry_price}
               onChange={(e) => setForm({ ...form, entry_price: e.target.value })}
               required
-              className="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-sm"
+              className="w-full bg-white border border-gray-300 rounded-xl px-3 py-2 text-sm text-gray-900"
             />
           </Field>
           <Field label="Exit price">
@@ -244,7 +244,7 @@ export default function DayPanel({ date, trades, userId, accounts = [], defaultR
               step="any"
               value={form.exit_price}
               onChange={(e) => setForm({ ...form, exit_price: e.target.value })}
-              className="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-sm"
+              className="w-full bg-white border border-gray-300 rounded-xl px-3 py-2 text-sm text-gray-900"
             />
           </Field>
         </div>
@@ -256,7 +256,7 @@ export default function DayPanel({ date, trades, userId, accounts = [], defaultR
               step="any"
               value={form.stop_loss}
               onChange={(e) => setForm({ ...form, stop_loss: e.target.value })}
-              className="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-sm"
+              className="w-full bg-white border border-gray-300 rounded-xl px-3 py-2 text-sm text-gray-900"
             />
           </Field>
           <Field label="Take profit">
@@ -265,7 +265,7 @@ export default function DayPanel({ date, trades, userId, accounts = [], defaultR
               step="any"
               value={form.take_profit}
               onChange={(e) => setForm({ ...form, take_profit: e.target.value })}
-              className="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-sm"
+              className="w-full bg-white border border-gray-300 rounded-xl px-3 py-2 text-sm text-gray-900"
             />
           </Field>
         </div>
@@ -278,7 +278,7 @@ export default function DayPanel({ date, trades, userId, accounts = [], defaultR
               value={form.size}
               onChange={(e) => setForm({ ...form, size: e.target.value })}
               required
-              className="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-sm"
+              className="w-full bg-white border border-gray-300 rounded-xl px-3 py-2 text-sm text-gray-900"
             />
           </Field>
           <Field label="P&L">
@@ -287,7 +287,7 @@ export default function DayPanel({ date, trades, userId, accounts = [], defaultR
               step="any"
               value={form.pnl}
               onChange={(e) => setForm({ ...form, pnl: e.target.value })}
-              className="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-sm"
+              className="w-full bg-white border border-gray-300 rounded-xl px-3 py-2 text-sm text-gray-900"
             />
           </Field>
         </div>
@@ -299,7 +299,7 @@ export default function DayPanel({ date, trades, userId, accounts = [], defaultR
             placeholder={defaultRiskAmount ? `Using default: ${defaultRiskAmount}` : 'e.g. 20'}
             value={form.risk_amount}
             onChange={(e) => setForm({ ...form, risk_amount: e.target.value })}
-            className="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-sm"
+            className="w-full bg-white border border-gray-300 rounded-xl px-3 py-2 text-sm text-gray-900"
           />
         </Field>
 
@@ -309,7 +309,7 @@ export default function DayPanel({ date, trades, userId, accounts = [], defaultR
               type="datetime-local"
               value={form.entry_time}
               onChange={(e) => setForm({ ...form, entry_time: e.target.value })}
-              className="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-sm"
+              className="w-full bg-white border border-gray-300 rounded-xl px-3 py-2 text-sm text-gray-900"
             />
           </Field>
           <Field label="Exit time">
@@ -317,7 +317,7 @@ export default function DayPanel({ date, trades, userId, accounts = [], defaultR
               type="datetime-local"
               value={form.exit_time}
               onChange={(e) => setForm({ ...form, exit_time: e.target.value })}
-              className="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-sm"
+              className="w-full bg-white border border-gray-300 rounded-xl px-3 py-2 text-sm text-gray-900"
             />
           </Field>
         </div>
@@ -326,7 +326,7 @@ export default function DayPanel({ date, trades, userId, accounts = [], defaultR
           <select
             value={form.emotion}
             onChange={(e) => setForm({ ...form, emotion: e.target.value })}
-            className="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-sm"
+            className="w-full bg-white border border-gray-300 rounded-xl px-3 py-2 text-sm text-gray-900"
           >
             <option value="">— none —</option>
             {EMOTIONS.map((em) => (
@@ -342,7 +342,7 @@ export default function DayPanel({ date, trades, userId, accounts = [], defaultR
             placeholder="e.g. breakout, trend-following"
             value={form.tags}
             onChange={(e) => setForm({ ...form, tags: e.target.value })}
-            className="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-sm"
+            className="w-full bg-white border border-gray-300 rounded-xl px-3 py-2 text-sm text-gray-900"
           />
         </Field>
 
@@ -351,22 +351,22 @@ export default function DayPanel({ date, trades, userId, accounts = [], defaultR
             value={form.notes}
             onChange={(e) => setForm({ ...form, notes: e.target.value })}
             rows={3}
-            className="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-sm"
+            className="w-full bg-white border border-gray-300 rounded-xl px-3 py-2 text-sm text-gray-900"
           />
         </Field>
 
-        {error && <p className="text-sm text-red-400">{error}</p>}
+        {error && <p className="text-sm text-red-500">{error}</p>}
 
         <div className="flex gap-2">
           <button
             type="submit"
             disabled={saving}
-            className="flex-1 bg-blue-600 hover:bg-blue-500 disabled:opacity-50 rounded-lg py-2 text-sm font-medium"
+            className="flex-1 bg-indigo-600 hover:bg-indigo-500 disabled:opacity-50 text-white rounded-xl py-2 text-sm font-medium"
           >
             {saving ? 'Saving...' : editingId ? 'Update Trade' : 'Add Trade'}
           </button>
           {editingId && (
-            <button type="button" onClick={resetForm} className="px-4 rounded-lg border border-gray-700 text-sm">
+            <button type="button" onClick={resetForm} className="px-4 rounded-xl border border-gray-300 text-sm text-gray-600">
               Cancel
             </button>
           )}
