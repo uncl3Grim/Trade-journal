@@ -73,21 +73,21 @@ export default function ImportCSV({ userId, onImported }) {
   }
 
   return (
-    <div className="bg-gray-900 border border-gray-800 rounded-xl p-5 mb-6">
-      <h2 className="font-semibold mb-1">Import trades</h2>
-      <p className="text-xs text-gray-500 mb-3">
+    <div className="bg-white border border-gray-200 rounded-2xl shadow-sm p-5 mb-6">
+      <h2 className="font-semibold mb-1 text-gray-900">Import trades</h2>
+      <p className="text-xs text-gray-400 mb-3">
         Upload a CSV of your trades (works with an MT5 history export reformatted to the template below).
       </p>
       <div className="flex flex-wrap items-center gap-3">
-        <label className="cursor-pointer bg-gray-800 hover:bg-gray-700 border border-gray-700 rounded-lg px-3 py-2 text-sm">
+        <label className="cursor-pointer bg-gray-100 hover:bg-gray-200 border border-gray-300 rounded-xl px-3 py-2 text-sm text-gray-700">
           Choose CSV file
           <input type="file" accept=".csv" onChange={handleFile} disabled={busy} className="hidden" />
         </label>
-        <button onClick={downloadTemplate} className="text-sm text-blue-400 hover:text-blue-300">
+        <button onClick={downloadTemplate} className="text-sm text-indigo-600 hover:text-indigo-500">
           Download template
         </button>
       </div>
-      {status && <p className="text-sm text-gray-400 mt-2">{status}</p>}
+      {status && <p className="text-sm text-gray-500 mt-2">{status}</p>}
     </div>
   );
 }
