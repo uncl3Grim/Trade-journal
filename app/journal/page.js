@@ -128,15 +128,15 @@ export default function JournalPage() {
     : [];
 
   return (
-    <div className="min-h-screen max-w-6xl mx-auto px-4 py-6">
+    <div className="min-h-screen max-w-6xl mx-auto px-4 py-6 bg-[#f7f7fb]">
       <div className="flex items-center justify-between mb-6">
-        <h1 className="text-xl font-semibold">Trade Journal</h1>
+        <h1 className="text-xl font-semibold text-gray-900">Trade Journal</h1>
         <div className="flex items-center gap-3">
-          <span className="text-sm text-gray-500">{user?.email}</span>
-          <button onClick={() => router.push('/broker')} className="text-sm text-gray-400 hover:text-gray-200">
+          <span className="text-sm text-gray-400">{user?.email}</span>
+          <button onClick={() => router.push('/broker')} className="text-sm text-gray-500 hover:text-gray-800">
             Broker
           </button>
-          <button onClick={handleSignOut} className="text-sm text-gray-400 hover:text-gray-200">
+          <button onClick={handleSignOut} className="text-sm text-gray-500 hover:text-gray-800">
             Sign out
           </button>
         </div>
@@ -146,16 +146,16 @@ export default function JournalPage() {
         <div className="flex gap-2">
           <button
             onClick={() => setTab('calendar')}
-            className={`px-4 py-1.5 rounded-lg text-sm font-medium ${
-              tab === 'calendar' ? 'bg-blue-600 text-white' : 'bg-gray-800 text-gray-400 hover:text-gray-200'
+            className={`px-4 py-1.5 rounded-xl text-sm font-medium ${
+              tab === 'calendar' ? 'bg-indigo-600 text-white' : 'bg-white border border-gray-200 text-gray-500 hover:text-gray-800'
             }`}
           >
             Calendar
           </button>
           <button
             onClick={() => setTab('review')}
-            className={`px-4 py-1.5 rounded-lg text-sm font-medium ${
-              tab === 'review' ? 'bg-blue-600 text-white' : 'bg-gray-800 text-gray-400 hover:text-gray-200'
+            className={`px-4 py-1.5 rounded-xl text-sm font-medium ${
+              tab === 'review' ? 'bg-indigo-600 text-white' : 'bg-white border border-gray-200 text-gray-500 hover:text-gray-800'
             }`}
           >
             Review
@@ -166,7 +166,7 @@ export default function JournalPage() {
           <select
             value={selectedAccount}
             onChange={(e) => setSelectedAccount(e.target.value)}
-            className="bg-gray-800 border border-gray-700 rounded-lg px-3 py-1.5 text-sm"
+            className="bg-white border border-gray-300 rounded-xl px-3 py-1.5 text-sm text-gray-700"
           >
             <option value="all">All accounts</option>
             <option value="manual">Manual entries only</option>
@@ -189,16 +189,16 @@ export default function JournalPage() {
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
             <div className="lg:col-span-2">
               <div className="flex items-center justify-between mb-4">
-                <button onClick={() => setMonth(subMonths(month, 1))} className="px-3 py-1 rounded-lg bg-gray-800 hover:bg-gray-700 text-sm">
+                <button onClick={() => setMonth(subMonths(month, 1))} className="px-3 py-1 rounded-xl bg-white border border-gray-200 hover:bg-gray-50 text-sm text-gray-700">
                   ← Prev
                 </button>
-                <h2 className="font-medium">{format(month, 'MMMM yyyy')}</h2>
-                <button onClick={() => setMonth(addMonths(month, 1))} className="px-3 py-1 rounded-lg bg-gray-800 hover:bg-gray-700 text-sm">
+                <h2 className="font-medium text-gray-900">{format(month, 'MMMM yyyy')}</h2>
+                <button onClick={() => setMonth(addMonths(month, 1))} className="px-3 py-1 rounded-xl bg-white border border-gray-200 hover:bg-gray-50 text-sm text-gray-700">
                   Next →
                 </button>
               </div>
               {loading ? (
-                <p className="text-gray-500 text-sm">Loading trades...</p>
+                <p className="text-gray-400 text-sm">Loading trades...</p>
               ) : (
                 <Calendar month={month} dailyPnl={dailyPnl} onDayClick={setSelectedDate} selectedDate={selectedDate} />
               )}
