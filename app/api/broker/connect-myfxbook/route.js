@@ -21,7 +21,7 @@ export async function POST(request) {
     }
     const userId = userData.user.id;
 
-    const { email, password } = await request.json();
+    const { email, password, accountId } = await request.json();
     if (!email || !password) {
       return Response.json({ error: 'Missing email or password' }, { status: 400 });
     }
@@ -36,7 +36,22 @@ export async function POST(request) {
       );
     }
 
-    const account = accounts[0];
+    // Multiple accounts and no specific one chosen yet — ask the client to pick
+    if (accounts.length > 1 && !accountId) {
+      return Response.json({
+        needsSelection: true,
+        accounts: accounts.map((a) => ({
+          id: a.id,
+          name: a.name,
+          server: a.serverName || 'MyFXBook',
+        })),
+      });
+    }
+
+    const account = accountId ? accounts.find((a) => String(a.id) === String(accountId)) : accounts[0];
+    if (!account) {
+      return Response.json({ error: 'Selected account not found' }, { status: 404 });
+    }
 
     const { error: insertError } = await supabase.from('broker_connections').insert({
       user_id: userId,
