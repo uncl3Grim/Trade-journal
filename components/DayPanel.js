@@ -40,13 +40,31 @@ export default function DayPanel({ date, trades, userId, accounts = [], defaultR
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
 
+  const [dailyNote, setDailyNote] = useState('');
+  const [dailyNoteId, setDailyNoteId] = useState(null);
+  const [dailyNotePinned, setDailyNotePinned] = useState(false);
+  const [savingDaily, setSavingDaily] = useState(false);
+
   useEffect(() => {
     if (date) {
       setEditingId(null);
       setForm({ ...emptyForm, entry_time: `${format(date, 'yyyy-MM-dd')}T09:30` });
       setError('');
+
+      const dateStr = format(date, 'yyyy-MM-dd');
+      supabase
+        .from('daily_notes')
+        .select('*')
+        .eq('user_id', userId)
+        .eq('note_date', dateStr)
+        .maybeSingle()
+        .then(({ data }) => {
+          setDailyNote(data?.content || '');
+          setDailyNoteId(data?.id || null);
+          setDailyNotePinned(data?.pinned || false);
+        });
     }
-  }, [date]);
+  }, [date, userId]);
 
   if (!date) {
     return (
@@ -54,6 +72,41 @@ export default function DayPanel({ date, trades, userId, accounts = [], defaultR
         Select a day on the calendar to view or log trades.
       </div>
     );
+  }
+
+  async function handleSaveDailyNote() {
+    setSavingDaily(true);
+    const dateStr = format(date, 'yyyy-MM-dd');
+    const { data, error } = await supabase
+      .from('daily_notes')
+      .upsert(
+        {
+          id: dailyNoteId || undefined,
+          user_id: userId,
+          note_date: dateStr,
+          content: dailyNote,
+          pinned: dailyNotePinned,
+          updated_at: new Date().toISOString(),
+        },
+        { onConflict: 'user_id,note_date' }
+      )
+      .select()
+      .single();
+    if (!error && data) setDailyNoteId(data.id);
+    setSavingDaily(false);
+  }
+
+  async function toggleDailyNotePin() {
+    const next = !dailyNotePinned;
+    setDailyNotePinned(next);
+    if (dailyNoteId) {
+      await supabase.from('daily_notes').update({ pinned: next }).eq('id', dailyNoteId);
+    }
+  }
+
+  async function toggleTradePin(trade) {
+    await supabase.from('trades').update({ pinned: !trade.pinned }).eq('id', trade.id);
+    onChanged();
   }
 
   function startEdit(trade) {
@@ -142,6 +195,33 @@ export default function DayPanel({ date, trades, userId, accounts = [], defaultR
         </button>
       </div>
 
+      <div className="bg-purple-50 border border-purple-100 rounded-xl p-3 mb-5">
+        <div className="flex items-center justify-between mb-2">
+          <span className="text-xs font-medium text-purple-700">Daily Note</span>
+          <button
+            onClick={toggleDailyNotePin}
+            className={`text-lg ${dailyNotePinned ? 'text-yellow-500' : 'text-gray-300 hover:text-gray-400'}`}
+            title={dailyNotePinned ? 'Unpin' : 'Pin'}
+          >
+            {dailyNotePinned ? '★' : '☆'}
+          </button>
+        </div>
+        <textarea
+          value={dailyNote}
+          onChange={(e) => setDailyNote(e.target.value)}
+          placeholder="How did the day feel overall? Market context, mindset, lessons..."
+          rows={3}
+          className="w-full bg-white border border-purple-200 rounded-lg px-3 py-2 text-sm text-gray-900 mb-2"
+        />
+        <button
+          onClick={handleSaveDailyNote}
+          disabled={savingDaily}
+          className="bg-purple-600 hover:bg-purple-500 disabled:opacity-50 text-white rounded-lg px-3 py-1.5 text-xs font-medium"
+        >
+          {savingDaily ? 'Saving...' : 'Save Daily Note'}
+        </button>
+      </div>
+
       {trades.length > 0 && (
         <div className="space-y-2 mb-5">
           {trades.map((t) => {
@@ -158,7 +238,14 @@ export default function DayPanel({ date, trades, userId, accounts = [], defaultR
                     {Number(t.pnl).toFixed(2)}
                     {r !== null && <span className="text-gray-400 font-normal ml-1">({r >= 0 ? '+' : ''}{r.toFixed(2)}R)</span>}
                   </div>
-                  <div className="flex gap-2">
+                  <div className="flex items-center gap-2">
+                    <button
+                      onClick={() => toggleTradePin(t)}
+                      className={`text-base ${t.pinned ? 'text-yellow-500' : 'text-gray-300 hover:text-gray-400'}`}
+                      title={t.pinned ? 'Unpin' : 'Pin'}
+                    >
+                      {t.pinned ? '★' : '☆'}
+                    </button>
                     <button onClick={() => startEdit(t)} className="text-indigo-600 hover:text-indigo-500 text-xs">
                       Edit
                     </button>
@@ -181,6 +268,7 @@ export default function DayPanel({ date, trades, userId, accounts = [], defaultR
                     ))}
                   </div>
                 )}
+                {t.notes && <p className="text-xs text-gray-500 mt-2 whitespace-pre-wrap">{t.notes}</p>}
               </div>
             );
           })}
@@ -346,11 +434,12 @@ export default function DayPanel({ date, trades, userId, accounts = [], defaultR
           />
         </Field>
 
-        <Field label="Notes / lessons learned">
+        <Field label="Trade note">
           <textarea
             value={form.notes}
             onChange={(e) => setForm({ ...form, notes: e.target.value })}
             rows={3}
+            placeholder="What was your setup, reasoning, execution?"
             className="w-full bg-white border border-gray-300 rounded-xl px-3 py-2 text-sm text-gray-900"
           />
         </Field>
