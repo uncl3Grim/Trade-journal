@@ -12,6 +12,7 @@ import ReviewPanel from '../../components/ReviewPanel';
 import RiskSettings from '../../components/RiskSettings';
 import NotesView from '../../components/NotesView';
 import AccountSwitcher from '../../components/AccountSwitcher';
+import DrawdownStats from '../../components/DrawdownStats';
 
 export default function JournalPage() {
   const router = useRouter();
@@ -19,6 +20,7 @@ export default function JournalPage() {
   const [month, setMonth] = useState(new Date());
   const [trades, setTrades] = useState([]);
   const [reviewTrades, setReviewTrades] = useState([]);
+  const [allTrades, setAllTrades] = useState([]);
   const [selectedDate, setSelectedDate] = useState(null);
   const [loading, setLoading] = useState(true);
   const [tab, setTab] = useState('calendar');
@@ -76,7 +78,6 @@ export default function JournalPage() {
       if (selectedIds.length) {
         return query.in('broker_connection_id', selectedIds);
       }
-      // nothing selected — return no rows
       return query.eq('id', '00000000-0000-0000-0000-000000000000');
     },
     [accountFilter]
@@ -120,6 +121,14 @@ export default function JournalPage() {
     if (!error) setReviewTrades(data || []);
   }, [user, applyAccountFilter]);
 
+  const loadAllTrades = useCallback(async () => {
+    if (!user) return;
+    let query = supabase.from('trades').select('*').order('entry_time', { ascending: true });
+    query = applyAccountFilter(query);
+    const { data, error } = await query;
+    if (!error) setAllTrades(data || []);
+  }, [user, applyAccountFilter]);
+
   useEffect(() => {
     loadTrades();
   }, [loadTrades]);
@@ -127,6 +136,10 @@ export default function JournalPage() {
   useEffect(() => {
     if (tab === 'review') loadReviewTrades();
   }, [tab, loadReviewTrades]);
+
+  useEffect(() => {
+    loadAllTrades();
+  }, [loadAllTrades]);
 
   async function handleSignOut() {
     await supabase.auth.signOut();
@@ -202,6 +215,7 @@ export default function JournalPage() {
       {tab === 'calendar' && (
         <>
           <RiskSettings userId={user?.id} onSaved={setDefaultRiskAmount} />
+          <DrawdownStats trades={allTrades} defaultRiskAmount={defaultRiskAmount} />
           <StatsBar trades={trades} />
 
           <ImportCSV userId={user?.id} onImported={loadTrades} />
@@ -231,7 +245,10 @@ export default function JournalPage() {
                 userId={user?.id}
                 accounts={accounts}
                 defaultRiskAmount={defaultRiskAmount}
-                onChanged={loadTrades}
+                onChanged={() => {
+                  loadTrades();
+                  loadAllTrades();
+                }}
                 onClose={() => setSelectedDate(null)}
               />
             </div>
