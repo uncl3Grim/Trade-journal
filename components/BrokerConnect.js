@@ -94,9 +94,10 @@ function MyfxbookForm({ onConnected }) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
+  const [accountChoices, setAccountChoices] = useState(null);
+  const [chosenAccountId, setChosenAccountId] = useState('');
 
-  async function handleSubmit(e) {
-    e.preventDefault();
+  async function submitConnect(accountId) {
     setError('');
     setSuccess('');
     setLoading(true);
@@ -115,14 +116,20 @@ function MyfxbookForm({ onConnected }) {
           'Content-Type': 'application/json',
           Authorization: `Bearer ${session.access_token}`,
         },
-        body: JSON.stringify({ email, password }),
+        body: JSON.stringify({ email, password, accountId }),
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || 'Failed to connect');
 
+      if (data.needsSelection) {
+        setAccountChoices(data.accounts);
+        setLoading(false);
+        return;
+      }
+
       setSuccess(`Connected to ${data.accountName || 'MyFXBook'}! Tap Sync Now to pull trades.`);
-      setEmail('');
-      setPassword('');
+      setAccountChoices(null);
+      setChosenAccountId('');
       onConnected?.();
     } catch (err) {
       setError(err.message);
@@ -130,11 +137,66 @@ function MyfxbookForm({ onConnected }) {
     setLoading(false);
   }
 
+  function handleSubmit(e) {
+    e.preventDefault();
+    submitConnect(undefined);
+  }
+
+  function handleChooseAccount() {
+    if (!chosenAccountId) return;
+    submitConnect(chosenAccountId);
+  }
+
+  if (accountChoices) {
+    return (
+      <div className="space-y-3">
+        <p className="text-xs text-gray-400">
+          This MyFXBook login has multiple accounts. Pick which one to connect — you can repeat
+          this to add the other one too.
+        </p>
+        {accountChoices.map((a) => (
+          <label
+            key={a.id}
+            className="flex items-center gap-2 p-3 border border-gray-200 rounded-xl cursor-pointer"
+          >
+            <input
+              type="radio"
+              name="account"
+              value={a.id}
+              checked={chosenAccountId === String(a.id)}
+              onChange={() => setChosenAccountId(String(a.id))}
+            />
+            <span className="text-sm text-gray-700">
+              {a.name} — {a.server}
+            </span>
+          </label>
+        ))}
+        {error && <p className="text-sm text-red-500">{error}</p>}
+        <div className="flex gap-2">
+          <button
+            onClick={handleChooseAccount}
+            disabled={loading || !chosenAccountId}
+            className="flex-1 bg-indigo-600 hover:bg-indigo-500 disabled:opacity-50 text-white rounded-xl py-2 text-sm font-medium"
+          >
+            {loading ? 'Connecting...' : 'Connect This Account'}
+          </button>
+          <button
+            onClick={() => setAccountChoices(null)}
+            className="px-4 rounded-xl border border-gray-300 text-sm text-gray-600"
+          >
+            Cancel
+          </button>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <form onSubmit={handleSubmit} className="space-y-3">
       <p className="text-xs text-gray-400">
         Free alternative to MetaApi — uses your MyFXBook.com login (not your MT5 password). Make
-        sure your MT5 account is already added and syncing on myfxbook.com first.
+        sure your MT5 account is already added and syncing on myfxbook.com first. If you have
+        multiple MT5 accounts under one MyFXBook login, connect them one at a time.
       </p>
       <input
         placeholder="MyFXBook email"
