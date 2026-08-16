@@ -12,6 +12,7 @@ import {
   isWithinInterval,
 } from 'date-fns';
 import EquityCurve from './EquityCurve';
+import BreakdownReports from './BreakdownReports';
 import { rMultiple } from '../lib/tradeMath';
 
 function summarize(trades, start, end, defaultRiskAmount) {
@@ -160,6 +161,7 @@ export default function ReviewPanel({ trades, defaultRiskAmount }) {
           }
         />
       </div>
+      <BreakdownReports trades={trades} />
     </div>
   );
 }
