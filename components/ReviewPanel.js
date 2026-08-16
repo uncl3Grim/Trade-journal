@@ -13,12 +13,11 @@ import {
 } from 'date-fns';
 import EquityCurve from './EquityCurve';
 import BreakdownReports from './BreakdownReports';
+import AIAnalysis from './AIAnalysis';
 import { rMultiple } from '../lib/tradeMath';
 
 function summarize(trades, start, end, defaultRiskAmount) {
-  const inRange = trades.filter((t) =>
-    isWithinInterval(new Date(t.entry_time), { start, end })
-  );
+  const inRange = trades.filter((t) => isWithinInterval(new Date(t.entry_time), { start, end }));
   const closed = inRange.filter((t) => t.exit_price !== null && t.exit_price !== undefined);
   const totalPnl = closed.reduce((sum, t) => sum + Number(t.pnl || 0), 0);
   const wins = closed.filter((t) => Number(t.pnl) > 0);
@@ -132,6 +131,7 @@ export default function ReviewPanel({ trades, defaultRiskAmount }) {
 
   return (
     <div>
+      <AIAnalysis defaultRiskAmount={defaultRiskAmount} />
       <EquityCurve trades={trades} />
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
         <PeriodCard
