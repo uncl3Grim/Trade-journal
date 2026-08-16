@@ -1,5 +1,5 @@
 'use client';
-import NotesView from '../../components/NotesView';
+
 import { useEffect, useState, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import { format, addMonths, subMonths, startOfMonth, endOfMonth, startOfWeek, endOfWeek, subMonths as subM } from 'date-fns';
@@ -10,6 +10,8 @@ import StatsBar from '../../components/StatsBar';
 import ImportCSV from '../../components/ImportCSV';
 import ReviewPanel from '../../components/ReviewPanel';
 import RiskSettings from '../../components/RiskSettings';
+import NotesView from '../../components/NotesView';
+import AccountSwitcher from '../../components/AccountSwitcher';
 
 export default function JournalPage() {
   const router = useRouter();
@@ -21,8 +23,13 @@ export default function JournalPage() {
   const [loading, setLoading] = useState(true);
   const [tab, setTab] = useState('calendar');
   const [accounts, setAccounts] = useState([]);
-  const [selectedAccount, setSelectedAccount] = useState('all');
   const [defaultRiskAmount, setDefaultRiskAmount] = useState(null);
+
+  const [accountFilter, setAccountFilter] = useState({
+    allSelected: true,
+    selectedIds: [],
+    includeManual: false,
+  });
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
@@ -57,11 +64,22 @@ export default function JournalPage() {
 
   const applyAccountFilter = useCallback(
     (query) => {
-      if (selectedAccount === 'manual') return query.is('broker_connection_id', null);
-      if (selectedAccount !== 'all') return query.eq('broker_connection_id', selectedAccount);
-      return query;
+      const { allSelected, selectedIds, includeManual } = accountFilter;
+      if (allSelected) return query;
+
+      if (includeManual && selectedIds.length) {
+        return query.or(`broker_connection_id.in.(${selectedIds.join(',')}),broker_connection_id.is.null`);
+      }
+      if (includeManual) {
+        return query.is('broker_connection_id', null);
+      }
+      if (selectedIds.length) {
+        return query.in('broker_connection_id', selectedIds);
+      }
+      // nothing selected — return no rows
+      return query.eq('id', '00000000-0000-0000-0000-000000000000');
     },
-    [selectedAccount]
+    [accountFilter]
   );
 
   const loadTrades = useCallback(async () => {
@@ -160,22 +178,24 @@ export default function JournalPage() {
           >
             Review
           </button>
+          <button
+            onClick={() => setTab('notes')}
+            className={`px-4 py-1.5 rounded-xl text-sm font-medium ${
+              tab === 'notes' ? 'bg-indigo-600 text-white' : 'bg-white border border-gray-200 text-gray-500 hover:text-gray-800'
+            }`}
+          >
+            Notes
+          </button>
         </div>
 
         {accounts.length > 0 && (
-          <select
-            value={selectedAccount}
-            onChange={(e) => setSelectedAccount(e.target.value)}
-            className="bg-white border border-gray-300 rounded-xl px-3 py-1.5 text-sm text-gray-700"
-          >
-            <option value="all">All accounts</option>
-            <option value="manual">Manual entries only</option>
-            {accounts.map((a) => (
-              <option key={a.id} value={a.id}>
-                {a.broker_server} ({a.mt5_login})
-              </option>
-            ))}
-          </select>
+          <AccountSwitcher
+            accounts={accounts}
+            allSelected={accountFilter.allSelected}
+            selectedIds={accountFilter.selectedIds}
+            includeManual={accountFilter.includeManual}
+            onChange={setAccountFilter}
+          />
         )}
       </div>
 
@@ -220,15 +240,7 @@ export default function JournalPage() {
       )}
 
       {tab === 'review' && <ReviewPanel trades={reviewTrades} defaultRiskAmount={defaultRiskAmount} />}
-        <button
-            onClick={() => setTab('notes')}
-            className={`px-4 py-1.5 rounded-xl text-sm font-medium ${
-              tab === 'notes' ? 'bg-indigo-600 text-white' : 'bg-white border border-gray-200 text-gray-500 hover:text-gray-800'
-            }`}
-          >
-            Notes
-          </button>
-              {tab === 'notes' && <NotesView userId={user?.id} />}
+      {tab === 'notes' && <NotesView userId={user?.id} />}
     </div>
   );
 }
