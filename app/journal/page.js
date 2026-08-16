@@ -1,5 +1,5 @@
 'use client';
-
+import NotesView from '../../components/NotesView';
 import { useEffect, useState, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import { format, addMonths, subMonths, startOfMonth, endOfMonth, startOfWeek, endOfWeek, subMonths as subM } from 'date-fns';
