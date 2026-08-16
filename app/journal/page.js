@@ -220,6 +220,15 @@ export default function JournalPage() {
       )}
 
       {tab === 'review' && <ReviewPanel trades={reviewTrades} defaultRiskAmount={defaultRiskAmount} />}
+        <button
+            onClick={() => setTab('notes')}
+            className={`px-4 py-1.5 rounded-xl text-sm font-medium ${
+              tab === 'notes' ? 'bg-indigo-600 text-white' : 'bg-white border border-gray-200 text-gray-500 hover:text-gray-800'
+            }`}
+          >
+            Notes
+          </button>
+              {tab === 'notes' && <NotesView userId={user?.id} />}
     </div>
   );
 }
