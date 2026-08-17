@@ -9,10 +9,12 @@ import DayPanel from '../../components/DayPanel';
 import StatsBar from '../../components/StatsBar';
 import ImportCSV from '../../components/ImportCSV';
 import ReviewPanel from '../../components/ReviewPanel';
-import RiskSettings from '../../components/RiskSettings';
 import NotesView from '../../components/NotesView';
 import AccountSwitcher from '../../components/AccountSwitcher';
 import DrawdownStats from '../../components/DrawdownStats';
+import DisplayModeToggle from '../../components/DisplayModeToggle';
+
+const DEFAULT_ACCOUNT_FILTER = { allSelected: true, selectedIds: [], includeManual: false };
 
 export default function JournalPage() {
   const router = useRouter();
@@ -26,12 +28,31 @@ export default function JournalPage() {
   const [tab, setTab] = useState('calendar');
   const [accounts, setAccounts] = useState([]);
   const [defaultRiskAmount, setDefaultRiskAmount] = useState(null);
+  const [accountBalance, setAccountBalance] = useState(null);
+  const [mode, setMode] = useState('dollar');
+  const [accountFilter, setAccountFilter] = useState(DEFAULT_ACCOUNT_FILTER);
 
-  const [accountFilter, setAccountFilter] = useState({
-    allSelected: true,
-    selectedIds: [],
-    includeManual: false,
-  });
+  // Load persisted account filter + display mode from localStorage on mount
+  useEffect(() => {
+    try {
+      const savedFilter = localStorage.getItem('tj_account_filter');
+      if (savedFilter) setAccountFilter(JSON.parse(savedFilter));
+      const savedMode = localStorage.getItem('tj_display_mode');
+      if (savedMode) setMode(savedMode);
+    } catch {}
+  }, []);
+
+  useEffect(() => {
+    try {
+      localStorage.setItem('tj_account_filter', JSON.stringify(accountFilter));
+    } catch {}
+  }, [accountFilter]);
+
+  useEffect(() => {
+    try {
+      localStorage.setItem('tj_display_mode', mode);
+    } catch {}
+  }, [mode]);
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
@@ -58,10 +79,13 @@ export default function JournalPage() {
 
     supabase
       .from('user_settings')
-      .select('default_risk_amount')
+      .select('default_risk_amount, account_balance')
       .eq('user_id', user.id)
       .maybeSingle()
-      .then(({ data }) => setDefaultRiskAmount(data?.default_risk_amount ?? null));
+      .then(({ data }) => {
+        setDefaultRiskAmount(data?.default_risk_amount ?? null);
+        setAccountBalance(data?.account_balance ?? null);
+      });
   }, [user]);
 
   const applyAccountFilter = useCallback(
@@ -141,11 +165,6 @@ export default function JournalPage() {
     loadAllTrades();
   }, [loadAllTrades]);
 
-  async function handleSignOut() {
-    await supabase.auth.signOut();
-    router.replace('/login');
-  }
-
   const dailyPnl = {};
   for (const t of trades) {
     const key = format(new Date(t.entry_time), 'yyyy-MM-dd');
@@ -158,17 +177,22 @@ export default function JournalPage() {
     ? trades.filter((t) => format(new Date(t.entry_time), 'yyyy-MM-dd') === format(selectedDate, 'yyyy-MM-dd'))
     : [];
 
+  const initial = user?.email ? user.email[0].toUpperCase() : '?';
+
   return (
     <div className="min-h-screen max-w-6xl mx-auto px-4 py-6 bg-[#f7f7fb]">
       <div className="flex items-center justify-between mb-6">
         <h1 className="text-xl font-semibold text-gray-900">Trade Journal</h1>
         <div className="flex items-center gap-3">
-          <span className="text-sm text-gray-400">{user?.email}</span>
           <button onClick={() => router.push('/broker')} className="text-sm text-gray-500 hover:text-gray-800">
             Broker
           </button>
-          <button onClick={handleSignOut} className="text-sm text-gray-500 hover:text-gray-800">
-            Sign out
+          <button
+            onClick={() => router.push('/profile')}
+            className="w-9 h-9 rounded-full bg-indigo-600 text-white flex items-center justify-center text-sm font-semibold"
+            title="Profile"
+          >
+            {initial}
           </button>
         </div>
       </div>
@@ -201,24 +225,28 @@ export default function JournalPage() {
           </button>
         </div>
 
-        {accounts.length > 0 && (
-          <AccountSwitcher
-            accounts={accounts}
-            allSelected={accountFilter.allSelected}
-            selectedIds={accountFilter.selectedIds}
-            includeManual={accountFilter.includeManual}
-            onChange={setAccountFilter}
-          />
-        )}
+        <div className="flex items-center gap-3">
+          <DisplayModeToggle mode={mode} onChange={setMode} />
+          {accounts.length > 0 && (
+            <AccountSwitcher
+              accounts={accounts}
+              allSelected={accountFilter.allSelected}
+              selectedIds={accountFilter.selectedIds}
+              includeManual={accountFilter.includeManual}
+              onChange={setAccountFilter}
+            />
+          )}
+        </div>
       </div>
 
       {tab === 'calendar' && (
         <>
-          <RiskSettings userId={user?.id} onSaved={setDefaultRiskAmount} />
           <DrawdownStats trades={allTrades} defaultRiskAmount={defaultRiskAmount} />
-          <StatsBar trades={trades} />
+          <StatsBar trades={trades} mode={mode} defaultRiskAmount={defaultRiskAmount} accountBalance={accountBalance} />
 
-          <ImportCSV userId={user?.id} onImported={loadTrades} />
+          <div className="mt-6">
+            <ImportCSV userId={user?.id} onImported={loadTrades} />
+          </div>
 
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
             <div className="lg:col-span-2">
@@ -256,7 +284,7 @@ export default function JournalPage() {
         </>
       )}
 
-      {tab === 'review' && <ReviewPanel trades={reviewTrades} defaultRiskAmount={defaultRiskAmount} />}
+      {tab === 'review' && <ReviewPanel trades={reviewTrades} defaultRiskAmount={defaultRiskAmount} mode={mode} />}
       {tab === 'notes' && <NotesView userId={user?.id} />}
     </div>
   );
