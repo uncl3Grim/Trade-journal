@@ -165,5 +165,6 @@ export default function ReviewPanel({ trades, defaultRiskAmount, mode = 'dollar'
       </div>
       <BreakdownReports trades={trades} />
     </div>
+import PsychologyInsights from './PsychologyInsights';
   );
 }
