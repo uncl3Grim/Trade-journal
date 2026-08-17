@@ -44,7 +44,6 @@ async function syncMyfxbook(connection) {
     pnl: t.profit ?? 0,
     stop_loss: t.sl || null,
     take_profit: t.tp || null,
-    notes: t.comment || '',
     source: 'myfxbook_sync',
   }));
 }
