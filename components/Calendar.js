@@ -11,7 +11,25 @@ import {
   isSameDay,
 } from 'date-fns';
 
-export default function Calendar({ month, dailyPnl, onDayClick, selectedDate }) {
+function formatValue(stat, mode, accountBalance) {
+  if (!stat) return null;
+  if (mode === 'r') {
+    return `${stat.r >= 0 ? '+' : ''}${stat.r.toFixed(2)}R`;
+  }
+  if (mode === 'percent') {
+    if (!accountBalance) return `${stat.dollar >= 0 ? '+' : ''}${stat.dollar.toFixed(2)}`;
+    const pct = (stat.dollar / accountBalance) * 100;
+    return `${pct >= 0 ? '+' : ''}${pct.toFixed(2)}%`;
+  }
+  return `${stat.dollar >= 0 ? '+' : ''}${stat.dollar.toFixed(2)}`;
+}
+
+function signOf(stat, mode) {
+  if (!stat) return 0;
+  return mode === 'r' ? stat.r : stat.dollar;
+}
+
+export default function Calendar({ month, dailyStats, onDayClick, selectedDate, mode = 'dollar', accountBalance }) {
   const monthStart = startOfMonth(month);
   const monthEnd = endOfMonth(month);
   const gridStart = startOfWeek(monthStart);
@@ -32,17 +50,18 @@ export default function Calendar({ month, dailyPnl, onDayClick, selectedDate }) 
       <div className="grid grid-cols-7 gap-2">
         {days.map((day) => {
           const key = format(day, 'yyyy-MM-dd');
-          const dayData = dailyPnl[key];
+          const stat = dailyStats[key];
           const inMonth = isSameMonth(day, month);
           const isSelected = selectedDate && isSameDay(day, selectedDate);
+          const sign = signOf(stat, mode);
 
           let bg = 'bg-white';
           let border = 'border-gray-200';
-          if (dayData) {
-            if (dayData.pnl > 0) {
+          if (stat) {
+            if (sign > 0) {
               bg = 'bg-green-50';
               border = 'border-green-200';
-            } else if (dayData.pnl < 0) {
+            } else if (sign < 0) {
               bg = 'bg-red-50';
               border = 'border-red-200';
             } else {
@@ -62,17 +81,16 @@ export default function Calendar({ month, dailyPnl, onDayClick, selectedDate }) 
                 hover:border-indigo-300`}
             >
               <span className="text-xs text-gray-400">{format(day, 'd')}</span>
-              {dayData && (
+              {stat && (
                 <div className="w-full">
                   <div
                     className={`text-xs font-semibold ${
-                      dayData.pnl > 0 ? 'text-green-600' : dayData.pnl < 0 ? 'text-red-500' : 'text-gray-500'
+                      sign > 0 ? 'text-green-600' : sign < 0 ? 'text-red-500' : 'text-gray-500'
                     }`}
                   >
-                    {dayData.pnl > 0 ? '+' : ''}
-                    {dayData.pnl.toFixed(2)}
+                    {formatValue(stat, mode, accountBalance)}
                   </div>
-                  <div className="text-[10px] text-gray-400">{dayData.count} trade{dayData.count !== 1 ? 's' : ''}</div>
+                  <div className="text-[10px] text-gray-400">{stat.count} trade{stat.count !== 1 ? 's' : ''}</div>
                 </div>
               )}
             </button>
