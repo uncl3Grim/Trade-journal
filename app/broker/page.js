@@ -11,6 +11,7 @@ export default function BrokerPage() {
   const [user, setUser] = useState(null);
   const [connections, setConnections] = useState([]);
   const [syncingId, setSyncingId] = useState(null);
+  const [deletingId, setDeletingId] = useState(null);
   const [syncMessage, setSyncMessage] = useState('');
 
   useEffect(() => {
@@ -60,6 +61,18 @@ export default function BrokerPage() {
     setSyncingId(null);
   }
 
+  async function handleDelete(connectionId, label) {
+    if (!confirm(`Disconnect ${label}? Its trades will stay in your journal but be unlinked from this account.`)) return;
+    setDeletingId(connectionId);
+    const { error } = await supabase.from('broker_connections').delete().eq('id', connectionId);
+    setDeletingId(null);
+    if (error) {
+      setSyncMessage(`Error deleting: ${error.message}`);
+    } else {
+      loadConnections();
+    }
+  }
+
   return (
     <div className="min-h-screen max-w-3xl mx-auto px-4 py-6 bg-[#f7f7fb]">
       <div className="flex items-center justify-between mb-6">
@@ -78,7 +91,7 @@ export default function BrokerPage() {
           <p className="text-sm text-gray-400">No broker accounts connected yet.</p>
         )}
         {connections.map((c) => (
-          <div key={c.id} className="bg-white border border-gray-200 rounded-2xl shadow-sm p-4 flex items-center justify-between">
+          <div key={c.id} className="bg-white border border-gray-200 rounded-2xl shadow-sm p-4 flex items-center justify-between gap-3">
             <div>
               <div className="font-medium text-gray-900">{c.broker_server}</div>
               <div className="text-xs text-gray-400">
@@ -86,13 +99,22 @@ export default function BrokerPage() {
                 {c.last_synced_at && ` · Last synced ${format(new Date(c.last_synced_at), 'MMM d, h:mm a')}`}
               </div>
             </div>
-            <button
-              onClick={() => handleSync(c.id)}
-              disabled={syncingId === c.id}
-              className="bg-indigo-600 hover:bg-indigo-500 disabled:opacity-50 text-white rounded-xl px-4 py-2 text-sm font-medium"
-            >
-              {syncingId === c.id ? 'Syncing...' : 'Sync Now'}
-            </button>
+            <div className="flex items-center gap-2 flex-shrink-0">
+              <button
+                onClick={() => handleSync(c.id)}
+                disabled={syncingId === c.id}
+                className="bg-indigo-600 hover:bg-indigo-500 disabled:opacity-50 text-white rounded-xl px-4 py-2 text-sm font-medium"
+              >
+                {syncingId === c.id ? 'Syncing...' : 'Sync Now'}
+              </button>
+              <button
+                onClick={() => handleDelete(c.id, c.broker_server)}
+                disabled={deletingId === c.id}
+                className="border border-red-200 text-red-500 hover:bg-red-50 disabled:opacity-50 rounded-xl px-3 py-2 text-sm font-medium"
+              >
+                {deletingId === c.id ? '...' : 'Delete'}
+              </button>
+            </div>
           </div>
         ))}
       </div>
