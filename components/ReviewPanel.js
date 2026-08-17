@@ -14,6 +14,7 @@ import {
 import EquityCurve from './EquityCurve';
 import BreakdownReports from './BreakdownReports';
 import AIAnalysis from './AIAnalysis';
+import InsightsCards from './InsightsCards';
 import { rMultiple } from '../lib/tradeMath';
 
 function summarize(trades, start, end, defaultRiskAmount) {
@@ -109,7 +110,7 @@ function isoWeekToDate(isoWeekStr) {
   return d;
 }
 
-export default function ReviewPanel({ trades, defaultRiskAmount }) {
+export default function ReviewPanel({ trades, defaultRiskAmount, mode = 'dollar' }) {
   const now = new Date();
   const [weekAnchor, setWeekAnchor] = useState(now);
   const [monthAnchor, setMonthAnchor] = useState(now);
@@ -131,6 +132,7 @@ export default function ReviewPanel({ trades, defaultRiskAmount }) {
 
   return (
     <div>
+      <InsightsCards trades={trades} mode={mode} defaultRiskAmount={defaultRiskAmount} />
       <AIAnalysis defaultRiskAmount={defaultRiskAmount} />
       <EquityCurve trades={trades} />
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
