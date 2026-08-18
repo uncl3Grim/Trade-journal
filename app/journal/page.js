@@ -13,6 +13,7 @@ import NotesView from '../../components/NotesView';
 import AccountSwitcher from '../../components/AccountSwitcher';
 import DrawdownStats from '../../components/DrawdownStats';
 import DisplayModeToggle from '../../components/DisplayModeToggle';
+import { computeDailyStats } from '../../lib/dailyStats';
 
 const DEFAULT_ACCOUNT_FILTER = { allSelected: true, selectedIds: [], includeManual: false };
 
@@ -32,7 +33,6 @@ export default function JournalPage() {
   const [mode, setMode] = useState('dollar');
   const [accountFilter, setAccountFilter] = useState(DEFAULT_ACCOUNT_FILTER);
 
-  // Load persisted account filter + display mode from localStorage on mount
   useEffect(() => {
     try {
       const savedFilter = localStorage.getItem('tj_account_filter');
@@ -165,13 +165,7 @@ export default function JournalPage() {
     loadAllTrades();
   }, [loadAllTrades]);
 
-  const dailyPnl = {};
-  for (const t of trades) {
-    const key = format(new Date(t.entry_time), 'yyyy-MM-dd');
-    if (!dailyPnl[key]) dailyPnl[key] = { pnl: 0, count: 0 };
-    dailyPnl[key].pnl += Number(t.pnl || 0);
-    dailyPnl[key].count += 1;
-  }
+  const dailyStats = computeDailyStats(trades, defaultRiskAmount);
 
   const selectedDayTrades = selectedDate
     ? trades.filter((t) => format(new Date(t.entry_time), 'yyyy-MM-dd') === format(selectedDate, 'yyyy-MM-dd'))
@@ -262,7 +256,14 @@ export default function JournalPage() {
               {loading ? (
                 <p className="text-gray-400 text-sm">Loading trades...</p>
               ) : (
-                <Calendar month={month} dailyPnl={dailyPnl} onDayClick={setSelectedDate} selectedDate={selectedDate} />
+                <Calendar
+                  month={month}
+                  dailyStats={dailyStats}
+                  onDayClick={setSelectedDate}
+                  selectedDate={selectedDate}
+                  mode={mode}
+                  accountBalance={accountBalance}
+                />
               )}
             </div>
 
