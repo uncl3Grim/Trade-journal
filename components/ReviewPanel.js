@@ -15,6 +15,7 @@ import EquityCurve from './EquityCurve';
 import BreakdownReports from './BreakdownReports';
 import AIAnalysis from './AIAnalysis';
 import InsightsCards from './InsightsCards';
+import PsychologyInsights from './PsychologyInsights';
 import { rMultiple } from '../lib/tradeMath';
 
 function summarize(trades, start, end, defaultRiskAmount) {
@@ -134,6 +135,7 @@ export default function ReviewPanel({ trades, defaultRiskAmount, mode = 'dollar'
     <div>
       <InsightsCards trades={trades} mode={mode} defaultRiskAmount={defaultRiskAmount} />
       <AIAnalysis defaultRiskAmount={defaultRiskAmount} />
+      <PsychologyInsights trades={trades} />
       <EquityCurve trades={trades} />
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
         <PeriodCard
