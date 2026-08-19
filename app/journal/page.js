@@ -2,17 +2,17 @@
 
 import { useEffect, useState, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
-import { format, addMonths, subMonths, startOfMonth, endOfMonth, startOfWeek, endOfWeek, subMonths as subM } from 'date-fns';
+import { format, addMonths, subMonths, startOfMonth, endOfMonth, startOfWeek, endOfWeek } from 'date-fns';
 import { supabase } from '../../lib/supabaseClient';
 import Calendar from '../../components/Calendar';
 import DayPanel from '../../components/DayPanel';
 import StatsBar from '../../components/StatsBar';
-import ImportCSV from '../../components/ImportCSV';
 import ReviewPanel from '../../components/ReviewPanel';
 import NotesView from '../../components/NotesView';
 import AccountSwitcher from '../../components/AccountSwitcher';
 import DrawdownStats from '../../components/DrawdownStats';
 import DisplayModeToggle from '../../components/DisplayModeToggle';
+import PsychologyQuotes from '../../components/PsychologyQuotes';
 import { computeDailyStats } from '../../lib/dailyStats';
 
 const DEFAULT_ACCOUNT_FILTER = { allSelected: true, selectedIds: [], includeManual: false };
@@ -22,7 +22,6 @@ export default function JournalPage() {
   const [user, setUser] = useState(null);
   const [month, setMonth] = useState(new Date());
   const [trades, setTrades] = useState([]);
-  const [reviewTrades, setReviewTrades] = useState([]);
   const [allTrades, setAllTrades] = useState([]);
   const [selectedDate, setSelectedDate] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -127,24 +126,6 @@ export default function JournalPage() {
     setLoading(false);
   }, [user, month, applyAccountFilter]);
 
-  const loadReviewTrades = useCallback(async () => {
-    if (!user) return;
-    const rangeStart = startOfMonth(subM(new Date(), 2));
-    const rangeEnd = endOfMonth(new Date());
-
-    let query = supabase
-      .from('trades')
-      .select('*')
-      .gte('entry_time', rangeStart.toISOString())
-      .lte('entry_time', rangeEnd.toISOString())
-      .order('entry_time', { ascending: true });
-
-    query = applyAccountFilter(query);
-
-    const { data, error } = await query;
-    if (!error) setReviewTrades(data || []);
-  }, [user, applyAccountFilter]);
-
   const loadAllTrades = useCallback(async () => {
     if (!user) return;
     let query = supabase.from('trades').select('*').order('entry_time', { ascending: true });
@@ -156,10 +137,6 @@ export default function JournalPage() {
   useEffect(() => {
     loadTrades();
   }, [loadTrades]);
-
-  useEffect(() => {
-    if (tab === 'review') loadReviewTrades();
-  }, [tab, loadReviewTrades]);
 
   useEffect(() => {
     loadAllTrades();
@@ -175,6 +152,8 @@ export default function JournalPage() {
 
   return (
     <div className="min-h-screen max-w-6xl mx-auto px-4 py-6 bg-[#f7f7fb]">
+      <PsychologyQuotes />
+
       <div className="flex items-center justify-between mb-6">
         <h1 className="text-xl font-semibold text-gray-900">Trade Journal</h1>
         <div className="flex items-center gap-3">
@@ -238,11 +217,7 @@ export default function JournalPage() {
           <DrawdownStats trades={allTrades} defaultRiskAmount={defaultRiskAmount} accountBalance={accountBalance} />
           <StatsBar trades={trades} mode={mode} defaultRiskAmount={defaultRiskAmount} accountBalance={accountBalance} />
 
-          <div className="mt-6">
-            <ImportCSV userId={user?.id} onImported={loadTrades} />
-          </div>
-
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mt-6">
             <div className="lg:col-span-2">
               <div className="flex items-center justify-between mb-4">
                 <button onClick={() => setMonth(subMonths(month, 1))} className="px-3 py-1 rounded-xl bg-white border border-gray-200 hover:bg-gray-50 text-sm text-gray-700">
@@ -285,7 +260,7 @@ export default function JournalPage() {
         </>
       )}
 
-      {tab === 'review' && <ReviewPanel trades={reviewTrades} defaultRiskAmount={defaultRiskAmount} mode={mode} />}
+      {tab === 'review' && <ReviewPanel trades={allTrades} defaultRiskAmount={defaultRiskAmount} mode={mode} />}
       {tab === 'notes' && <NotesView userId={user?.id} />}
     </div>
   );
