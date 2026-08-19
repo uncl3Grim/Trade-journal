@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import { format } from 'date-fns';
 import { supabase } from '../../lib/supabaseClient';
 import BrokerConnect from '../../components/BrokerConnect';
+import ImportCSV from '../../components/ImportCSV';
 
 export default function BrokerPage() {
   const router = useRouter();
@@ -83,6 +84,8 @@ export default function BrokerPage() {
       </div>
 
       <BrokerConnect onConnected={loadConnections} />
+
+      <ImportCSV userId={user?.id} onImported={() => setSyncMessage('CSV import complete — check your Calendar tab.')} />
 
       {syncMessage && <p className="text-sm text-gray-500 mb-4">{syncMessage}</p>}
 
