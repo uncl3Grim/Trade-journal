@@ -235,7 +235,7 @@ export default function JournalPage() {
 
       {tab === 'calendar' && (
         <>
-          <DrawdownStats trades={allTrades} defaultRiskAmount={defaultRiskAmount} />
+          <DrawdownStats trades={allTrades} defaultRiskAmount={defaultRiskAmount} accountBalance={accountBalance} />
           <StatsBar trades={trades} mode={mode} defaultRiskAmount={defaultRiskAmount} accountBalance={accountBalance} />
 
           <div className="mt-6">
