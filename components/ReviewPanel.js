@@ -10,6 +10,7 @@ import {
   subMonths,
   format,
   isWithinInterval,
+  parseISO,
 } from 'date-fns';
 import EquityCurve from './EquityCurve';
 import BreakdownReports from './BreakdownReports';
@@ -41,7 +42,7 @@ function summarize(trades, start, end, defaultRiskAmount) {
 }
 
 function PeriodCard({ label, current, previous, rangeLabel, control }) {
-  const delta = current.totalPnl - previous.totalPnl;
+  const delta = previous ? current.totalPnl - previous.totalPnl : null;
   return (
     <div className="bg-white border border-gray-200 rounded-2xl shadow-sm p-5">
       <div className="flex items-center justify-between mb-4">
@@ -76,13 +77,15 @@ function PeriodCard({ label, current, previous, rangeLabel, control }) {
       </div>
 
       <div className="border-t border-gray-100 pt-3 space-y-1 text-sm">
-        <div className="flex justify-between">
-          <span className="text-gray-400">vs. previous period</span>
-          <span className={delta >= 0 ? 'text-green-600' : 'text-red-500'}>
-            {delta >= 0 ? '+' : ''}
-            {delta.toFixed(2)}
-          </span>
-        </div>
+        {delta !== null && (
+          <div className="flex justify-between">
+            <span className="text-gray-400">vs. previous period</span>
+            <span className={delta >= 0 ? 'text-green-600' : 'text-red-500'}>
+              {delta >= 0 ? '+' : ''}
+              {delta.toFixed(2)}
+            </span>
+          </div>
+        )}
         <div className="flex justify-between">
           <span className="text-gray-400">Best day</span>
           <span className="text-green-600">
@@ -109,6 +112,68 @@ function isoWeekToDate(isoWeekStr) {
   const d = new Date(weekStart);
   d.setDate(d.getDate() + (week - 1) * 7);
   return d;
+}
+
+function CustomRangeCard({ trades, defaultRiskAmount }) {
+  const [from, setFrom] = useState('');
+  const [to, setTo] = useState('');
+
+  const hasRange = from && to;
+  const current = hasRange
+    ? summarize(trades, parseISO(from), new Date(parseISO(to).getTime() + 86399999), defaultRiskAmount)
+    : null;
+
+  return (
+    <div className="bg-white border border-gray-200 rounded-2xl shadow-sm p-5 mb-6">
+      <div className="flex items-center justify-between mb-3 flex-wrap gap-2">
+        <h3 className="font-semibold text-gray-900">Custom Range</h3>
+        <div className="flex items-center gap-2">
+          <input
+            type="date"
+            value={from}
+            onChange={(e) => setFrom(e.target.value)}
+            className="bg-white border border-gray-300 rounded-lg px-2 py-1 text-xs text-gray-700"
+          />
+          <span className="text-xs text-gray-400">to</span>
+          <input
+            type="date"
+            value={to}
+            onChange={(e) => setTo(e.target.value)}
+            className="bg-white border border-gray-300 rounded-lg px-2 py-1 text-xs text-gray-700"
+          />
+        </div>
+      </div>
+
+      {!hasRange ? (
+        <p className="text-xs text-gray-400">Pick a start and end date to see stats for any custom period.</p>
+      ) : (
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+          <div>
+            <div className="text-xs text-gray-400 mb-1">P&L</div>
+            <div className={`text-lg font-semibold ${current.totalPnl >= 0 ? 'text-green-600' : 'text-red-500'}`}>
+              {current.totalPnl >= 0 ? '+' : ''}
+              {current.totalPnl.toFixed(2)}
+            </div>
+          </div>
+          <div>
+            <div className="text-xs text-gray-400 mb-1">Total R</div>
+            <div className={`text-lg font-semibold ${current.totalR >= 0 ? 'text-green-600' : 'text-red-500'}`}>
+              {current.totalR >= 0 ? '+' : ''}
+              {current.totalR.toFixed(2)}R
+            </div>
+          </div>
+          <div>
+            <div className="text-xs text-gray-400 mb-1">Win Rate</div>
+            <div className="text-lg font-medium text-gray-900">{current.winRate.toFixed(1)}%</div>
+          </div>
+          <div>
+            <div className="text-xs text-gray-400 mb-1">Trades</div>
+            <div className="text-lg font-medium text-gray-700">{current.tradeCount}</div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
 }
 
 export default function ReviewPanel({ trades, defaultRiskAmount, mode = 'dollar' }) {
@@ -165,6 +230,7 @@ export default function ReviewPanel({ trades, defaultRiskAmount, mode = 'dollar'
           }
         />
       </div>
+      <CustomRangeCard trades={trades} defaultRiskAmount={defaultRiskAmount} />
       <BreakdownReports trades={trades} />
     </div>
   );
