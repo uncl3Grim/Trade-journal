@@ -4,7 +4,7 @@ import { useState } from 'react';
 import { computeDrawdown } from '../lib/drawdown';
 import { rMultiple } from '../lib/tradeMath';
 
-export default function DrawdownStats({ trades, defaultRiskAmount }) {
+export default function DrawdownStats({ trades, defaultRiskAmount, accountBalance }) {
   const [mode, setMode] = useState('trailing');
 
   const closed = trades.filter((t) => t.exit_price !== null && t.exit_price !== undefined);
@@ -14,11 +14,13 @@ export default function DrawdownStats({ trades, defaultRiskAmount }) {
     .reduce((sum, r) => sum + r, 0);
 
   const dd = computeDrawdown(trades, mode);
+  const totalPnl = closed.reduce((s, t) => s + Number(t.pnl || 0), 0);
+  const currentBalance = accountBalance !== null && accountBalance !== undefined ? accountBalance + totalPnl : null;
 
   return (
     <div className="bg-white border border-gray-200 rounded-2xl shadow-sm p-4 mb-6">
       <div className="flex items-center justify-between mb-3">
-        <h3 className="font-semibold text-gray-900 text-sm">Drawdown & Total R</h3>
+        <h3 className="font-semibold text-gray-900 text-sm">Account Overview</h3>
         <div className="flex gap-1 bg-gray-100 rounded-lg p-0.5">
           <button
             onClick={() => setMode('static')}
@@ -38,7 +40,13 @@ export default function DrawdownStats({ trades, defaultRiskAmount }) {
           </button>
         </div>
       </div>
-      <div className="grid grid-cols-3 gap-3">
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+        {currentBalance !== null && (
+          <div>
+            <div className="text-xs text-gray-400 mb-1">Account Balance</div>
+            <div className="text-lg font-semibold text-gray-900">{currentBalance.toFixed(2)}</div>
+          </div>
+        )}
         <div>
           <div className="text-xs text-gray-400 mb-1">Total R</div>
           <div className={`text-lg font-semibold ${totalR >= 0 ? 'text-green-600' : 'text-red-500'}`}>
@@ -55,6 +63,11 @@ export default function DrawdownStats({ trades, defaultRiskAmount }) {
           <div className="text-lg font-semibold text-red-500">-{dd.maxDrawdown.toFixed(2)}</div>
         </div>
       </div>
+      {currentBalance === null && (
+        <p className="text-[10px] text-gray-400 mt-2">
+          Set your starting account balance on the Profile page to see your live balance here.
+        </p>
+      )}
       <p className="text-[10px] text-gray-400 mt-2">
         {mode === 'trailing'
           ? 'Trailing: measured from your highest-ever account balance (matches most prop firm rules).'
