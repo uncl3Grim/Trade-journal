@@ -63,7 +63,7 @@ export default function BrokerPage() {
   }
 
   async function handleDelete(connectionId, label) {
-    if (!confirm(`Disconnect ${label}? Its trades will stay in your journal but be unlinked from this account.`)) return;
+    if (!confirm(`Remove ${label}? Its trades will stay in your journal but be unlinked from this account.`)) return;
     setDeletingId(connectionId);
     const { error } = await supabase.from('broker_connections').delete().eq('id', connectionId);
     setDeletingId(null);
@@ -85,31 +85,41 @@ export default function BrokerPage() {
 
       <BrokerConnect onConnected={loadConnections} />
 
-      <ImportCSV userId={user?.id} onImported={() => setSyncMessage('CSV import complete — check your Calendar tab.')} />
+      <ImportCSV userId={user?.id} onImported={() => { setSyncMessage('CSV import complete — check your Calendar tab.'); loadConnections(); }} />
 
       {syncMessage && <p className="text-sm text-gray-500 mb-4">{syncMessage}</p>}
 
       <div className="space-y-3">
         {connections.length === 0 && (
-          <p className="text-sm text-gray-400">No broker accounts connected yet.</p>
+          <p className="text-sm text-gray-400">No accounts connected yet.</p>
         )}
         {connections.map((c) => (
           <div key={c.id} className="bg-white border border-gray-200 rounded-2xl shadow-sm p-4 flex items-center justify-between gap-3">
             <div>
-              <div className="font-medium text-gray-900">{c.broker_server}</div>
+              <div className="font-medium text-gray-900">
+                {c.broker_server}
+                {c.broker_type === 'csv' && (
+                  <span className="ml-2 text-[10px] px-2 py-0.5 rounded-full bg-gray-100 text-gray-500 align-middle">
+                    CSV
+                  </span>
+                )}
+              </div>
               <div className="text-xs text-gray-400">
-                Login {c.mt5_login} · {c.status}
+                {c.broker_type !== 'csv' && `Login ${c.mt5_login} · `}
+                {c.status}
                 {c.last_synced_at && ` · Last synced ${format(new Date(c.last_synced_at), 'MMM d, h:mm a')}`}
               </div>
             </div>
             <div className="flex items-center gap-2 flex-shrink-0">
-              <button
-                onClick={() => handleSync(c.id)}
-                disabled={syncingId === c.id}
-                className="bg-indigo-600 hover:bg-indigo-500 disabled:opacity-50 text-white rounded-xl px-4 py-2 text-sm font-medium"
-              >
-                {syncingId === c.id ? 'Syncing...' : 'Sync Now'}
-              </button>
+              {c.broker_type !== 'csv' && (
+                <button
+                  onClick={() => handleSync(c.id)}
+                  disabled={syncingId === c.id}
+                  className="bg-indigo-600 hover:bg-indigo-500 disabled:opacity-50 text-white rounded-xl px-4 py-2 text-sm font-medium"
+                >
+                  {syncingId === c.id ? 'Syncing...' : 'Sync Now'}
+                </button>
+              )}
               <button
                 onClick={() => handleDelete(c.id, c.broker_server)}
                 disabled={deletingId === c.id}
