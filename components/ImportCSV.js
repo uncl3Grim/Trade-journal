@@ -128,12 +128,9 @@ export default function ImportCSV({ userId, onImported }) {
             return;
           }
 
-          // Upsert: rows matching an existing (user, symbol, entry_time) are
-          // skipped instead of erroring, so re-importing an updated export
-          // never creates duplicates.
           const { error, data: inserted } = await supabase
             .from('trades')
-            .upsert(trades, { onConflict: 'user_id,symbol,entry_time', ignoreDuplicates: true })
+            .upsert(trades, { onConflict: 'user_id,symbol,entry_time,broker_connection_id', ignoreDuplicates: true })
             .select();
 
           setBusy(false);
@@ -168,7 +165,7 @@ export default function ImportCSV({ userId, onImported }) {
       <p className="text-xs text-gray-400 mb-3">
         Upload a CSV of your trades. Required columns: <code>symbol</code>, <code>entry_price</code>. Dates should
         look like <code>2026-07-01T09:30</code>. Re-importing the same file is safe — existing trades won't be
-        duplicated.
+        duplicated. Import into a named account rather than leaving it unassigned for the safest deduping.
       </p>
 
       <div className="mb-3">
