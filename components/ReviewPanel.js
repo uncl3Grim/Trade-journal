@@ -1,5 +1,5 @@
 'use client';
-<PsychologyInsights trades={trades} />
+ import AdvancedStats from './AdvancedStats';
 import { useState } from 'react';
 import {
   startOfWeek,
