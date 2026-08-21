@@ -13,6 +13,7 @@ import AccountSwitcher from '../../components/AccountSwitcher';
 import DrawdownStats from '../../components/DrawdownStats';
 import DisplayModeToggle from '../../components/DisplayModeToggle';
 import PsychologyQuotes from '../../components/PsychologyQuotes';
+import PeriodStatsHeader from '../../components/PeriodStatsHeader';
 import { computeDailyStats } from '../../lib/dailyStats';
 import { applyAccountFilter, computeActiveAccountId } from '../../lib/accountFilter';
 
@@ -73,7 +74,7 @@ export default function JournalPage() {
     if (!user) return;
     supabase
       .from('broker_connections')
-      .select('id, broker_server, broker_type, mt5_login')
+      .select('id, broker_server, broker_type, mt5_login, starting_balance')
       .order('created_at', { ascending: true })
       .then(({ data }) => setAccounts(data || []));
 
@@ -126,6 +127,10 @@ export default function JournalPage() {
 
   const dailyStats = computeDailyStats(trades, defaultRiskAmount);
   const activeAccountId = computeActiveAccountId(accountFilter);
+  const activeAccountObj = activeAccountId ? accounts.find((a) => a.id === activeAccountId) : null;
+  const manualOnly = !accountFilter.allSelected && accountFilter.includeManual && accountFilter.selectedIds.length === 0;
+  const startingBalance = activeAccountObj ? activeAccountObj.starting_balance : manualOnly ? accountBalance : null;
+  const balanceApplicable = !!activeAccountObj || manualOnly;
 
   const selectedDayTrades = selectedDate
     ? trades.filter((t) => format(new Date(t.entry_time), 'yyyy-MM-dd') === format(selectedDate, 'yyyy-MM-dd'))
@@ -197,8 +202,14 @@ export default function JournalPage() {
 
       {tab === 'calendar' && (
         <>
-          <DrawdownStats trades={allTrades} defaultRiskAmount={defaultRiskAmount} accountBalance={accountBalance} />
-          <StatsBar trades={trades} mode={mode} defaultRiskAmount={defaultRiskAmount} accountBalance={accountBalance} />
+          <DrawdownStats
+            trades={allTrades}
+            defaultRiskAmount={defaultRiskAmount}
+            startingBalance={startingBalance}
+            balanceApplicable={balanceApplicable}
+          />
+          <PeriodStatsHeader trades={allTrades} mode={mode} defaultRiskAmount={defaultRiskAmount} accountBalance={startingBalance} />
+          <StatsBar trades={trades} mode={mode} defaultRiskAmount={defaultRiskAmount} accountBalance={startingBalance} />
 
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mt-6">
             <div className="lg:col-span-2">
@@ -220,7 +231,7 @@ export default function JournalPage() {
                   onDayClick={setSelectedDate}
                   selectedDate={selectedDate}
                   mode={mode}
-                  accountBalance={accountBalance}
+                  accountBalance={startingBalance}
                 />
               )}
             </div>
@@ -245,7 +256,7 @@ export default function JournalPage() {
       )}
 
       {tab === 'review' && <ReviewPanel trades={allTrades} defaultRiskAmount={defaultRiskAmount} mode={mode} />}
-      {tab === 'notes' && <NotesView userId={user?.id} accountFilter={accountFilter} />}
+      {tab === 'notes' && <NotesView userId={user?.id} accountFilter={accountFilter} accounts={accounts} />}
     </div>
   );
 }
