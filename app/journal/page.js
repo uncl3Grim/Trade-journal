@@ -14,6 +14,7 @@ import DrawdownStats from '../../components/DrawdownStats';
 import DisplayModeToggle from '../../components/DisplayModeToggle';
 import PsychologyQuotes from '../../components/PsychologyQuotes';
 import { computeDailyStats } from '../../lib/dailyStats';
+import { applyAccountFilter, computeActiveAccountId } from '../../lib/accountFilter';
 
 const DEFAULT_ACCOUNT_FILTER = { allSelected: true, selectedIds: [], includeManual: false };
 
@@ -87,25 +88,6 @@ export default function JournalPage() {
       });
   }, [user]);
 
-  const applyAccountFilter = useCallback(
-    (query) => {
-      const { allSelected, selectedIds, includeManual } = accountFilter;
-      if (allSelected) return query;
-
-      if (includeManual && selectedIds.length) {
-        return query.or(`broker_connection_id.in.(${selectedIds.join(',')}),broker_connection_id.is.null`);
-      }
-      if (includeManual) {
-        return query.is('broker_connection_id', null);
-      }
-      if (selectedIds.length) {
-        return query.in('broker_connection_id', selectedIds);
-      }
-      return query.eq('id', '00000000-0000-0000-0000-000000000000');
-    },
-    [accountFilter]
-  );
-
   const loadTrades = useCallback(async () => {
     if (!user) return;
     setLoading(true);
@@ -119,20 +101,20 @@ export default function JournalPage() {
       .lte('entry_time', rangeEnd.toISOString())
       .order('entry_time', { ascending: true });
 
-    query = applyAccountFilter(query);
+    query = applyAccountFilter(query, accountFilter);
 
     const { data, error } = await query;
     if (!error) setTrades(data || []);
     setLoading(false);
-  }, [user, month, applyAccountFilter]);
+  }, [user, month, accountFilter]);
 
   const loadAllTrades = useCallback(async () => {
     if (!user) return;
     let query = supabase.from('trades').select('*').order('entry_time', { ascending: true });
-    query = applyAccountFilter(query);
+    query = applyAccountFilter(query, accountFilter);
     const { data, error } = await query;
     if (!error) setAllTrades(data || []);
-  }, [user, applyAccountFilter]);
+  }, [user, accountFilter]);
 
   useEffect(() => {
     loadTrades();
@@ -143,6 +125,7 @@ export default function JournalPage() {
   }, [loadAllTrades]);
 
   const dailyStats = computeDailyStats(trades, defaultRiskAmount);
+  const activeAccountId = computeActiveAccountId(accountFilter);
 
   const selectedDayTrades = selectedDate
     ? trades.filter((t) => format(new Date(t.entry_time), 'yyyy-MM-dd') === format(selectedDate, 'yyyy-MM-dd'))
@@ -249,6 +232,7 @@ export default function JournalPage() {
                 userId={user?.id}
                 accounts={accounts}
                 defaultRiskAmount={defaultRiskAmount}
+                activeAccountId={activeAccountId}
                 onChanged={() => {
                   loadTrades();
                   loadAllTrades();
@@ -261,7 +245,7 @@ export default function JournalPage() {
       )}
 
       {tab === 'review' && <ReviewPanel trades={allTrades} defaultRiskAmount={defaultRiskAmount} mode={mode} />}
-      {tab === 'notes' && <NotesView userId={user?.id} />}
+      {tab === 'notes' && <NotesView userId={user?.id} accountFilter={accountFilter} />}
     </div>
   );
 }
