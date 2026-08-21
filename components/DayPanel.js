@@ -34,7 +34,7 @@ function Field({ label, children }) {
   );
 }
 
-export default function DayPanel({ date, trades, userId, accounts = [], defaultRiskAmount, onChanged, onClose }) {
+export default function DayPanel({ date, trades, userId, accounts = [], defaultRiskAmount, activeAccountId = null, onChanged, onClose }) {
   const [form, setForm] = useState(emptyForm);
   const [editingId, setEditingId] = useState(null);
   const [saving, setSaving] = useState(false);
@@ -52,19 +52,16 @@ export default function DayPanel({ date, trades, userId, accounts = [], defaultR
       setError('');
 
       const dateStr = format(date, 'yyyy-MM-dd');
-      supabase
-        .from('daily_notes')
-        .select('*')
-        .eq('user_id', userId)
-        .eq('note_date', dateStr)
-        .maybeSingle()
-        .then(({ data }) => {
-          setDailyNote(data?.content || '');
-          setDailyNoteId(data?.id || null);
-          setDailyNotePinned(data?.pinned || false);
-        });
+      let query = supabase.from('daily_notes').select('*').eq('user_id', userId).eq('note_date', dateStr);
+      query = activeAccountId ? query.eq('broker_connection_id', activeAccountId) : query.is('broker_connection_id', null);
+
+      query.maybeSingle().then(({ data }) => {
+        setDailyNote(data?.content || '');
+        setDailyNoteId(data?.id || null);
+        setDailyNotePinned(data?.pinned || false);
+      });
     }
-  }, [date, userId]);
+  }, [date, userId, activeAccountId]);
 
   if (!date) {
     return (
@@ -77,22 +74,28 @@ export default function DayPanel({ date, trades, userId, accounts = [], defaultR
   async function handleSaveDailyNote() {
     setSavingDaily(true);
     const dateStr = format(date, 'yyyy-MM-dd');
-    const { data, error } = await supabase
-      .from('daily_notes')
-      .upsert(
-        {
-          id: dailyNoteId || undefined,
+
+    if (dailyNoteId) {
+      const { error } = await supabase
+        .from('daily_notes')
+        .update({ content: dailyNote, pinned: dailyNotePinned, updated_at: new Date().toISOString() })
+        .eq('id', dailyNoteId);
+      if (error) setError(error.message);
+    } else {
+      const { data, error } = await supabase
+        .from('daily_notes')
+        .insert({
           user_id: userId,
           note_date: dateStr,
           content: dailyNote,
           pinned: dailyNotePinned,
-          updated_at: new Date().toISOString(),
-        },
-        { onConflict: 'user_id,note_date' }
-      )
-      .select()
-      .single();
-    if (!error && data) setDailyNoteId(data.id);
+          broker_connection_id: activeAccountId,
+        })
+        .select()
+        .single();
+      if (error) setError(error.message);
+      else if (data) setDailyNoteId(data.id);
+    }
     setSavingDaily(false);
   }
 
@@ -132,7 +135,7 @@ export default function DayPanel({ date, trades, userId, accounts = [], defaultR
 
   function resetForm() {
     setEditingId(null);
-    setForm({ ...emptyForm, entry_time: `${format(date, 'yyyy-MM-dd')}T09:30` });
+    setForm({ ...emptyForm, entry_time: `${format(date, 'yyyy-MM-dd')}T09:30`, account_id: activeAccountId || '' });
   }
 
   async function handleSubmit(e) {
@@ -197,7 +200,9 @@ export default function DayPanel({ date, trades, userId, accounts = [], defaultR
 
       <div className="bg-purple-50 border border-purple-100 rounded-xl p-3 mb-5">
         <div className="flex items-center justify-between mb-2">
-          <span className="text-xs font-medium text-purple-700">Daily Note</span>
+          <span className="text-xs font-medium text-purple-700">
+            Daily Note {activeAccountId ? '' : '(general)'}
+          </span>
           <button
             onClick={toggleDailyNotePin}
             className={`text-lg ${dailyNotePinned ? 'text-yellow-500' : 'text-gray-300 hover:text-gray-400'}`}
