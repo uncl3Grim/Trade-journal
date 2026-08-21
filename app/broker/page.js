@@ -7,6 +7,42 @@ import { supabase } from '../../lib/supabaseClient';
 import BrokerConnect from '../../components/BrokerConnect';
 import ImportCSV from '../../components/ImportCSV';
 
+function BalanceEditor({ connection, onSaved }) {
+  const [value, setValue] = useState(connection.starting_balance ?? '');
+  const [saving, setSaving] = useState(false);
+
+  async function save() {
+    setSaving(true);
+    await supabase
+      .from('broker_connections')
+      .update({ starting_balance: value === '' ? null : parseFloat(value) })
+      .eq('id', connection.id);
+    setSaving(false);
+    onSaved?.();
+  }
+
+  return (
+    <div className="flex items-center gap-2 mt-2">
+      <label className="text-xs text-gray-400">Starting balance:</label>
+      <input
+        type="number"
+        step="any"
+        placeholder="e.g. 10000"
+        value={value}
+        onChange={(e) => setValue(e.target.value)}
+        className="w-28 bg-white border border-gray-300 rounded-lg px-2 py-1 text-xs text-gray-900"
+      />
+      <button
+        onClick={save}
+        disabled={saving}
+        className="text-xs text-indigo-600 hover:text-indigo-500 disabled:opacity-50"
+      >
+        {saving ? 'Saving...' : 'Save'}
+      </button>
+    </div>
+  );
+}
+
 export default function BrokerPage() {
   const router = useRouter();
   const [user, setUser] = useState(null);
@@ -94,40 +130,43 @@ export default function BrokerPage() {
           <p className="text-sm text-gray-400">No accounts connected yet.</p>
         )}
         {connections.map((c) => (
-          <div key={c.id} className="bg-white border border-gray-200 rounded-2xl shadow-sm p-4 flex items-center justify-between gap-3">
-            <div>
-              <div className="font-medium text-gray-900">
-                {c.broker_server}
-                {c.broker_type === 'csv' && (
-                  <span className="ml-2 text-[10px] px-2 py-0.5 rounded-full bg-gray-100 text-gray-500 align-middle">
-                    CSV
-                  </span>
+          <div key={c.id} className="bg-white border border-gray-200 rounded-2xl shadow-sm p-4">
+            <div className="flex items-center justify-between gap-3">
+              <div>
+                <div className="font-medium text-gray-900">
+                  {c.broker_server}
+                  {c.broker_type === 'csv' && (
+                    <span className="ml-2 text-[10px] px-2 py-0.5 rounded-full bg-gray-100 text-gray-500 align-middle">
+                      CSV
+                    </span>
+                  )}
+                </div>
+                <div className="text-xs text-gray-400">
+                  {c.broker_type !== 'csv' && `Login ${c.mt5_login} · `}
+                  {c.status}
+                  {c.last_synced_at && ` · Last synced ${format(new Date(c.last_synced_at), 'MMM d, h:mm a')}`}
+                </div>
+              </div>
+              <div className="flex items-center gap-2 flex-shrink-0">
+                {c.broker_type !== 'csv' && (
+                  <button
+                    onClick={() => handleSync(c.id)}
+                    disabled={syncingId === c.id}
+                    className="bg-indigo-600 hover:bg-indigo-500 disabled:opacity-50 text-white rounded-xl px-4 py-2 text-sm font-medium"
+                  >
+                    {syncingId === c.id ? 'Syncing...' : 'Sync Now'}
+                  </button>
                 )}
-              </div>
-              <div className="text-xs text-gray-400">
-                {c.broker_type !== 'csv' && `Login ${c.mt5_login} · `}
-                {c.status}
-                {c.last_synced_at && ` · Last synced ${format(new Date(c.last_synced_at), 'MMM d, h:mm a')}`}
-              </div>
-            </div>
-            <div className="flex items-center gap-2 flex-shrink-0">
-              {c.broker_type !== 'csv' && (
                 <button
-                  onClick={() => handleSync(c.id)}
-                  disabled={syncingId === c.id}
-                  className="bg-indigo-600 hover:bg-indigo-500 disabled:opacity-50 text-white rounded-xl px-4 py-2 text-sm font-medium"
+                  onClick={() => handleDelete(c.id, c.broker_server)}
+                  disabled={deletingId === c.id}
+                  className="border border-red-200 text-red-500 hover:bg-red-50 disabled:opacity-50 rounded-xl px-3 py-2 text-sm font-medium"
                 >
-                  {syncingId === c.id ? 'Syncing...' : 'Sync Now'}
+                  {deletingId === c.id ? '...' : 'Delete'}
                 </button>
-              )}
-              <button
-                onClick={() => handleDelete(c.id, c.broker_server)}
-                disabled={deletingId === c.id}
-                className="border border-red-200 text-red-500 hover:bg-red-50 disabled:opacity-50 rounded-xl px-3 py-2 text-sm font-medium"
-              >
-                {deletingId === c.id ? '...' : 'Delete'}
-              </button>
+              </div>
             </div>
+            <BalanceEditor connection={c} onSaved={loadConnections} />
           </div>
         ))}
       </div>
