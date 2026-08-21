@@ -1,5 +1,5 @@
 'use client';
-
+<PsychologyInsights trades={trades} />
 import { useState } from 'react';
 import {
   startOfWeek,
