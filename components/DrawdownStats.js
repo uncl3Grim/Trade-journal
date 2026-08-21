@@ -4,7 +4,7 @@ import { useState } from 'react';
 import { computeDrawdown } from '../lib/drawdown';
 import { rMultiple } from '../lib/tradeMath';
 
-export default function DrawdownStats({ trades, defaultRiskAmount, accountBalance }) {
+export default function DrawdownStats({ trades, defaultRiskAmount, startingBalance, balanceApplicable }) {
   const [mode, setMode] = useState('trailing');
 
   const closed = trades.filter((t) => t.exit_price !== null && t.exit_price !== undefined);
@@ -15,7 +15,10 @@ export default function DrawdownStats({ trades, defaultRiskAmount, accountBalanc
 
   const dd = computeDrawdown(trades, mode);
   const totalPnl = closed.reduce((s, t) => s + Number(t.pnl || 0), 0);
-  const currentBalance = accountBalance !== null && accountBalance !== undefined ? accountBalance + totalPnl : null;
+  const currentBalance =
+    balanceApplicable && startingBalance !== null && startingBalance !== undefined
+      ? startingBalance + totalPnl
+      : null;
 
   return (
     <div className="bg-white border border-gray-200 rounded-2xl shadow-sm p-4 mb-6">
@@ -63,15 +66,24 @@ export default function DrawdownStats({ trades, defaultRiskAmount, accountBalanc
           <div className="text-lg font-semibold text-red-500">-{dd.maxDrawdown.toFixed(2)}</div>
         </div>
       </div>
-      {currentBalance === null && (
+      {!balanceApplicable && (
         <p className="text-[10px] text-gray-400 mt-2">
-          Set your starting account balance on the Profile page to see your live balance here.
+          Select a single account above to see its balance — combining accounts with different
+          starting balances/currencies isn't meaningful.
+        </p>
+      )}
+      {balanceApplicable && currentBalance === null && (
+        <p className="text-[10px] text-gray-400 mt-2">
+          Set this account's starting balance on the Broker page to see its balance here.
         </p>
       )}
       <p className="text-[10px] text-gray-400 mt-2">
         {mode === 'trailing'
           ? 'Trailing: measured from your highest-ever account balance (matches most prop firm rules).'
           : 'Static: measured from your starting balance only.'}
+        {' '}Note: balance is calculated only from trades this app has — brokers with an API history
+        limit (like MyFXBook's free tier) may be missing older trades, causing a mismatch with your
+        real account.
       </p>
     </div>
   );
