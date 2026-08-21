@@ -3,6 +3,7 @@
 import { useEffect, useState, useCallback } from 'react';
 import { format } from 'date-fns';
 import { supabase } from '../lib/supabaseClient';
+import { applyAccountFilter } from '../lib/accountFilter';
 
 function NoteCard({ item, onTogglePin }) {
   return (
@@ -35,7 +36,7 @@ function NoteCard({ item, onTogglePin }) {
   );
 }
 
-export default function NotesView({ userId }) {
+export default function NotesView({ userId, accountFilter }) {
   const [tradeNotes, setTradeNotes] = useState([]);
   const [dailyNotes, setDailyNotes] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -44,20 +45,25 @@ export default function NotesView({ userId }) {
     if (!userId) return;
     setLoading(true);
 
-    const [tradesRes, dailyRes] = await Promise.all([
-      supabase
-        .from('trades')
-        .select('id, symbol, entry_time, notes, pinned')
-        .not('notes', 'is', null)
-        .neq('notes', '')
-        .order('entry_time', { ascending: false }),
-      supabase.from('daily_notes').select('*').order('note_date', { ascending: false }),
-    ]);
+    let tradesQuery = supabase
+      .from('trades')
+      .select('id, symbol, entry_time, notes, pinned')
+      .not('notes', 'is', null)
+      .neq('notes', '')
+      .order('entry_time', { ascending: false });
+    let dailyQuery = supabase.from('daily_notes').select('*').order('note_date', { ascending: false });
+
+    if (accountFilter) {
+      tradesQuery = applyAccountFilter(tradesQuery, accountFilter);
+      dailyQuery = applyAccountFilter(dailyQuery, accountFilter);
+    }
+
+    const [tradesRes, dailyRes] = await Promise.all([tradesQuery, dailyQuery]);
 
     setTradeNotes(tradesRes.data || []);
     setDailyNotes(dailyRes.data || []);
     setLoading(false);
-  }, [userId]);
+  }, [userId, accountFilter]);
 
   useEffect(() => {
     load();
@@ -103,7 +109,7 @@ export default function NotesView({ userId }) {
     return (
       <div className="bg-white border border-gray-200 rounded-2xl shadow-sm p-10 text-center">
         <div className="text-3xl mb-2">📝</div>
-        <p className="text-gray-400 text-sm">No notes yet — add one from the Calendar tab.</p>
+        <p className="text-gray-400 text-sm">No notes yet for this account selection.</p>
       </div>
     );
   }
