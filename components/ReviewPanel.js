@@ -201,6 +201,7 @@ export default function ReviewPanel({ trades, defaultRiskAmount, mode = 'dollar'
       <InsightsCards trades={trades} mode={mode} defaultRiskAmount={defaultRiskAmount} />
       <AIAnalysis defaultRiskAmount={defaultRiskAmount} />
       <PsychologyInsights trades={trades} />
+   <AdvancedStats trades={trades} />
       <EquityCurve trades={trades} />
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
         <PeriodCard
