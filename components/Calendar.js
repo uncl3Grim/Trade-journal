@@ -40,14 +40,14 @@ export default function Calendar({ month, dailyStats, onDayClick, selectedDate, 
 
   return (
     <div>
-      <div className="grid grid-cols-7 gap-2 mb-2">
+      <div className="grid grid-cols-7 gap-1.5 sm:gap-2 mb-2">
         {weekdayLabels.map((d) => (
-          <div key={d} className="text-center text-xs text-gray-400 font-medium">
+          <div key={d} className="text-center text-[10px] sm:text-xs text-gray-400 font-medium">
             {d}
           </div>
         ))}
       </div>
-      <div className="grid grid-cols-7 gap-2">
+      <div className="grid grid-cols-7 gap-1.5 sm:gap-2">
         {days.map((day) => {
           const key = format(day, 'yyyy-MM-dd');
           const stat = dailyStats[key];
@@ -74,23 +74,25 @@ export default function Calendar({ month, dailyStats, onDayClick, selectedDate, 
             <button
               key={key}
               onClick={() => onDayClick(day)}
-              className={`aspect-square rounded-xl border p-2 flex flex-col items-start justify-between text-left transition
+              className={`h-16 sm:h-20 rounded-lg sm:rounded-xl border p-1.5 sm:p-2 flex flex-col items-start justify-between text-left transition overflow-hidden
                 ${bg} ${border}
                 ${inMonth ? '' : 'opacity-40'}
                 ${isSelected ? 'ring-2 ring-indigo-500' : ''}
                 hover:border-indigo-300`}
             >
-              <span className="text-xs text-gray-400">{format(day, 'd')}</span>
+              <span className="text-[10px] sm:text-xs text-gray-400 leading-none">{format(day, 'd')}</span>
               {stat && (
-                <div className="w-full">
+                <div className="w-full min-w-0">
                   <div
-                    className={`text-xs font-semibold ${
+                    className={`text-[10px] sm:text-xs font-semibold leading-tight truncate ${
                       sign > 0 ? 'text-green-600' : sign < 0 ? 'text-red-500' : 'text-gray-500'
                     }`}
                   >
                     {formatValue(stat, mode, accountBalance)}
                   </div>
-                  <div className="text-[10px] text-gray-400">{stat.count} trade{stat.count !== 1 ? 's' : ''}</div>
+                  <div className="text-[8px] sm:text-[10px] text-gray-400 leading-tight truncate">
+                    {stat.count} trade{stat.count !== 1 ? 's' : ''}
+                  </div>
                 </div>
               )}
             </button>
