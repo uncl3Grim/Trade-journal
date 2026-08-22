@@ -16,6 +16,7 @@ import PsychologyQuotes from '../../components/PsychologyQuotes';
 import PeriodStatsHeader from '../../components/PeriodStatsHeader';
 import { computeDailyStats } from '../../lib/dailyStats';
 import { applyAccountFilter, computeActiveAccountId } from '../../lib/accountFilter';
+import WeeklyTotals from '../../components/WeeklyTotals';
 
 const DEFAULT_ACCOUNT_FILTER = { allSelected: true, selectedIds: [], includeManual: false };
 
@@ -237,6 +238,7 @@ export default function JournalPage() {
             </div>
 
             <div>
+              <WeeklyTotals month={month} dailyStats={dailyStats} mode={mode} />
               <DayPanel
                 date={selectedDate}
                 trades={selectedDayTrades}
