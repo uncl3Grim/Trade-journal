@@ -1,6 +1,8 @@
 'use client';
  import AdvancedStats from './AdvancedStats';
 import { useState } from 'react';
+import TraderScoreCard from './TraderScoreCard';
+import DailyPnLBarChart from './DailyPnLBarChart';
 import {
   startOfWeek,
   endOfWeek,
@@ -203,6 +205,8 @@ export default function ReviewPanel({ trades, defaultRiskAmount, mode = 'dollar'
       <PsychologyInsights trades={trades} />
    <AdvancedStats trades={trades} />
       <EquityCurve trades={trades} />
+   <TraderScoreCard trades={trades} />
+      <DailyPnLBarChart trades={trades} />
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
         <PeriodCard
           label="Week"
