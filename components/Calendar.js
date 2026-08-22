@@ -74,7 +74,7 @@ export default function Calendar({ month, dailyStats, onDayClick, selectedDate, 
             <button
               key={key}
               onClick={() => onDayClick(day)}
-              className={`h-16 sm:h-20 rounded-lg sm:rounded-xl border p-1.5 sm:p-2 flex flex-col items-start justify-between text-left transition overflow-hidden
+              className={`h-20 sm:h-24 rounded-lg sm:rounded-xl border p-1.5 sm:p-2 flex flex-col items-start justify-between text-left transition overflow-hidden
                 ${bg} ${border}
                 ${inMonth ? '' : 'opacity-40'}
                 ${isSelected ? 'ring-2 ring-indigo-500' : ''}
@@ -93,6 +93,11 @@ export default function Calendar({ month, dailyStats, onDayClick, selectedDate, 
                   <div className="text-[8px] sm:text-[10px] text-gray-400 leading-tight truncate">
                     {stat.count} trade{stat.count !== 1 ? 's' : ''}
                   </div>
+                  {stat.symbols?.length > 0 && (
+                    <div className="text-[8px] sm:text-[9px] text-gray-500 leading-tight truncate">
+                      {stat.symbols.join(', ')}
+                    </div>
+                  )}
                 </div>
               )}
             </button>
