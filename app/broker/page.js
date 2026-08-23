@@ -43,6 +43,63 @@ function BalanceEditor({ connection, onSaved }) {
   );
 }
 
+function NameEditor({ connection, onSaved }) {
+  const [editing, setEditing] = useState(false);
+  const [value, setValue] = useState(connection.broker_server);
+  const [saving, setSaving] = useState(false);
+
+  async function save() {
+    const trimmed = value.trim();
+    if (!trimmed) return;
+    setSaving(true);
+    await supabase.from('broker_connections').update({ broker_server: trimmed }).eq('id', connection.id);
+    setSaving(false);
+    setEditing(false);
+    onSaved?.();
+  }
+
+  if (!editing) {
+    return (
+      <div className="flex items-center gap-2">
+        <div className="font-medium text-gray-900">{connection.broker_server}</div>
+        {connection.broker_type === 'csv' && (
+          <span className="text-[10px] px-2 py-0.5 rounded-full bg-gray-100 text-gray-500">CSV</span>
+        )}
+        <button onClick={() => setEditing(true)} className="text-[10px] text-indigo-500 hover:text-indigo-400">
+          Rename
+        </button>
+      </div>
+    );
+  }
+
+  return (
+    <div className="flex items-center gap-2">
+      <input
+        autoFocus
+        value={value}
+        onChange={(e) => setValue(e.target.value)}
+        className="bg-white border border-gray-300 rounded-lg px-2 py-1 text-sm text-gray-900"
+      />
+      <button
+        onClick={save}
+        disabled={saving}
+        className="text-xs text-indigo-600 hover:text-indigo-500 disabled:opacity-50"
+      >
+        {saving ? '...' : 'Save'}
+      </button>
+      <button
+        onClick={() => {
+          setEditing(false);
+          setValue(connection.broker_server);
+        }}
+        className="text-xs text-gray-400 hover:text-gray-600"
+      >
+        Cancel
+      </button>
+    </div>
+  );
+}
+
 export default function BrokerPage() {
   const router = useRouter();
   const [user, setUser] = useState(null);
@@ -131,22 +188,8 @@ export default function BrokerPage() {
         )}
         {connections.map((c) => (
           <div key={c.id} className="bg-white border border-gray-200 rounded-2xl shadow-sm p-4">
-            <div className="flex items-center justify-between gap-3">
-              <div>
-                <div className="font-medium text-gray-900">
-                  {c.broker_server}
-                  {c.broker_type === 'csv' && (
-                    <span className="ml-2 text-[10px] px-2 py-0.5 rounded-full bg-gray-100 text-gray-500 align-middle">
-                      CSV
-                    </span>
-                  )}
-                </div>
-                <div className="text-xs text-gray-400">
-                  {c.broker_type !== 'csv' && `Login ${c.mt5_login} · `}
-                  {c.status}
-                  {c.last_synced_at && ` · Last synced ${format(new Date(c.last_synced_at), 'MMM d, h:mm a')}`}
-                </div>
-              </div>
+            <div className="flex items-center justify-between gap-3 flex-wrap">
+              <NameEditor connection={c} onSaved={loadConnections} />
               <div className="flex items-center gap-2 flex-shrink-0">
                 {c.broker_type !== 'csv' && (
                   <button
@@ -165,6 +208,11 @@ export default function BrokerPage() {
                   {deletingId === c.id ? '...' : 'Delete'}
                 </button>
               </div>
+            </div>
+            <div className="text-xs text-gray-400 mt-1">
+              {c.broker_type !== 'csv' && `Login ${c.mt5_login} · `}
+              {c.status}
+              {c.last_synced_at && ` · Last synced ${format(new Date(c.last_synced_at), 'MMM d, h:mm a')}`}
             </div>
             <BalanceEditor connection={c} onSaved={loadConnections} />
           </div>
