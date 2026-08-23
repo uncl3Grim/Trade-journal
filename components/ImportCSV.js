@@ -3,7 +3,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import Papa from 'papaparse';
 import { supabase } from '../lib/supabaseClient';
-import { detectFormat, convertOrderLevelRows } from '../lib/csvFormats';
+import { detectFormat, convertOrderLevelRows, convertMyfxbookStatementRows } from '../lib/csvFormats';
 
 function toISO(dateStr) {
   if (!dateStr) return null;
@@ -86,19 +86,22 @@ export default function ImportCSV({ userId, onImported }) {
           const accountId = await resolveAccountId();
           const rawRows = results.data;
           const headers = results.meta.fields || [];
-          const format = detectFormat(headers);
+          const detected = detectFormat(headers);
 
           let normalizedRows;
-          if (format === 'order_level') {
+          if (detected === 'order_level') {
             normalizedRows = convertOrderLevelRows(rawRows);
+          } else if (detected === 'myfxbook_statement') {
+            normalizedRows = convertMyfxbookStatementRows(rawRows);
           } else {
-            // Template format (or unknown — attempt as template, lowercase headers)
             normalizedRows = rawRows.map((r) => {
               const lower = {};
               for (const k in r) lower[k.trim().toLowerCase()] = r[k];
               return lower;
             });
           }
+
+          const usesRawDates = detected === 'order_level' || detected === 'myfxbook_statement';
 
           let skipped = 0;
           const trades = [];
@@ -108,8 +111,8 @@ export default function ImportCSV({ userId, onImported }) {
               skipped++;
               continue;
             }
-            const entryTime = format === 'order_level' ? r.entry_time : toISO(r.entry_time) || new Date().toISOString();
-            const exitTime = format === 'order_level' ? r.exit_time || null : r.exit_time ? toISO(r.exit_time) : null;
+            const entryTime = usesRawDates ? r.entry_time : toISO(r.entry_time) || new Date().toISOString();
+            const exitTime = usesRawDates ? r.exit_time || null : r.exit_time ? toISO(r.exit_time) : null;
 
             const entryPrice = parseFloat(r.entry_price);
             if (isNaN(entryPrice) || !entryTime) {
@@ -127,6 +130,8 @@ export default function ImportCSV({ userId, onImported }) {
               entry_time: entryTime,
               exit_time: exitTime,
               pnl: r.pnl ? parseFloat(r.pnl) : 0,
+              stop_loss: r.stop_loss ? parseFloat(r.stop_loss) : null,
+              take_profit: r.take_profit ? parseFloat(r.take_profit) : null,
               notes: r.notes || '',
               source: 'csv_import',
               broker_connection_id: accountId,
@@ -135,7 +140,7 @@ export default function ImportCSV({ userId, onImported }) {
 
           if (trades.length === 0) {
             setStatus(
-              `No valid rows found (${skipped} skipped, detected format: ${format}). Check your CSV matches the template or a supported broker export.`
+              `No valid rows found (${skipped} skipped, detected format: ${detected}). Check your CSV matches the template or a supported broker export.`
             );
             setBusy(false);
             e.target.value = '';
@@ -153,7 +158,7 @@ export default function ImportCSV({ userId, onImported }) {
           } else {
             const addedCount = inserted?.length ?? trades.length;
             const dupeCount = trades.length - addedCount;
-            const formatLabel = format === 'order_level' ? ' (auto-converted from order-level export)' : '';
+            const formatLabel = detected !== 'template' ? ` (auto-converted, format: ${detected})` : '';
             setStatus(
               `${addedCount} new trade(s) added${formatLabel}.${dupeCount > 0 ? ` ${dupeCount} already existed and were skipped.` : ''}${
                 skipped > 0 ? ` ${skipped} row(s) skipped for missing/invalid data.` : ''
@@ -178,9 +183,8 @@ export default function ImportCSV({ userId, onImported }) {
     <div className="bg-white border border-gray-200 rounded-2xl shadow-sm p-5 mb-6">
       <h2 className="font-semibold mb-1 text-gray-900">Import trades</h2>
       <p className="text-xs text-gray-400 mb-3">
-        Upload our CSV template, or a raw TradingView/Alchemy Markets order-history export — both are
-        auto-detected and converted. Re-importing the same file is safe, existing trades won't be
-        duplicated.
+        Upload our CSV template, or a raw TradingView/Alchemy Markets or MyFXBook Statement export —
+        all are auto-detected and converted. Re-importing the same file is safe.
       </p>
 
       <div className="mb-3">
