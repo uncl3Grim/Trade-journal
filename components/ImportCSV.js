@@ -3,6 +3,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import Papa from 'papaparse';
 import { supabase } from '../lib/supabaseClient';
+import { detectFormat, convertOrderLevelRows } from '../lib/csvFormats';
 
 function toISO(dateStr) {
   if (!dateStr) return null;
@@ -80,25 +81,38 @@ export default function ImportCSV({ userId, onImported }) {
     Papa.parse(file, {
       header: true,
       skipEmptyLines: true,
-      transformHeader: (h) => h.trim().toLowerCase(),
       complete: async (results) => {
         try {
           const accountId = await resolveAccountId();
+          const rawRows = results.data;
+          const headers = results.meta.fields || [];
+          const format = detectFormat(headers);
 
-          const rows = results.data;
+          let normalizedRows;
+          if (format === 'order_level') {
+            normalizedRows = convertOrderLevelRows(rawRows);
+          } else {
+            // Template format (or unknown — attempt as template, lowercase headers)
+            normalizedRows = rawRows.map((r) => {
+              const lower = {};
+              for (const k in r) lower[k.trim().toLowerCase()] = r[k];
+              return lower;
+            });
+          }
+
           let skipped = 0;
           const trades = [];
 
-          for (const r of rows) {
+          for (const r of normalizedRows) {
             if (!r.symbol || !r.entry_price) {
               skipped++;
               continue;
             }
-            const entryTime = toISO(r.entry_time) || new Date().toISOString();
-            const exitTime = r.exit_time ? toISO(r.exit_time) : null;
+            const entryTime = format === 'order_level' ? r.entry_time : toISO(r.entry_time) || new Date().toISOString();
+            const exitTime = format === 'order_level' ? r.exit_time || null : r.exit_time ? toISO(r.exit_time) : null;
 
             const entryPrice = parseFloat(r.entry_price);
-            if (isNaN(entryPrice)) {
+            if (isNaN(entryPrice) || !entryTime) {
               skipped++;
               continue;
             }
@@ -106,7 +120,7 @@ export default function ImportCSV({ userId, onImported }) {
             trades.push({
               user_id: userId,
               symbol: String(r.symbol).toUpperCase().trim(),
-              direction: (r.direction || 'long').toLowerCase().trim() === 'short' ? 'short' : 'long',
+              direction: (r.direction || 'long').toString().toLowerCase().trim() === 'short' ? 'short' : 'long',
               entry_price: entryPrice,
               exit_price: r.exit_price ? parseFloat(r.exit_price) : null,
               size: parseFloat(r.size || 0) || 0,
@@ -121,7 +135,7 @@ export default function ImportCSV({ userId, onImported }) {
 
           if (trades.length === 0) {
             setStatus(
-              `No valid rows found (${skipped} skipped). Check your CSV matches the template — symbol and entry_price are required.`
+              `No valid rows found (${skipped} skipped, detected format: ${format}). Check your CSV matches the template or a supported broker export.`
             );
             setBusy(false);
             e.target.value = '';
@@ -139,8 +153,9 @@ export default function ImportCSV({ userId, onImported }) {
           } else {
             const addedCount = inserted?.length ?? trades.length;
             const dupeCount = trades.length - addedCount;
+            const formatLabel = format === 'order_level' ? ' (auto-converted from order-level export)' : '';
             setStatus(
-              `${addedCount} new trade(s) added.${dupeCount > 0 ? ` ${dupeCount} already existed and were skipped.` : ''}${
+              `${addedCount} new trade(s) added${formatLabel}.${dupeCount > 0 ? ` ${dupeCount} already existed and were skipped.` : ''}${
                 skipped > 0 ? ` ${skipped} row(s) skipped for missing/invalid data.` : ''
               }`
             );
@@ -163,9 +178,9 @@ export default function ImportCSV({ userId, onImported }) {
     <div className="bg-white border border-gray-200 rounded-2xl shadow-sm p-5 mb-6">
       <h2 className="font-semibold mb-1 text-gray-900">Import trades</h2>
       <p className="text-xs text-gray-400 mb-3">
-        Upload a CSV of your trades. Required columns: <code>symbol</code>, <code>entry_price</code>. Dates should
-        look like <code>2026-07-01T09:30</code>. Re-importing the same file is safe — existing trades won't be
-        duplicated. Import into a named account rather than leaving it unassigned for the safest deduping.
+        Upload our CSV template, or a raw TradingView/Alchemy Markets order-history export — both are
+        auto-detected and converted. Re-importing the same file is safe, existing trades won't be
+        duplicated.
       </p>
 
       <div className="mb-3">
