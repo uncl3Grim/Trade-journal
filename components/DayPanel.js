@@ -1,5 +1,6 @@
 'use client';
 
+import TradeScreenshot from './TradeScreenshot';
 import { useState, useEffect } from 'react';
 import { format } from 'date-fns';
 import { supabase } from '../lib/supabaseClient';
@@ -274,6 +275,7 @@ export default function DayPanel({ date, trades, userId, accounts = [], defaultR
                   </div>
                 )}
                 {t.notes && <p className="text-xs text-gray-500 mt-2 whitespace-pre-wrap">{t.notes}</p>}
+                <TradeScreenshot trade={t} userId={userId} onUpdated={onChanged} />
               </div>
             );
           })}
