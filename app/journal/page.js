@@ -146,6 +146,9 @@ export default function JournalPage() {
       <div className="flex items-center justify-between mb-6">
         <h1 className="text-xl font-semibold text-gray-900">Trade Journal</h1>
         <div className="flex items-center gap-3">
+    <button onClick={() => router.push('/trades')} className="text-sm text-gray-500 hover:text-gray-800">
+            Trades
+          </button>
           <button onClick={() => router.push('/broker')} className="text-sm text-gray-500 hover:text-gray-800">
             Broker
           </button>
