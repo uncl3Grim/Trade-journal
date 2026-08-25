@@ -234,7 +234,13 @@ export default function ImportCSV({ userId, onImported }) {
       <div className="flex flex-wrap items-center gap-3">
         <label className="cursor-pointer bg-gray-100 hover:bg-gray-200 border border-gray-300 rounded-xl px-3 py-2 text-sm text-gray-700">
           Choose CSV file
-          <input type="file" accept=".csv" onChange={handleFile} disabled={busy} className="hidden" />
+         <input
+            type="file"
+            accept=".csv,text/csv,text/comma-separated-values,application/vnd.ms-excel,text/plain"
+            onChange={handleFile}
+            disabled={busy}
+            className="hidden"
+          />
         </label>
         <button onClick={downloadTemplate} className="text-sm text-indigo-600 hover:text-indigo-500">
           Download template
