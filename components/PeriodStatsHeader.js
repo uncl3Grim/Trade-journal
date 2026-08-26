@@ -2,13 +2,14 @@
 
 import { startOfWeek, endOfWeek, startOfMonth, endOfMonth } from 'date-fns';
 import { summarizePeriod } from '../lib/periodStats';
+import { formatMoney } from '../lib/format';
 
 function fmt(v, mode, accountBalance) {
   if (mode === 'r') return `${v >= 0 ? '+' : ''}${v.toFixed(2)}R`;
   if (mode === 'percent' && accountBalance) {
     return `${v >= 0 ? '+' : ''}${((v / accountBalance) * 100).toFixed(2)}%`;
   }
-  return `${v >= 0 ? '+' : ''}${v.toFixed(2)}`;
+  return formatMoney(v);
 }
 
 export default function PeriodStatsHeader({ trades, mode, defaultRiskAmount, accountBalance }) {
