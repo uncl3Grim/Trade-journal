@@ -2,6 +2,7 @@
 
 import { format } from 'date-fns';
 import { computeWeeklyTotals } from '../lib/weeklyTotals';
+import { formatMoney } from '../lib/format';
 
 export default function WeeklyTotals({ month, dailyStats, mode }) {
   const weeks = computeWeeklyTotals(month, dailyStats, mode);
@@ -21,7 +22,7 @@ export default function WeeklyTotals({ month, dailyStats, mode }) {
             </div>
             <div className="text-right">
               <div className={`text-sm font-semibold ${w.total >= 0 ? 'text-green-600' : 'text-red-500'}`}>
-                {w.tradingDays === 0 ? '—' : `${w.total >= 0 ? '+' : ''}${w.total.toFixed(2)}${suffix}`}
+                {w.tradingDays === 0 ? '—' : mode === 'r' ? `${w.total >= 0 ? '+' : ''}${w.total.toFixed(2)}${suffix}` : formatMoney(w.total)}
               </div>
               <div className="text-[10px] text-gray-400">
                 {w.tradingDays} day{w.tradingDays !== 1 ? 's' : ''}
