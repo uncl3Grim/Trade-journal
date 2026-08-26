@@ -1,6 +1,7 @@
 'use client';
 
 import { rMultiple } from '../lib/tradeMath';
+import { formatMoney } from '../lib/format';
 
 export default function StatsBar({ trades, mode = 'dollar', defaultRiskAmount, accountBalance }) {
   const closed = trades.filter((t) => t.exit_price !== null && t.exit_price !== undefined);
@@ -27,7 +28,10 @@ export default function StatsBar({ trades, mode = 'dollar', defaultRiskAmount, a
     if (usePercent) {
       return `${v >= 0 ? '+' : ''}${((v / accountBalance) * 100).toFixed(2)}%`;
     }
-    return `${v >= 0 ? '+' : ''}${v.toFixed(2)}${suffix}`;
+    if (mode === 'r') {
+      return `${v >= 0 ? '+' : ''}${v.toFixed(2)}${suffix}`;
+    }
+    return formatMoney(v);
   }
 
   const totalLabel = mode === 'r' ? 'Total R' : usePercent ? 'Total %' : 'Total P&L';
@@ -50,7 +54,7 @@ export default function StatsBar({ trades, mode = 'dollar', defaultRiskAmount, a
       ))}
       {mode === 'percent' && !accountBalance && (
         <div className="col-span-full text-[10px] text-gray-400">
-          Set your account balance on the Profile page to see percentage values.
+          Set your account balance on the Broker page to see percentage values.
         </div>
       )}
     </div>
