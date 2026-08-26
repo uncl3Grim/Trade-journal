@@ -14,9 +14,9 @@ import DrawdownStats from '../../components/DrawdownStats';
 import DisplayModeToggle from '../../components/DisplayModeToggle';
 import PsychologyQuotes from '../../components/PsychologyQuotes';
 import PeriodStatsHeader from '../../components/PeriodStatsHeader';
+import WeeklyTotals from '../../components/WeeklyTotals';
 import { computeDailyStats } from '../../lib/dailyStats';
 import { applyAccountFilter, computeActiveAccountId } from '../../lib/accountFilter';
-import WeeklyTotals from '../../components/WeeklyTotals';
 
 const DEFAULT_ACCOUNT_FILTER = { allSelected: true, selectedIds: [], includeManual: false };
 
@@ -146,7 +146,7 @@ export default function JournalPage() {
       <div className="flex items-center justify-between mb-6">
         <h1 className="text-xl font-semibold text-gray-900">Trade Journal</h1>
         <div className="flex items-center gap-3">
-    <button onClick={() => router.push('/trades')} className="text-sm text-gray-500 hover:text-gray-800">
+          <button onClick={() => router.push('/trades')} className="text-sm text-gray-500 hover:text-gray-800">
             Trades
           </button>
           <button onClick={() => router.push('/broker')} className="text-sm text-gray-500 hover:text-gray-800">
