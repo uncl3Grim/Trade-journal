@@ -1,11 +1,12 @@
 'use client';
 
-import TradeSummaryCard from './TradeSummaryCard';
-import TradeScreenshot from './TradeScreenshot';
 import { useState, useEffect } from 'react';
 import { format } from 'date-fns';
 import { supabase } from '../lib/supabaseClient';
 import { rMultiple } from '../lib/tradeMath';
+import { formatMoney } from '../lib/format';
+import TradeScreenshot from './TradeScreenshot';
+import TradeSummaryCard from './TradeSummaryCard';
 
 const EMOTIONS = ['disciplined', 'confident', 'hesitant', 'fomo', 'revenge', 'bored', 'anxious'];
 
@@ -40,12 +41,13 @@ export default function DayPanel({ date, trades, userId, accounts = [], defaultR
   const [form, setForm] = useState(emptyForm);
   const [editingId, setEditingId] = useState(null);
   const [saving, setSaving] = useState(false);
-  const [viewingTrade, setViewingTrade] = useState(null);
   const [error, setError] = useState('');
+  const [viewingTrade, setViewingTrade] = useState(null);
 
   const [dailyNote, setDailyNote] = useState('');
   const [dailyNoteId, setDailyNoteId] = useState(null);
   const [dailyNotePinned, setDailyNotePinned] = useState(false);
+  const [dailyEmotion, setDailyEmotion] = useState('');
   const [savingDaily, setSavingDaily] = useState(false);
 
   useEffect(() => {
@@ -62,6 +64,7 @@ export default function DayPanel({ date, trades, userId, accounts = [], defaultR
         setDailyNote(data?.content || '');
         setDailyNoteId(data?.id || null);
         setDailyNotePinned(data?.pinned || false);
+        setDailyEmotion(data?.emotion || '');
       });
     }
   }, [date, userId, activeAccountId]);
@@ -81,7 +84,12 @@ export default function DayPanel({ date, trades, userId, accounts = [], defaultR
     if (dailyNoteId) {
       const { error } = await supabase
         .from('daily_notes')
-        .update({ content: dailyNote, pinned: dailyNotePinned, updated_at: new Date().toISOString() })
+        .update({
+          content: dailyNote,
+          pinned: dailyNotePinned,
+          emotion: dailyEmotion || null,
+          updated_at: new Date().toISOString(),
+        })
         .eq('id', dailyNoteId);
       if (error) setError(error.message);
     } else {
@@ -92,6 +100,7 @@ export default function DayPanel({ date, trades, userId, accounts = [], defaultR
           note_date: dateStr,
           content: dailyNote,
           pinned: dailyNotePinned,
+          emotion: dailyEmotion || null,
           broker_connection_id: activeAccountId,
         })
         .select()
@@ -214,6 +223,21 @@ export default function DayPanel({ date, trades, userId, accounts = [], defaultR
             {dailyNotePinned ? '★' : '☆'}
           </button>
         </div>
+
+        <label className="block text-[10px] text-purple-500 mb-1">How did you feel today overall?</label>
+        <select
+          value={dailyEmotion}
+          onChange={(e) => setDailyEmotion(e.target.value)}
+          className="w-full bg-white border border-purple-200 rounded-lg px-3 py-2 text-sm text-gray-900 mb-2"
+        >
+          <option value="">— none —</option>
+          {EMOTIONS.map((em) => (
+            <option key={em} value={em}>
+              {em}
+            </option>
+          ))}
+        </select>
+
         <textarea
           value={dailyNote}
           onChange={(e) => setDailyNote(e.target.value)}
@@ -237,13 +261,12 @@ export default function DayPanel({ date, trades, userId, accounts = [], defaultR
             return (
               <div key={t.id} className="bg-gray-50 border border-gray-100 rounded-xl px-3 py-2 text-sm">
                 <div className="flex items-center justify-between">
-                 <div className="cursor-pointer" onClick={() => setViewingTrade(t)}>
+                  <div className="cursor-pointer" onClick={() => setViewingTrade(t)}>
                     <span className="font-medium text-gray-900">{t.symbol}</span>{' '}
                     <span className="text-gray-400">{t.direction}</span>
                   </div>
                   <div className={`font-semibold ${t.pnl > 0 ? 'text-green-600' : t.pnl < 0 ? 'text-red-500' : 'text-gray-500'}`}>
-                    {t.pnl > 0 ? '+' : ''}
-                    {Number(t.pnl).toFixed(2)}
+                    {formatMoney(Number(t.pnl))}
                     {r !== null && <span className="text-gray-400 font-normal ml-1">({r >= 0 ? '+' : ''}{r.toFixed(2)}R)</span>}
                   </div>
                   <div className="flex items-center gap-2">
@@ -419,7 +442,7 @@ export default function DayPanel({ date, trades, userId, accounts = [], defaultR
           </Field>
         </div>
 
-        <Field label="Emotion / mindset">
+        <Field label="Trade emotion / mindset (optional, separate from the day's overall mood above)">
           <select
             value={form.emotion}
             onChange={(e) => setForm({ ...form, emotion: e.target.value })}
@@ -470,7 +493,8 @@ export default function DayPanel({ date, trades, userId, accounts = [], defaultR
           )}
         </div>
       </form>
-   <TradeSummaryCard trade={viewingTrade} defaultRiskAmount={defaultRiskAmount} onClose={() => setViewingTrade(null)} />
+
+      <TradeSummaryCard trade={viewingTrade} defaultRiskAmount={defaultRiskAmount} onClose={() => setViewingTrade(null)} />
     </div>
   );
 }
