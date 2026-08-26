@@ -1,5 +1,6 @@
 'use client';
 
+import TradeSummaryCard from './TradeSummaryCard';
 import TradeScreenshot from './TradeScreenshot';
 import { useState, useEffect } from 'react';
 import { format } from 'date-fns';
@@ -39,6 +40,7 @@ export default function DayPanel({ date, trades, userId, accounts = [], defaultR
   const [form, setForm] = useState(emptyForm);
   const [editingId, setEditingId] = useState(null);
   const [saving, setSaving] = useState(false);
+  const [viewingTrade, setViewingTrade] = useState(null);
   const [error, setError] = useState('');
 
   const [dailyNote, setDailyNote] = useState('');
@@ -235,7 +237,7 @@ export default function DayPanel({ date, trades, userId, accounts = [], defaultR
             return (
               <div key={t.id} className="bg-gray-50 border border-gray-100 rounded-xl px-3 py-2 text-sm">
                 <div className="flex items-center justify-between">
-                  <div>
+                 <div className="cursor-pointer" onClick={() => setViewingTrade(t)}>
                     <span className="font-medium text-gray-900">{t.symbol}</span>{' '}
                     <span className="text-gray-400">{t.direction}</span>
                   </div>
@@ -468,6 +470,7 @@ export default function DayPanel({ date, trades, userId, accounts = [], defaultR
           )}
         </div>
       </form>
+   <TradeSummaryCard trade={viewingTrade} defaultRiskAmount={defaultRiskAmount} onClose={() => setViewingTrade(null)} />
     </div>
   );
 }
