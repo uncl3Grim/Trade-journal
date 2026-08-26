@@ -1,5 +1,6 @@
 'use client';
 
+import TradeSummaryCard from '../../components/TradeSummaryCard';
 import { useEffect, useState, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import { format } from 'date-fns';
@@ -17,6 +18,7 @@ export default function TradesPage() {
   const [defaultRiskAmount, setDefaultRiskAmount] = useState(null);
   const [accountFilter, setAccountFilter] = useState(DEFAULT_ACCOUNT_FILTER);
   const [loading, setLoading] = useState(true);
+  const [selectedTrade, setSelectedTrade] = useState(null);
 
   useEffect(() => {
     try {
@@ -102,7 +104,11 @@ export default function TradesPage() {
               {trades.map((t) => {
                 const r = rMultiple(t, defaultRiskAmount);
                 return (
-                  <tr key={t.id} className="border-b border-gray-50 last:border-0">
+                  <tr
+                    key={t.id}
+                    onClick={() => setSelectedTrade(t)}
+                    className="border-b border-gray-50 last:border-0 cursor-pointer hover:bg-gray-50"
+                  >
                     <td className="px-4 py-3 whitespace-nowrap text-gray-700">
                       {format(new Date(t.entry_time), 'MMM d, yyyy')}
                     </td>
@@ -132,6 +138,9 @@ export default function TradesPage() {
           </table>
         </div>
       )}
+    </div>
+      )}
+      <TradeSummaryCard trade={selectedTrade} defaultRiskAmount={defaultRiskAmount} onClose={() => setSelectedTrade(null)} />
     </div>
   );
 }
