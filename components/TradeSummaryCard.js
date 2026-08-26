@@ -2,6 +2,7 @@
 
 import { format } from 'date-fns';
 import { rMultiple } from '../lib/tradeMath';
+import { formatMoney } from '../lib/format';
 
 function computeDuration(entryTime, exitTime) {
   if (!entryTime || !exitTime) return null;
@@ -36,10 +37,7 @@ export default function TradeSummaryCard({ trade, defaultRiskAmount, onClose }) 
     trade.exit_price && trade.entry_price ? Math.abs(Number(trade.exit_price) - Number(trade.entry_price)) : null;
 
   return (
-    <div
-      className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4"
-      onClick={onClose}
-    >
+    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4" onClick={onClose}>
       <div
         className={`w-full max-w-sm rounded-3xl overflow-hidden shadow-2xl ${
           isWin
@@ -65,8 +63,7 @@ export default function TradeSummaryCard({ trade, defaultRiskAmount, onClose }) 
           </div>
 
           <div className={`text-5xl font-black mb-2 ${isWin ? 'text-green-400' : 'text-red-400'}`}>
-            {isWin ? '+' : ''}
-            {pnl.toFixed(2)}
+            {formatMoney(pnl)}
           </div>
 
           {r !== null && (
@@ -96,7 +93,7 @@ export default function TradeSummaryCard({ trade, defaultRiskAmount, onClose }) 
               <div className="text-[10px] uppercase text-white/40 mb-2">Stats</div>
               <div className="flex justify-between text-sm mb-1.5">
                 <span className="text-white/50">Risk</span>
-                <span className="font-semibold">{riskAmount !== null ? riskAmount.toFixed(2) : '—'}</span>
+                <span className="font-semibold">{riskAmount !== null ? formatMoney(riskAmount).replace(/^[+-]/, '') : '—'}</span>
               </div>
               <div className="flex justify-between text-sm mb-1.5">
                 <span className="text-white/50">Result</span>
