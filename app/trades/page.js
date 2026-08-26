@@ -138,8 +138,7 @@ export default function TradesPage() {
           </table>
         </div>
       )}
-    </div>
-      )}
+
       <TradeSummaryCard trade={selectedTrade} defaultRiskAmount={defaultRiskAmount} onClose={() => setSelectedTrade(null)} />
     </div>
   );
