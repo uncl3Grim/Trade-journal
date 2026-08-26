@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import { computeDrawdown } from '../lib/drawdown';
 import { rMultiple } from '../lib/tradeMath';
+import { formatMoney } from '../lib/format';
 
 export default function DrawdownStats({ trades, defaultRiskAmount, startingBalance, balanceApplicable }) {
   const [mode, setMode] = useState('trailing');
@@ -47,7 +48,9 @@ export default function DrawdownStats({ trades, defaultRiskAmount, startingBalan
         {currentBalance !== null && (
           <div>
             <div className="text-xs text-gray-400 mb-1">Account Balance</div>
-            <div className="text-lg font-semibold text-gray-900">{currentBalance.toFixed(2)}</div>
+            <div className="text-lg font-semibold text-gray-900">
+              ${currentBalance.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+            </div>
           </div>
         )}
         <div>
@@ -59,11 +62,11 @@ export default function DrawdownStats({ trades, defaultRiskAmount, startingBalan
         </div>
         <div>
           <div className="text-xs text-gray-400 mb-1">Current Drawdown</div>
-          <div className="text-lg font-semibold text-red-500">-{dd.currentDrawdown.toFixed(2)}</div>
+          <div className="text-lg font-semibold text-red-500">-{formatMoney(dd.currentDrawdown).replace(/^[+-]/, '')}</div>
         </div>
         <div>
           <div className="text-xs text-gray-400 mb-1">Max Drawdown</div>
-          <div className="text-lg font-semibold text-red-500">-{dd.maxDrawdown.toFixed(2)}</div>
+          <div className="text-lg font-semibold text-red-500">-{formatMoney(dd.maxDrawdown).replace(/^[+-]/, '')}</div>
         </div>
       </div>
       {!balanceApplicable && (
