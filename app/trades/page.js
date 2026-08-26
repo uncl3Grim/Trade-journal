@@ -1,12 +1,13 @@
 'use client';
 
-import TradeSummaryCard from '../../components/TradeSummaryCard';
 import { useEffect, useState, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import { format } from 'date-fns';
 import { supabase } from '../../lib/supabaseClient';
 import { applyAccountFilter } from '../../lib/accountFilter';
 import { rMultiple } from '../../lib/tradeMath';
+import { formatMoney } from '../../lib/format';
+import TradeSummaryCard from '../../components/TradeSummaryCard';
 
 const DEFAULT_ACCOUNT_FILTER = { allSelected: true, selectedIds: [], includeManual: false };
 
@@ -126,8 +127,7 @@ export default function TradesPage() {
                     <td className="px-4 py-3 text-gray-600">{t.exit_price ?? '—'}</td>
                     <td className="px-4 py-3 text-gray-600">{t.size}</td>
                     <td className={`px-4 py-3 font-medium ${Number(t.pnl) >= 0 ? 'text-green-600' : 'text-red-500'}`}>
-                      {Number(t.pnl) >= 0 ? '+' : ''}
-                      {Number(t.pnl).toFixed(2)}
+                      {formatMoney(Number(t.pnl))}
                     </td>
                     <td className="px-4 py-3 text-gray-500">{r !== null ? `${r >= 0 ? '+' : ''}${r.toFixed(2)}R` : '—'}</td>
                     <td className="px-4 py-3 text-gray-400 text-xs">{accountName(t.broker_connection_id)}</td>
@@ -138,7 +138,6 @@ export default function TradesPage() {
           </table>
         </div>
       )}
-
       <TradeSummaryCard trade={selectedTrade} defaultRiskAmount={defaultRiskAmount} onClose={() => setSelectedTrade(null)} />
     </div>
   );
