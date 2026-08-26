@@ -10,6 +10,7 @@ import {
   isSameMonth,
   isSameDay,
 } from 'date-fns';
+import { formatMoney } from '../lib/format';
 
 function formatValue(stat, mode, accountBalance) {
   if (!stat) return null;
@@ -17,11 +18,11 @@ function formatValue(stat, mode, accountBalance) {
     return `${stat.r >= 0 ? '+' : ''}${stat.r.toFixed(2)}R`;
   }
   if (mode === 'percent') {
-    if (!accountBalance) return `${stat.dollar >= 0 ? '+' : ''}${stat.dollar.toFixed(2)}`;
+    if (!accountBalance) return formatMoney(stat.dollar);
     const pct = (stat.dollar / accountBalance) * 100;
     return `${pct >= 0 ? '+' : ''}${pct.toFixed(2)}%`;
   }
-  return `${stat.dollar >= 0 ? '+' : ''}${stat.dollar.toFixed(2)}`;
+  return formatMoney(stat.dollar);
 }
 
 function signOf(stat, mode) {
