@@ -7,6 +7,80 @@ import { supabase } from '../../lib/supabaseClient';
 import BrokerConnect from '../../components/BrokerConnect';
 import ImportCSV from '../../components/ImportCSV';
 
+function RulesEditor({ connection, onSaved }) {
+  const [daily, setDaily] = useState(connection.daily_loss_limit_pct ?? '');
+  const [maxDd, setMaxDd] = useState(connection.max_loss_limit_pct ?? '');
+  const [target, setTarget] = useState(connection.profit_target_pct ?? '');
+  const [saving, setSaving] = useState(false);
+  const [open, setOpen] = useState(false);
+
+  async function save() {
+    setSaving(true);
+    await supabase
+      .from('broker_connections')
+      .update({
+        daily_loss_limit_pct: daily === '' ? null : parseFloat(daily),
+        max_loss_limit_pct: maxDd === '' ? null : parseFloat(maxDd),
+        profit_target_pct: target === '' ? null : parseFloat(target),
+      })
+      .eq('id', connection.id);
+    setSaving(false);
+    onSaved?.();
+  }
+
+  if (!open) {
+    return (
+      <button onClick={() => setOpen(true)} className="text-xs text-indigo-500 hover:text-indigo-400 mt-2">
+        Set prop firm rules
+      </button>
+    );
+  }
+
+  return (
+    <div className="mt-2 grid grid-cols-3 gap-2">
+      <div>
+        <label className="block text-[10px] text-gray-400 mb-1">Daily loss limit (%)</label>
+        <input
+          type="number"
+          step="any"
+          placeholder="e.g. 5"
+          value={daily}
+          onChange={(e) => setDaily(e.target.value)}
+          className="w-full bg-white border border-gray-300 rounded-lg px-2 py-1 text-xs text-gray-900"
+        />
+      </div>
+      <div>
+        <label className="block text-[10px] text-gray-400 mb-1">Max drawdown (%)</label>
+        <input
+          type="number"
+          step="any"
+          placeholder="e.g. 10"
+          value={maxDd}
+          onChange={(e) => setMaxDd(e.target.value)}
+          className="w-full bg-white border border-gray-300 rounded-lg px-2 py-1 text-xs text-gray-900"
+        />
+      </div>
+      <div>
+        <label className="block text-[10px] text-gray-400 mb-1">Profit target (%)</label>
+        <input
+          type="number"
+          step="any"
+          placeholder="e.g. 8"
+          value={target}
+          onChange={(e) => setTarget(e.target.value)}
+          className="w-full bg-white border border-gray-300 rounded-lg px-2 py-1 text-xs text-gray-900"
+        />
+      </div>
+      <button
+        onClick={save}
+        disabled={saving}
+        className="col-span-3 text-xs text-indigo-600 hover:text-indigo-500 disabled:opacity-50 mt-1"
+      >
+        {saving ? 'Saving...' : 'Save rules'}
+      </button>
+    </div>
+  );
+}
 function BalanceEditor({ connection, onSaved }) {
   const [value, setValue] = useState(connection.starting_balance ?? '');
   const [saving, setSaving] = useState(false);
