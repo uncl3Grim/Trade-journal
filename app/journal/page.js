@@ -1,5 +1,7 @@
 'use client';
 
+import Sidebar from '../../components/Sidebar';
+import MobileNav from '../../components/MobileNav';
 import PropFirmTracker from '../../components/PropFirmTracker';
 import { useEffect, useState, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
@@ -141,26 +143,15 @@ export default function JournalPage() {
   const initial = user?.email ? user.email[0].toUpperCase() : '?';
 
   return (
-    <div className="min-h-screen max-w-6xl mx-auto px-4 py-6 bg-[#f7f7fb]">
-      <PsychologyQuotes />
+    return (
+    <div className="flex bg-[#f7f7fb] min-h-screen">
+      <Sidebar />
+      <div className="flex-1 max-w-6xl mx-auto px-4 py-6 pb-20 md:pb-6">
+        <PsychologyQuotes />
 
       <div className="flex items-center justify-between mb-6">
         <h1 className="text-xl font-semibold text-gray-900">Trade Journal</h1>
-        <div className="flex items-center gap-3">
-          <button onClick={() => router.push('/trades')} className="text-sm text-gray-500 hover:text-gray-800">
-            Trades
-          </button>
-          <button onClick={() => router.push('/broker')} className="text-sm text-gray-500 hover:text-gray-800">
-            Broker
-          </button>
-          <button
-            onClick={() => router.push('/profile')}
-            className="w-9 h-9 rounded-full bg-indigo-600 text-white flex items-center justify-center text-sm font-semibold"
-            title="Profile"
-          >
-            {initial}
-          </button>
-        </div>
+        <span className="text-sm text-gray-400">{user?.email}</span>
       </div>
 
       <div className="flex items-center justify-between mb-6 flex-wrap gap-3">
@@ -262,8 +253,9 @@ export default function JournalPage() {
         </>
       )}
 
-      {tab === 'review' && <ReviewPanel trades={allTrades} defaultRiskAmount={defaultRiskAmount} mode={mode} />}
       {tab === 'notes' && <NotesView userId={user?.id} accountFilter={accountFilter} accounts={accounts} />}
+      </div>
+      <MobileNav />
     </div>
   );
 }
