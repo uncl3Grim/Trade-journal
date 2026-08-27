@@ -1,8 +1,5 @@
 'use client';
 
-import Sidebar from '../../components/Sidebar';
-import MobileNav from '../../components/MobileNav';
-import PropFirmTracker from '../../components/PropFirmTracker';
 import { useEffect, useState, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import { format, addMonths, subMonths, startOfMonth, endOfMonth, startOfWeek, endOfWeek } from 'date-fns';
@@ -18,6 +15,10 @@ import DisplayModeToggle from '../../components/DisplayModeToggle';
 import PsychologyQuotes from '../../components/PsychologyQuotes';
 import PeriodStatsHeader from '../../components/PeriodStatsHeader';
 import WeeklyTotals from '../../components/WeeklyTotals';
+import PropFirmTracker from '../../components/PropFirmTracker';
+import AnimatedOverview from '../../components/AnimatedOverview';
+import Sidebar from '../../components/Sidebar';
+import MobileNav from '../../components/MobileNav';
 import { computeDailyStats } from '../../lib/dailyStats';
 import { applyAccountFilter, computeActiveAccountId } from '../../lib/accountFilter';
 
@@ -78,7 +79,7 @@ export default function JournalPage() {
     if (!user) return;
     supabase
       .from('broker_connections')
-      .select('id, broker_server, broker_type, mt5_login, starting_balance')
+      .select('id, broker_server, broker_type, mt5_login, starting_balance, daily_loss_limit_pct, max_loss_limit_pct, profit_target_pct')
       .order('created_at', { ascending: true })
       .then(({ data }) => setAccounts(data || []));
 
@@ -140,119 +141,119 @@ export default function JournalPage() {
     ? trades.filter((t) => format(new Date(t.entry_time), 'yyyy-MM-dd') === format(selectedDate, 'yyyy-MM-dd'))
     : [];
 
-  const initial = user?.email ? user.email[0].toUpperCase() : '?';
-
   return (
     <div className="flex bg-[#f7f7fb] min-h-screen">
       <Sidebar />
       <div className="flex-1 max-w-6xl mx-auto px-4 py-6 pb-20 md:pb-6">
         <PsychologyQuotes />
 
-      <div className="flex items-center justify-between mb-6">
-        <h1 className="text-xl font-semibold text-gray-900">Trade Journal</h1>
-        <span className="text-sm text-gray-400">{user?.email}</span>
-      </div>
-
-      <div className="flex items-center justify-between mb-6 flex-wrap gap-3">
-        <div className="flex gap-2">
-          <button
-            onClick={() => setTab('calendar')}
-            className={`px-4 py-1.5 rounded-xl text-sm font-medium ${
-              tab === 'calendar' ? 'bg-indigo-600 text-white' : 'bg-white border border-gray-200 text-gray-500 hover:text-gray-800'
-            }`}
-          >
-            Calendar
-          </button>
-          <button
-            onClick={() => setTab('review')}
-            className={`px-4 py-1.5 rounded-xl text-sm font-medium ${
-              tab === 'review' ? 'bg-indigo-600 text-white' : 'bg-white border border-gray-200 text-gray-500 hover:text-gray-800'
-            }`}
-          >
-            Review
-          </button>
-          <button
-            onClick={() => setTab('notes')}
-            className={`px-4 py-1.5 rounded-xl text-sm font-medium ${
-              tab === 'notes' ? 'bg-indigo-600 text-white' : 'bg-white border border-gray-200 text-gray-500 hover:text-gray-800'
-            }`}
-          >
-            Notes
-          </button>
+        <div className="flex items-center justify-between mb-6">
+          <h1 className="text-xl font-semibold text-gray-900">Trade Journal</h1>
+          <span className="text-sm text-gray-400">{user?.email}</span>
         </div>
 
-        <div className="flex items-center gap-3">
-          <DisplayModeToggle mode={mode} onChange={setMode} />
-          {accounts.length > 0 && (
-            <AccountSwitcher
-              accounts={accounts}
-              allSelected={accountFilter.allSelected}
-              selectedIds={accountFilter.selectedIds}
-              includeManual={accountFilter.includeManual}
-              onChange={setAccountFilter}
-            />
-          )}
-        </div>
-      </div>
-
-      {tab === 'calendar' && (
-        <>
-        {activeAccountObj && <PropFirmTracker trades={allTrades} account={activeAccountObj} />}
-          <DrawdownStats
-            trades={allTrades}
-            defaultRiskAmount={defaultRiskAmount}
-            startingBalance={startingBalance}
-            balanceApplicable={balanceApplicable}
-          />
-          <PeriodStatsHeader trades={allTrades} mode={mode} defaultRiskAmount={defaultRiskAmount} accountBalance={startingBalance} />
-          <StatsBar trades={trades} mode={mode} defaultRiskAmount={defaultRiskAmount} accountBalance={startingBalance} />
-
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mt-6">
-            <div className="lg:col-span-2">
-              <div className="flex items-center justify-between mb-4">
-                <button onClick={() => setMonth(subMonths(month, 1))} className="px-3 py-1 rounded-xl bg-white border border-gray-200 hover:bg-gray-50 text-sm text-gray-700">
-                  ← Prev
-                </button>
-                <h2 className="font-medium text-gray-900">{format(month, 'MMMM yyyy')}</h2>
-                <button onClick={() => setMonth(addMonths(month, 1))} className="px-3 py-1 rounded-xl bg-white border border-gray-200 hover:bg-gray-50 text-sm text-gray-700">
-                  Next →
-                </button>
-              </div>
-              {loading ? (
-                <p className="text-gray-400 text-sm">Loading trades...</p>
-              ) : (
-                <Calendar
-                  month={month}
-                  dailyStats={dailyStats}
-                  onDayClick={setSelectedDate}
-                  selectedDate={selectedDate}
-                  mode={mode}
-                  accountBalance={startingBalance}
-                />
-              )}
-            </div>
-
-            <div>
-              <WeeklyTotals month={month} dailyStats={dailyStats} mode={mode} />
-              <DayPanel
-                date={selectedDate}
-                trades={selectedDayTrades}
-                userId={user?.id}
-                accounts={accounts}
-                defaultRiskAmount={defaultRiskAmount}
-                activeAccountId={activeAccountId}
-                onChanged={() => {
-                  loadTrades();
-                  loadAllTrades();
-                }}
-                onClose={() => setSelectedDate(null)}
-              />
-            </div>
+        <div className="flex items-center justify-between mb-6 flex-wrap gap-3">
+          <div className="flex gap-2">
+            <button
+              onClick={() => setTab('calendar')}
+              className={`px-4 py-1.5 rounded-xl text-sm font-medium ${
+                tab === 'calendar' ? 'bg-indigo-600 text-white' : 'bg-white border border-gray-200 text-gray-500 hover:text-gray-800'
+              }`}
+            >
+              Calendar
+            </button>
+            <button
+              onClick={() => setTab('review')}
+              className={`px-4 py-1.5 rounded-xl text-sm font-medium ${
+                tab === 'review' ? 'bg-indigo-600 text-white' : 'bg-white border border-gray-200 text-gray-500 hover:text-gray-800'
+              }`}
+            >
+              Review
+            </button>
+            <button
+              onClick={() => setTab('notes')}
+              className={`px-4 py-1.5 rounded-xl text-sm font-medium ${
+                tab === 'notes' ? 'bg-indigo-600 text-white' : 'bg-white border border-gray-200 text-gray-500 hover:text-gray-800'
+              }`}
+            >
+              Notes
+            </button>
           </div>
-        </>
-      )}
 
-      {tab === 'notes' && <NotesView userId={user?.id} accountFilter={accountFilter} accounts={accounts} />}
+          <div className="flex items-center gap-3">
+            <DisplayModeToggle mode={mode} onChange={setMode} />
+            {accounts.length > 0 && (
+              <AccountSwitcher
+                accounts={accounts}
+                allSelected={accountFilter.allSelected}
+                selectedIds={accountFilter.selectedIds}
+                includeManual={accountFilter.includeManual}
+                onChange={setAccountFilter}
+              />
+            )}
+          </div>
+        </div>
+
+        {tab === 'calendar' && (
+          <>
+            {activeAccountObj && <PropFirmTracker trades={allTrades} account={activeAccountObj} />}
+            <AnimatedOverview trades={allTrades} />
+            <DrawdownStats
+              trades={allTrades}
+              defaultRiskAmount={defaultRiskAmount}
+              startingBalance={startingBalance}
+              balanceApplicable={balanceApplicable}
+            />
+            <PeriodStatsHeader trades={allTrades} mode={mode} defaultRiskAmount={defaultRiskAmount} accountBalance={startingBalance} />
+            <StatsBar trades={trades} mode={mode} defaultRiskAmount={defaultRiskAmount} accountBalance={startingBalance} />
+
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mt-6">
+              <div className="lg:col-span-2">
+                <div className="flex items-center justify-between mb-4">
+                  <button onClick={() => setMonth(subMonths(month, 1))} className="px-3 py-1 rounded-xl bg-white border border-gray-200 hover:bg-gray-50 text-sm text-gray-700">
+                    ← Prev
+                  </button>
+                  <h2 className="font-medium text-gray-900">{format(month, 'MMMM yyyy')}</h2>
+                  <button onClick={() => setMonth(addMonths(month, 1))} className="px-3 py-1 rounded-xl bg-white border border-gray-200 hover:bg-gray-50 text-sm text-gray-700">
+                    Next →
+                  </button>
+                </div>
+                {loading ? (
+                  <p className="text-gray-400 text-sm">Loading trades...</p>
+                ) : (
+                  <Calendar
+                    month={month}
+                    dailyStats={dailyStats}
+                    onDayClick={setSelectedDate}
+                    selectedDate={selectedDate}
+                    mode={mode}
+                    accountBalance={startingBalance}
+                  />
+                )}
+              </div>
+
+              <div>
+                <WeeklyTotals month={month} dailyStats={dailyStats} mode={mode} />
+                <DayPanel
+                  date={selectedDate}
+                  trades={selectedDayTrades}
+                  userId={user?.id}
+                  accounts={accounts}
+                  defaultRiskAmount={defaultRiskAmount}
+                  activeAccountId={activeAccountId}
+                  onChanged={() => {
+                    loadTrades();
+                    loadAllTrades();
+                  }}
+                  onClose={() => setSelectedDate(null)}
+                />
+              </div>
+            </div>
+          </>
+        )}
+
+        {tab === 'review' && <ReviewPanel trades={allTrades} defaultRiskAmount={defaultRiskAmount} mode={mode} />}
+        {tab === 'notes' && <NotesView userId={user?.id} accountFilter={accountFilter} accounts={accounts} />}
       </div>
       <MobileNav />
     </div>
