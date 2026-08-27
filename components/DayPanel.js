@@ -9,6 +9,14 @@ import TradeScreenshot from './TradeScreenshot';
 import TradeSummaryCard from './TradeSummaryCard';
 
 const EMOTIONS = ['disciplined', 'confident', 'hesitant', 'fomo', 'revenge', 'bored', 'anxious'];
+const RULE_OPTIONS = [
+  { value: '', label: '— none —' },
+  { value: 'followed_plan', label: 'Followed plan' },
+  { value: 'impulse_entry', label: 'Impulse entry' },
+  { value: 'moved_stop', label: 'Moved stop' },
+  { value: 'oversized', label: 'Oversized' },
+  { value: 'other', label: 'Other deviation' },
+];
 
 const emptyForm = {
   symbol: '',
@@ -26,6 +34,7 @@ const emptyForm = {
   emotion: '',
   notes: '',
   account_id: '',
+  rule_adherence: '',
 };
 
 function Field({ label, children }) {
@@ -142,6 +151,7 @@ export default function DayPanel({ date, trades, userId, accounts = [], defaultR
       emotion: trade.emotion ?? '',
       notes: trade.notes ?? '',
       account_id: trade.broker_connection_id ?? '',
+      rule_adherence: trade.rule_adherence ?? '',
     });
   }
 
@@ -177,6 +187,7 @@ export default function DayPanel({ date, trades, userId, accounts = [], defaultR
       emotion: form.emotion || null,
       notes: form.notes,
       broker_connection_id: form.account_id || null,
+      rule_adherence: form.rule_adherence || null,
     };
 
     let res;
@@ -285,11 +296,20 @@ export default function DayPanel({ date, trades, userId, accounts = [], defaultR
                     </button>
                   </div>
                 </div>
-                {(t.tags?.length > 0 || t.emotion) && (
+                {(t.tags?.length > 0 || t.emotion || t.rule_adherence) && (
                   <div className="flex flex-wrap gap-1 mt-2">
                     {t.emotion && (
                       <span className="text-[10px] px-2 py-0.5 rounded-full bg-purple-100 text-purple-700">
                         {t.emotion}
+                      </span>
+                    )}
+                    {t.rule_adherence && (
+                      <span
+                        className={`text-[10px] px-2 py-0.5 rounded-full ${
+                          t.rule_adherence === 'followed_plan' ? 'bg-green-100 text-green-700' : 'bg-orange-100 text-orange-700'
+                        }`}
+                      >
+                        {RULE_OPTIONS.find((o) => o.value === t.rule_adherence)?.label || t.rule_adherence}
                       </span>
                     )}
                     {t.tags?.map((tag) => (
@@ -441,6 +461,20 @@ export default function DayPanel({ date, trades, userId, accounts = [], defaultR
             />
           </Field>
         </div>
+
+        <Field label="Rule adherence — did you follow your plan?">
+          <select
+            value={form.rule_adherence}
+            onChange={(e) => setForm({ ...form, rule_adherence: e.target.value })}
+            className="w-full bg-white border border-gray-300 rounded-xl px-3 py-2 text-sm text-gray-900"
+          >
+            {RULE_OPTIONS.map((o) => (
+              <option key={o.value} value={o.value}>
+                {o.label}
+              </option>
+            ))}
+          </select>
+        </Field>
 
         <Field label="Trade emotion / mindset (optional, separate from the day's overall mood above)">
           <select
