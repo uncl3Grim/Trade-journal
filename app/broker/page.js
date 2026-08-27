@@ -1,5 +1,6 @@
 'use client';
 
+import ShareReport from '../../components/ShareReport';
 import { useEffect, useState, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import { format } from 'date-fns';
@@ -289,6 +290,7 @@ export default function BrokerPage() {
               {c.last_synced_at && ` · Last synced ${format(new Date(c.last_synced_at), 'MMM d, h:mm a')}`}
             </div>
             <BalanceEditor connection={c} onSaved={loadConnections} />
+             <ShareReport connection={c} /> 
             <RulesEditor connection={c} onSaved={loadConnections} />
           </div>
         ))}
