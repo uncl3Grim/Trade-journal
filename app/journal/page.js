@@ -143,7 +143,6 @@ export default function JournalPage() {
   const initial = user?.email ? user.email[0].toUpperCase() : '?';
 
   return (
-    return (
     <div className="flex bg-[#f7f7fb] min-h-screen">
       <Sidebar />
       <div className="flex-1 max-w-6xl mx-auto px-4 py-6 pb-20 md:pb-6">
