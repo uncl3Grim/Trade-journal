@@ -1,8 +1,6 @@
 'use client';
- import AdvancedStats from './AdvancedStats';
+
 import { useState } from 'react';
-import TraderScoreCard from './TraderScoreCard';
-import DailyPnLBarChart from './DailyPnLBarChart';
 import {
   startOfWeek,
   endOfWeek,
@@ -19,6 +17,11 @@ import BreakdownReports from './BreakdownReports';
 import AIAnalysis from './AIAnalysis';
 import InsightsCards from './InsightsCards';
 import PsychologyInsights from './PsychologyInsights';
+import TraderScoreCard from './TraderScoreCard';
+import DailyPnLBarChart from './DailyPnLBarChart';
+import AdvancedStats from './AdvancedStats';
+import WeeklyReviewPrompt from './WeeklyReviewPrompt';
+import RuleAdherenceCard from './RuleAdherenceCard';
 import { rMultiple } from '../lib/tradeMath';
 
 function summarize(trades, start, end, defaultRiskAmount) {
@@ -198,15 +201,19 @@ export default function ReviewPanel({ trades, defaultRiskAmount, mode = 'dollar'
   const thisMonth = summarize(trades, monthStart, monthEnd, defaultRiskAmount);
   const lastMonth = summarize(trades, lastMonthStart, lastMonthEnd, defaultRiskAmount);
 
+  const weekTrades = trades.filter((t) => isWithinInterval(new Date(t.entry_time), { start: weekStart, end: weekEnd }));
+
   return (
     <div>
+      <WeeklyReviewPrompt trades={weekTrades} />
       <InsightsCards trades={trades} mode={mode} defaultRiskAmount={defaultRiskAmount} />
       <AIAnalysis defaultRiskAmount={defaultRiskAmount} />
       <PsychologyInsights trades={trades} />
-   <AdvancedStats trades={trades} />
-      <EquityCurve trades={trades} />
-   <TraderScoreCard trades={trades} />
+      <RuleAdherenceCard trades={trades} />
+      <TraderScoreCard trades={trades} />
       <DailyPnLBarChart trades={trades} />
+      <AdvancedStats trades={trades} />
+      <EquityCurve trades={trades} />
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
         <PeriodCard
           label="Week"
