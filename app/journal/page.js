@@ -1,5 +1,6 @@
 'use client';
 
+import PropFirmTracker from '../../components/PropFirmTracker';
 import { useEffect, useState, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import { format, addMonths, subMonths, startOfMonth, endOfMonth, startOfWeek, endOfWeek } from 'date-fns';
@@ -206,6 +207,7 @@ export default function JournalPage() {
 
       {tab === 'calendar' && (
         <>
+        {activeAccountObj && <PropFirmTracker trades={allTrades} account={activeAccountObj} />}
           <DrawdownStats
             trades={allTrades}
             defaultRiskAmount={defaultRiskAmount}
