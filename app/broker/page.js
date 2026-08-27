@@ -289,6 +289,7 @@ export default function BrokerPage() {
               {c.last_synced_at && ` · Last synced ${format(new Date(c.last_synced_at), 'MMM d, h:mm a')}`}
             </div>
             <BalanceEditor connection={c} onSaved={loadConnections} />
+            <RulesEditor connection={c} onSaved={loadConnections} />
           </div>
         ))}
       </div>
