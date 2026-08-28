@@ -42,3 +42,26 @@ export function ProfileGlyph({ size = 20, className = '' }) {
     </svg>
   );
 }
+export function WalletGlyph({ size = 20, className = '' }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" className={className}>
+      <path d="M3 7.5C3 6.12 4.12 5 5.5 5H17C18.66 5 20 6.34 20 8V9" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" />
+      <rect x="3" y="8" width="18" height="11" rx="2.5" stroke="currentColor" strokeWidth="1.6" />
+      <path d="M15 13.5C15 12.67 15.9 12 17 12H21V15H17C15.9 15 15 14.33 15 13.5Z" stroke="currentColor" strokeWidth="1.4" />
+      <circle cx="17.3" cy="13.5" r="0.8" fill="currentColor" />
+      <path d="M5 6L6 5" stroke="currentColor" strokeWidth="1" strokeLinecap="round" opacity="0.6" />
+    </svg>
+  );
+}
+
+export function TargetGlyph({ size = 20, className = '' }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" className={className}>
+      <circle cx="12" cy="12" r="8.5" stroke="currentColor" strokeWidth="1.6" />
+      <circle cx="12" cy="12" r="4.5" stroke="currentColor" strokeWidth="1.4" />
+      <circle cx="12" cy="12" r="1.2" fill="currentColor" />
+      <path d="M12 2V5M12 19V22M2 12H5M19 12H22" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" />
+      <path d="M18 6L19 5" stroke="currentColor" strokeWidth="1" strokeLinecap="round" opacity="0.6" />
+    </svg>
+  );
+}
