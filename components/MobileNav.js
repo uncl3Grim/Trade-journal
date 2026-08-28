@@ -1,13 +1,13 @@
 'use client';
 
 import { useRouter, usePathname } from 'next/navigation';
-import { LayoutGrid, BarChart3, NotebookPen, List, Link2, User } from 'lucide-react';
+import { JournalGlyph, TradesGlyph, BrokerGlyph, ProfileGlyph } from './AnimeIcons';
 
 const NAV_ITEMS = [
-  { key: 'journal', label: 'Journal', icon: LayoutGrid, path: '/journal' },
-  { key: 'trades', label: 'Trades', icon: List, path: '/trades' },
-  { key: 'broker', label: 'Broker', icon: Link2, path: '/broker' },
-  { key: 'profile', label: 'Profile', icon: User, path: '/profile' },
+  { key: 'journal', label: 'Journal', icon: JournalGlyph, path: '/journal' },
+  { key: 'trades', label: 'Trades', icon: TradesGlyph, path: '/trades' },
+  { key: 'broker', label: 'Broker', icon: BrokerGlyph, path: '/broker' },
+  { key: 'profile', label: 'Profile', icon: ProfileGlyph, path: '/profile' },
 ];
 
 export default function MobileNav() {
