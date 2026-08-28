@@ -1,5 +1,6 @@
 'use client';
 
+import SyncStatusWidget from '../../components/SyncStatusWidget';
 import { useEffect, useState, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import { format, addMonths, subMonths, startOfMonth, endOfMonth, startOfWeek, endOfWeek } from 'date-fns';
@@ -79,7 +80,7 @@ export default function JournalPage() {
     if (!user) return;
     supabase
       .from('broker_connections')
-      .select('id, broker_server, broker_type, mt5_login, starting_balance, daily_loss_limit_pct, max_loss_limit_pct, profit_target_pct')
+      .select('id, broker_server, broker_type, mt5_login, starting_balance, daily_loss_limit_pct, max_loss_limit_pct, profit_target_pct, status, last_synced_at')
       .order('created_at', { ascending: true })
       .then(({ data }) => setAccounts(data || []));
 
@@ -197,6 +198,7 @@ export default function JournalPage() {
         {tab === 'calendar' && (
           <>
             {activeAccountObj && <PropFirmTracker trades={allTrades} account={activeAccountObj} />}
+             {activeAccountObj && <SyncStatusWidget account={activeAccountObj} onSynced={() => { loadTrades(); loadAllTrades(); }} />}                                             
             <AnimatedOverview trades={allTrades} />
             <DrawdownStats
               trades={allTrades}
