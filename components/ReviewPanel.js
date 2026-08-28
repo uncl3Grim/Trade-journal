@@ -1,5 +1,6 @@
 'use client';
 
+import TradeSummaryStats from './TradeSummaryStats';
 import { useState } from 'react';
 import {
   startOfWeek,
@@ -207,6 +208,7 @@ export default function ReviewPanel({ trades, defaultRiskAmount, mode = 'dollar'
     <div>
       <WeeklyReviewPrompt trades={weekTrades} />
       <InsightsCards trades={trades} mode={mode} defaultRiskAmount={defaultRiskAmount} />
+    <TradeSummaryStats trades={trades} />
       <AIAnalysis defaultRiskAmount={defaultRiskAmount} />
       <PsychologyInsights trades={trades} />
       <RuleAdherenceCard trades={trades} />
