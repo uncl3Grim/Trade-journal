@@ -13,9 +13,13 @@ export default function AnimatedOverview({ trades }) {
   const ddPercent = dd.maxDrawdown > 0 ? (dd.currentDrawdown / dd.maxDrawdown) * 100 : 0;
 
   return (
-    <div className="bg-white border border-gray-200 rounded-2xl shadow-sm p-5 mb-6 flex items-center justify-around gap-6">
-      <AnimatedDrawdownTank percent={ddPercent} />
-      <AnimatedWinRateRing percent={winRate} />
+    <div className="grid grid-cols-2 gap-4 mb-6">
+      <div className="bg-white border border-gray-200 rounded-2xl shadow-sm p-5 flex items-center justify-center">
+        <AnimatedDrawdownTank percent={ddPercent} />
+      </div>
+      <div className="bg-white border border-gray-200 rounded-2xl shadow-sm p-5 flex items-center justify-center">
+        <AnimatedWinRateRing percent={winRate} />
+      </div>
     </div>
   );
 }
