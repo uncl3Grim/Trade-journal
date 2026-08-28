@@ -4,6 +4,8 @@ import { useState } from 'react';
 import { computeDrawdown } from '../lib/drawdown';
 import { rMultiple } from '../lib/tradeMath';
 import { formatMoney } from '../lib/format';
+import { WalletGlyph, TargetGlyph } from './AnimeIcons';
+import BatteryCellIcon from './BatteryCellIcon';
 
 export default function DrawdownStats({ trades, defaultRiskAmount, startingBalance, balanceApplicable }) {
   const [mode, setMode] = useState('trailing');
@@ -21,17 +23,7 @@ export default function DrawdownStats({ trades, defaultRiskAmount, startingBalan
       ? startingBalance + totalPnl
       : null;
 
-  const items = [];
-  if (currentBalance !== null) {
-    items.push({
-      label: 'Account Balance',
-      value: `$${currentBalance.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`,
-      color: 'text-gray-900',
-    });
-  }
-  items.push({ label: 'Total R', value: `${totalR >= 0 ? '+' : ''}${totalR.toFixed(2)}R`, color: totalR >= 0 ? 'text-green-600' : 'text-red-500' });
-  items.push({ label: 'Current Drawdown', value: `-${formatMoney(dd.currentDrawdown).replace(/^[+-]/, '')}`, color: 'text-red-500' });
-  items.push({ label: 'Max Drawdown', value: `-${formatMoney(dd.maxDrawdown).replace(/^[+-]/, '')}`, color: 'text-red-500' });
+  const ddOfMaxPct = dd.maxDrawdown > 0 ? (dd.currentDrawdown / dd.maxDrawdown) * 100 : 0;
 
   return (
     <div className="bg-white border border-gray-200 rounded-2xl shadow-sm p-4 mb-6">
@@ -52,14 +44,40 @@ export default function DrawdownStats({ trades, defaultRiskAmount, startingBalan
           </button>
         </div>
       </div>
+
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-        {items.map((it) => (
-          <div key={it.label} className="bg-gray-50 border border-gray-100 rounded-xl p-3">
-            <div className="text-xs text-gray-400 mb-1">{it.label}</div>
-            <div className={`text-lg font-semibold ${it.color}`}>{it.value}</div>
+        {currentBalance !== null && (
+          <div className="bg-gray-50 border border-gray-100 rounded-xl p-3 flex flex-col items-center text-center">
+            <WalletGlyph size={22} className="text-gray-500 mb-1" />
+            <div className="text-xs text-gray-400 mb-1">Account Balance</div>
+            <div className="text-base font-semibold text-gray-900">
+              ${currentBalance.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+            </div>
           </div>
-        ))}
+        )}
+
+        <div className="bg-gray-50 border border-gray-100 rounded-xl p-3 flex flex-col items-center text-center">
+          <TargetGlyph size={22} className="text-indigo-500 mb-1" />
+          <div className="text-xs text-gray-400 mb-1">Total R</div>
+          <div className={`text-base font-semibold ${totalR >= 0 ? 'text-green-600' : 'text-red-500'}`}>
+            {totalR >= 0 ? '+' : ''}
+            {totalR.toFixed(2)}R
+          </div>
+        </div>
+
+        <div className="bg-gray-50 border border-gray-100 rounded-xl p-3 flex flex-col items-center text-center">
+          <div className="text-xs text-gray-400 mb-1">Current Drawdown</div>
+          <BatteryCellIcon percent={ddOfMaxPct} size={40} color="red" />
+          <div className="text-[10px] text-gray-400 mt-1">{formatMoney(dd.currentDrawdown).replace(/^\+/, '')}</div>
+        </div>
+
+        <div className="bg-gray-50 border border-gray-100 rounded-xl p-3 flex flex-col items-center text-center">
+          <div className="text-xs text-gray-400 mb-1">Max Drawdown</div>
+          <BatteryCellIcon percent={100} size={40} color="indigo" />
+          <div className="text-[10px] text-gray-400 mt-1">{formatMoney(dd.maxDrawdown).replace(/^\+/, '')}</div>
+        </div>
       </div>
+
       {!balanceApplicable && (
         <p className="text-[10px] text-gray-400 mt-2">
           Select a single account above to see its balance — combining accounts with different starting balances/currencies isn't meaningful.
