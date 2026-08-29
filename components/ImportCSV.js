@@ -133,6 +133,7 @@ export default function ImportCSV({ userId, onImported }) {
               stop_loss: r.stop_loss ? parseFloat(r.stop_loss) : null,
               take_profit: r.take_profit ? parseFloat(r.take_profit) : null,
               ...(r.notes ? { notes: r.notes } : {}),
+              ...(r.ticket ? { broker_ticket: String(r.ticket) } : {}),
               source: 'csv_import',
               broker_connection_id: accountId,
             });
@@ -147,33 +148,56 @@ export default function ImportCSV({ userId, onImported }) {
             return;
           }
 
-          // Postgres can't run ON CONFLICT DO UPDATE twice against the same row
-          // in one statement. If two rows in this file land on the same
-          // symbol+entry_time+account (e.g. two trades opened the same second),
-          // collapse them to the last one before sending the batch.
-          const byKey = new Map();
+          // A trade's own broker ticket is the true identity — two trades on
+          // the same symbol in the same minute are only "the same trade" if
+          // they share a ticket. Only fall back to symbol+time matching for
+          // rows with no ticket at all (manual/template imports).
+          // Postgres also can't run ON CONFLICT DO UPDATE twice against the
+          // same row in one statement, so within each group we still collapse
+          // any true duplicates down to the last occurrence.
+          const ticketed = new Map();
+          const untickered = new Map();
           for (const t of trades) {
-            const key = `${t.symbol}||${t.entry_time}||${t.broker_connection_id ?? ''}`;
-            byKey.set(key, t);
+            if (t.broker_ticket) {
+              ticketed.set(`${t.broker_ticket}||${t.broker_connection_id ?? ''}`, t);
+            } else {
+              untickered.set(`${t.symbol}||${t.entry_time}||${t.broker_connection_id ?? ''}`, t);
+            }
           }
-          const dedupedTrades = Array.from(byKey.values());
-          const collapsedCount = trades.length - dedupedTrades.length;
+          const ticketedTrades = Array.from(ticketed.values());
+          const untickeredTrades = Array.from(untickered.values());
+          const collapsedCount = trades.length - ticketedTrades.length - untickeredTrades.length;
 
-          const { error, data: inserted } = await supabase
-            .from('trades')
-            .upsert(dedupedTrades, { onConflict: 'user_id,symbol,entry_time,broker_connection_id' })
-            .select();
+          let affectedCount = 0;
+          let dbError = null;
+
+          if (ticketedTrades.length) {
+            const { error, data } = await supabase
+              .from('trades')
+              .upsert(ticketedTrades, { onConflict: 'user_id,broker_connection_id,broker_ticket' })
+              .select();
+            if (error) dbError = error;
+            else affectedCount += data?.length ?? ticketedTrades.length;
+          }
+
+          if (!dbError && untickeredTrades.length) {
+            const { error, data } = await supabase
+              .from('trades')
+              .upsert(untickeredTrades, { onConflict: 'user_id,symbol,entry_time,broker_connection_id' })
+              .select();
+            if (error) dbError = error;
+            else affectedCount += data?.length ?? untickeredTrades.length;
+          }
 
           setBusy(false);
-          if (error) {
-            setStatus(`Error saving to database: ${error.message}`);
+          if (dbError) {
+            setStatus(`Error saving to database: ${dbError.message}`);
           } else {
-            const affectedCount = inserted?.length ?? dedupedTrades.length;
             const formatLabel = detected !== 'template' ? ` (auto-converted, format: ${detected})` : '';
             setStatus(
               `${affectedCount} trade(s) imported or updated${formatLabel}.${
                 collapsedCount > 0
-                  ? ` ${collapsedCount} row(s) in the file shared the same symbol/time as another row and were merged.`
+                  ? ` ${collapsedCount} exact duplicate row(s) in the file were merged.`
                   : ''
               }${skipped > 0 ? ` ${skipped} row(s) skipped for missing/invalid data.` : ''}`
             );
