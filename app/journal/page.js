@@ -2,7 +2,6 @@
 
 import { useRouter } from 'next/navigation';
 import { useEffect, useState, useCallback } from 'react';
-import { useRouter } from 'next/navigation';
 import { format, addMonths, subMonths, startOfMonth, endOfMonth, startOfWeek, endOfWeek } from 'date-fns';
 import { supabase } from '../../lib/supabaseClient';
 import Calendar from '../../components/Calendar';
@@ -241,7 +240,7 @@ export default function JournalPage() {
                   />
                 )}
               </div>
-<div>
+              <div>
                 <WeeklyTotals month={month} dailyStats={dailyStats} mode={mode} />
               </div>
             </div>
