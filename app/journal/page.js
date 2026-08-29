@@ -1,11 +1,10 @@
 'use client';
 
-import { useRouter } from 'next/navigation';
 import { useEffect, useState, useCallback } from 'react';
+import { useRouter } from 'next/navigation';
 import { format, addMonths, subMonths, startOfMonth, endOfMonth, startOfWeek, endOfWeek } from 'date-fns';
 import { supabase } from '../../lib/supabaseClient';
 import Calendar from '../../components/Calendar';
-import DayPanel from '../../components/DayPanel';
 import StatsBar from '../../components/StatsBar';
 import ReviewPanel from '../../components/ReviewPanel';
 import NotesView from '../../components/NotesView';
@@ -30,7 +29,6 @@ export default function JournalPage() {
   const [month, setMonth] = useState(new Date());
   const [trades, setTrades] = useState([]);
   const [allTrades, setAllTrades] = useState([]);
-  const [selectedDate, setSelectedDate] = useState(null);
   const [loading, setLoading] = useState(true);
   const [tab, setTab] = useState('calendar');
   const [accounts, setAccounts] = useState([]);
@@ -146,17 +144,13 @@ export default function JournalPage() {
   const startingBalance = activeAccountObj ? activeAccountObj.starting_balance : manualOnly ? accountBalance : null;
   const balanceApplicable = !!activeAccountObj || manualOnly;
 
-  const selectedDayTrades = selectedDate
-    ? trades.filter((t) => format(new Date(t.entry_time), 'yyyy-MM-dd') === format(selectedDate, 'yyyy-MM-dd'))
-    : [];
-
   return (
     <AppShell>
       <div className="max-w-6xl mx-auto px-4 py-6">
         <PsychologyQuotes />
 
         <div className="flex items-center justify-between mb-6">
-          <h1 className="text-xl font-semibold text-gray-900">Trade Journal</h1>
+          <h1 className="text-xl font-semibold text-gray-900 dark:text-gray-100">Trade Journal</h1>
           <span className="text-sm text-gray-400">{user?.email}</span>
         </div>
 
@@ -165,7 +159,9 @@ export default function JournalPage() {
             <button
               onClick={() => setTab('calendar')}
               className={`px-4 py-1.5 rounded-xl text-sm font-medium ${
-                tab === 'calendar' ? 'bg-indigo-600 text-white' : 'bg-white border border-gray-200 text-gray-500 hover:text-gray-800'
+                tab === 'calendar'
+                  ? 'bg-indigo-600 text-white'
+                  : 'bg-white dark:bg-[#15151b] border border-gray-200 dark:border-gray-800 text-gray-500 hover:text-gray-800 dark:hover:text-gray-200'
               }`}
             >
               Calendar
@@ -173,7 +169,9 @@ export default function JournalPage() {
             <button
               onClick={() => setTab('review')}
               className={`px-4 py-1.5 rounded-xl text-sm font-medium ${
-                tab === 'review' ? 'bg-indigo-600 text-white' : 'bg-white border border-gray-200 text-gray-500 hover:text-gray-800'
+                tab === 'review'
+                  ? 'bg-indigo-600 text-white'
+                  : 'bg-white dark:bg-[#15151b] border border-gray-200 dark:border-gray-800 text-gray-500 hover:text-gray-800 dark:hover:text-gray-200'
               }`}
             >
               Review
@@ -181,7 +179,9 @@ export default function JournalPage() {
             <button
               onClick={() => setTab('notes')}
               className={`px-4 py-1.5 rounded-xl text-sm font-medium ${
-                tab === 'notes' ? 'bg-indigo-600 text-white' : 'bg-white border border-gray-200 text-gray-500 hover:text-gray-800'
+                tab === 'notes'
+                  ? 'bg-indigo-600 text-white'
+                  : 'bg-white dark:bg-[#15151b] border border-gray-200 dark:border-gray-800 text-gray-500 hover:text-gray-800 dark:hover:text-gray-200'
               }`}
             >
               Notes
@@ -204,7 +204,9 @@ export default function JournalPage() {
 
         {tab === 'calendar' && (
           <>
-            {activeAccountObj && <SyncStatusWidget account={activeAccountObj} onSynced={() => { loadTrades(); loadAllTrades(); }} />}
+            {activeAccountObj && (
+              <SyncStatusWidget account={activeAccountObj} onSynced={() => { loadTrades(); loadAllTrades(); }} />
+            )}
             {activeAccountObj && <PropFirmTracker trades={allTrades} account={activeAccountObj} />}
             <AnimatedOverview trades={allTrades} />
             <DrawdownStats
@@ -219,11 +221,17 @@ export default function JournalPage() {
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mt-6">
               <div className="lg:col-span-2">
                 <div className="flex items-center justify-between mb-4">
-                  <button onClick={() => setMonth(subMonths(month, 1))} className="px-3 py-1 rounded-xl bg-white border border-gray-200 hover:bg-gray-50 text-sm text-gray-700">
+                  <button
+                    onClick={() => setMonth(subMonths(month, 1))}
+                    className="px-3 py-1 rounded-xl bg-white dark:bg-[#15151b] border border-gray-200 dark:border-gray-800 hover:bg-gray-50 dark:hover:bg-gray-800 text-sm text-gray-700 dark:text-gray-200"
+                  >
                     ← Prev
                   </button>
-                  <h2 className="font-medium text-gray-900">{format(month, 'MMMM yyyy')}</h2>
-                  <button onClick={() => setMonth(addMonths(month, 1))} className="px-3 py-1 rounded-xl bg-white border border-gray-200 hover:bg-gray-50 text-sm text-gray-700">
+                  <h2 className="font-medium text-gray-900 dark:text-gray-100">{format(month, 'MMMM yyyy')}</h2>
+                  <button
+                    onClick={() => setMonth(addMonths(month, 1))}
+                    className="px-3 py-1 rounded-xl bg-white dark:bg-[#15151b] border border-gray-200 dark:border-gray-800 hover:bg-gray-50 dark:hover:bg-gray-800 text-sm text-gray-700 dark:text-gray-200"
+                  >
                     Next →
                   </button>
                 </div>
@@ -234,12 +242,13 @@ export default function JournalPage() {
                     month={month}
                     dailyStats={dailyStats}
                     onDayClick={(day) => router.push(`/journal/day/${format(day, 'yyyy-MM-dd')}`)}
-                    selectedDate={selectedDate}
+                    selectedDate={null}
                     mode={mode}
                     accountBalance={startingBalance}
                   />
                 )}
               </div>
+
               <div>
                 <WeeklyTotals month={month} dailyStats={dailyStats} mode={mode} />
               </div>
