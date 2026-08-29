@@ -2,6 +2,14 @@ import { createClient } from '@supabase/supabase-js';
 import { getAccountStatus, getHistoricalTrades } from '../../../../lib/metaapi';
 import { myfxbookLogin, myfxbookGetHistory, parseMyfxbookDate } from '../../../../lib/myfxbook';
 
+// Postgres returns timestamps in a different string format than what we
+// send in (e.g. "+00:00" vs ".000Z") — same instant, different text. Compare
+// by parsed value, not raw string, or existing rows won't be recognized.
+function timeKey(value) {
+  const t = new Date(value).getTime();
+  return isNaN(t) ? String(value) : t;
+}
+
 async function syncMt5(connection) {
   const status = await getAccountStatus(connection.metaapi_account_id);
   if (status.connectionStatus !== 'CONNECTED') {
@@ -128,16 +136,16 @@ export async function POST(request) {
     const bySymbolTime = new Map();
     for (const row of existingRows || []) {
       if (row.broker_ticket) byTicket.set(row.broker_ticket, row.id);
-      bySymbolTime.set(`${row.symbol}||${row.entry_time}`, row.id);
+      bySymbolTime.set(`${row.symbol}||${timeKey(row.entry_time)}`, row.id);
     }
 
     const seen = new Map();
     for (const r of validRows) {
       const existingId =
         (r.broker_ticket && byTicket.get(r.broker_ticket)) ||
-        bySymbolTime.get(`${r.symbol}||${r.entry_time}`) ||
+        bySymbolTime.get(`${r.symbol}||${timeKey(r.entry_time)}`) ||
         null;
-      const key = existingId ? `id:${existingId}` : `new:${r.broker_ticket || `${r.symbol}||${r.entry_time}`}`;
+      const key = existingId ? `id:${existingId}` : `new:${r.broker_ticket || `${r.symbol}||${timeKey(r.entry_time)}`}`;
       seen.set(key, existingId ? { ...r, id: existingId } : r);
     }
     const finalRows = Array.from(seen.values());
