@@ -214,6 +214,7 @@ export default function JournalPage() {
               defaultRiskAmount={defaultRiskAmount}
               startingBalance={startingBalance}
               balanceApplicable={balanceApplicable}
+              account={activeAccountObj}
             />
             <PeriodStatsHeader trades={allTrades} mode={mode} defaultRiskAmount={defaultRiskAmount} accountBalance={startingBalance} />
             <StatsBar trades={trades} mode={mode} defaultRiskAmount={defaultRiskAmount} accountBalance={startingBalance} />
