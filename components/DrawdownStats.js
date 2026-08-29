@@ -1,10 +1,11 @@
 'use client';
 
 import { useState } from 'react';
+import { format } from 'date-fns';
 import { computeDrawdown } from '../lib/drawdown';
 import { rMultiple } from '../lib/tradeMath';
 import { formatMoney } from '../lib/format';
-import { WalletGlyph, TargetGlyph } from './AnimeIcons';
+import { WalletGlyph, TargetGlyph, StreakCalendarGlyph, StackedTradesGlyph } from './AnimeIcons';
 import BatteryCellIcon from './BatteryCellIcon';
 
 export default function DrawdownStats({ trades, defaultRiskAmount, startingBalance, balanceApplicable, account }) {
@@ -23,10 +24,6 @@ export default function DrawdownStats({ trades, defaultRiskAmount, startingBalan
       ? startingBalance + totalPnl
       : null;
 
-  const ddOfMaxPct = dd.maxDrawdown > 0 ? (dd.currentDrawdown / dd.maxDrawdown) * 100 : 0;
-
-  // Max drawdown as % of the account's starting balance, then compared against
-  // the prop firm's allowed max-loss limit (if one is set on this account).
   const maxDrawdownPctOfBalance =
     startingBalance && startingBalance > 0 ? (dd.maxDrawdown / startingBalance) * 100 : null;
 
@@ -35,7 +32,12 @@ export default function DrawdownStats({ trades, defaultRiskAmount, startingBalan
   const maxDrawdownOfLimitPct =
     maxLossLimitPct && maxDrawdownPctOfBalance !== null
       ? Math.min(100, (maxDrawdownPctOfBalance / maxLossLimitPct) * 100)
-      : 100; // fall back to old behavior if no limit is set on this account
+      : 100;
+
+  const tradingDaysSet = new Set(closed.map((t) => format(new Date(t.entry_time), 'yyyy-MM-dd')));
+  const tradingDaysCount = tradingDaysSet.size;
+
+  const totalTradesCount = trades.length;
 
   return (
     <div className="bg-white border border-gray-200 rounded-2xl shadow-sm p-4 mb-6">
@@ -79,12 +81,6 @@ export default function DrawdownStats({ trades, defaultRiskAmount, startingBalan
 
         <div className="bg-gray-50 border border-gray-100 rounded-xl p-3 flex flex-col items-center text-center">
           <div className="text-xs text-gray-400 mb-1">Current Drawdown</div>
-          <BatteryCellIcon percent={ddOfMaxPct} size={40} color="red" />
-          <div className="text-[10px] text-gray-400 mt-1">{formatMoney(dd.currentDrawdown).replace(/^\+/, '')}</div>
-        </div>
-
-        <div className="bg-gray-50 border border-gray-100 rounded-xl p-3 flex flex-col items-center text-center">
-          <div className="text-xs text-gray-400 mb-1">Max Drawdown</div>
           <BatteryCellIcon percent={maxDrawdownOfLimitPct} size={40} color="indigo" />
           <div className="text-[10px] text-gray-400 mt-1">
             {formatMoney(dd.maxDrawdown).replace(/^\+/, '')}
@@ -93,8 +89,20 @@ export default function DrawdownStats({ trades, defaultRiskAmount, startingBalan
                 {maxDrawdownPctOfBalance.toFixed(2)}% / {maxLossLimitPct}% limit
               </span>
             )}
-            <span className="block">Max {mode} drawdown</span>
+            <span className="block">Current {mode} drawdown</span>
           </div>
+        </div>
+
+        <div className="bg-gray-50 border border-gray-100 rounded-xl p-3 flex flex-col items-center text-center">
+          <StreakCalendarGlyph size={22} className="text-teal-600 mb-1" />
+          <div className="text-xs text-gray-400 mb-1">Trading Days</div>
+          <div className="text-base font-semibold text-gray-900">{tradingDaysCount}</div>
+        </div>
+
+        <div className="bg-gray-50 border border-gray-100 rounded-xl p-3 flex flex-col items-center text-center">
+          <StackedTradesGlyph size={22} className="text-amber-600 mb-1" />
+          <div className="text-xs text-gray-400 mb-1">Total Trades</div>
+          <div className="text-base font-semibold text-gray-900">{totalTradesCount}</div>
         </div>
       </div>
 
