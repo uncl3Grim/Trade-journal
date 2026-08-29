@@ -34,7 +34,7 @@ export default function PsychologyQuotes() {
     return (
       <button
         onClick={() => setCollapsed(false)}
-        className="fixed bottom-4 right-4 w-11 h-11 rounded-full bg-indigo-600 text-white shadow-lg flex items-center justify-center text-lg z-30"
+        className="fixed bottom-20 md:bottom-4 right-4 w-11 h-11 rounded-full bg-indigo-600 text-white shadow-lg flex items-center justify-center text-lg z-30"
         title="Trading mindset"
       >
         💭
@@ -43,7 +43,7 @@ export default function PsychologyQuotes() {
   }
 
   return (
-    <div className="fixed bottom-4 right-4 max-w-xs bg-white border border-gray-200 rounded-2xl shadow-lg p-4 z-30">
+    <div className="fixed bottom-20 md:bottom-4 right-4 max-w-xs bg-white dark:bg-[#15151b] border border-gray-200 dark:border-gray-800 rounded-2xl shadow-lg p-4 z-30">
       <div className="flex items-start justify-between gap-2 mb-1">
         <span className="text-xs font-semibold text-indigo-600">💭 Mindset</span>
         <div className="flex gap-2">
@@ -55,7 +55,7 @@ export default function PsychologyQuotes() {
           </button>
         </div>
       </div>
-      <p className="text-sm text-gray-700 italic leading-snug mb-2">"{quote.text}"</p>
+      <p className="text-sm text-gray-700 dark:text-gray-200 italic leading-snug mb-2">"{quote.text}"</p>
       <div className="flex items-center justify-between">
         <span className="text-[10px] text-gray-400">— {quote.author}</span>
         <button onClick={next} className="text-[10px] text-indigo-500 hover:text-indigo-400">
