@@ -35,6 +35,7 @@ const emptyForm = {
   notes: '',
   account_id: '',
   rule_adherence: '',
+  setup_type: '',
 };
 
 function Field({ label, children }) {
@@ -152,6 +153,7 @@ export default function DayPanel({ date, trades, userId, accounts = [], defaultR
       notes: trade.notes ?? '',
       account_id: trade.broker_connection_id ?? '',
       rule_adherence: trade.rule_adherence ?? '',
+      setup_type: trade.setup_type ?? '',
     });
   }
 
@@ -188,6 +190,7 @@ export default function DayPanel({ date, trades, userId, accounts = [], defaultR
       notes: form.notes,
       broker_connection_id: form.account_id || null,
       rule_adherence: form.rule_adherence || null,
+      setup_type: form.setup_type || null,
     };
 
     let res;
@@ -296,11 +299,16 @@ export default function DayPanel({ date, trades, userId, accounts = [], defaultR
                     </button>
                   </div>
                 </div>
-                {(t.tags?.length > 0 || t.emotion || t.rule_adherence) && (
+                {(t.tags?.length > 0 || t.emotion || t.rule_adherence || t.setup_type) && (
                   <div className="flex flex-wrap gap-1 mt-2">
                     {t.emotion && (
                       <span className="text-[10px] px-2 py-0.5 rounded-full bg-purple-100 text-purple-700">
                         {t.emotion}
+                      </span>
+                    )}
+                    {t.setup_type && (
+                      <span className="text-[10px] px-2 py-0.5 rounded-full bg-indigo-100 text-indigo-700 capitalize">
+                        {t.setup_type}
                       </span>
                     )}
                     {t.rule_adherence && (
@@ -474,6 +482,15 @@ export default function DayPanel({ date, trades, userId, accounts = [], defaultR
               </option>
             ))}
           </select>
+        </Field>
+
+        <Field label="Setup type">
+          <input
+            placeholder="e.g. breakout, reversal, continuation, liquidity sweep"
+            value={form.setup_type}
+            onChange={(e) => setForm({ ...form, setup_type: e.target.value })}
+            className="w-full bg-white border border-gray-300 rounded-xl px-3 py-2 text-sm text-gray-900"
+          />
         </Field>
 
         <Field label="Trade emotion / mindset (optional, separate from the day's overall mood above)">
