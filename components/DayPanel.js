@@ -36,6 +36,7 @@ const emptyForm = {
   account_id: '',
   rule_adherence: '',
   setup_type: '',
+  strategy_id: '',
 };
 
 function Field({ label, children }) {
@@ -47,7 +48,17 @@ function Field({ label, children }) {
   );
 }
 
-export default function DayPanel({ date, trades, userId, accounts = [], defaultRiskAmount, activeAccountId = null, onChanged, onClose }) {
+export default function DayPanel({
+  date,
+  trades,
+  userId,
+  accounts = [],
+  defaultRiskAmount,
+  activeAccountId = null,
+  onChanged,
+  onClose,
+  strategies = [],
+}) {
   const [form, setForm] = useState(emptyForm);
   const [editingId, setEditingId] = useState(null);
   const [saving, setSaving] = useState(false);
@@ -154,6 +165,7 @@ export default function DayPanel({ date, trades, userId, accounts = [], defaultR
       account_id: trade.broker_connection_id ?? '',
       rule_adherence: trade.rule_adherence ?? '',
       setup_type: trade.setup_type ?? '',
+      strategy_id: trade.strategy_id ?? '',
     });
   }
 
@@ -191,6 +203,7 @@ export default function DayPanel({ date, trades, userId, accounts = [], defaultR
       broker_connection_id: form.account_id || null,
       rule_adherence: form.rule_adherence || null,
       setup_type: form.setup_type || null,
+      strategy_id: form.strategy_id || null,
     };
 
     let res;
@@ -327,225 +340,3 @@ export default function DayPanel({ date, trades, userId, accounts = [], defaultR
                     ))}
                   </div>
                 )}
-                {t.notes && <p className="text-xs text-gray-500 mt-2 whitespace-pre-wrap">{t.notes}</p>}
-                <TradeScreenshot trade={t} userId={userId} onUpdated={onChanged} />
-              </div>
-            );
-          })}
-        </div>
-      )}
-
-      <form onSubmit={handleSubmit} className="space-y-3">
-        {accounts.length > 0 && (
-          <Field label="Account">
-            <select
-              value={form.account_id}
-              onChange={(e) => setForm({ ...form, account_id: e.target.value })}
-              className="w-full bg-white border border-gray-300 rounded-xl px-3 py-2 text-sm text-gray-900"
-            >
-              <option value="">Manual (no account)</option>
-              {accounts.map((a) => (
-                <option key={a.id} value={a.id}>
-                  {a.broker_server} ({a.mt5_login})
-                </option>
-              ))}
-            </select>
-          </Field>
-        )}
-
-        <div className="grid grid-cols-2 gap-3">
-          <Field label="Symbol">
-            <input
-              placeholder="e.g. EURUSD"
-              value={form.symbol}
-              onChange={(e) => setForm({ ...form, symbol: e.target.value })}
-              required
-              className="w-full bg-white border border-gray-300 rounded-xl px-3 py-2 text-sm text-gray-900"
-            />
-          </Field>
-          <Field label="Direction">
-            <select
-              value={form.direction}
-              onChange={(e) => setForm({ ...form, direction: e.target.value })}
-              className="w-full bg-white border border-gray-300 rounded-xl px-3 py-2 text-sm text-gray-900"
-            >
-              <option value="long">Long</option>
-              <option value="short">Short</option>
-            </select>
-          </Field>
-        </div>
-
-        <div className="grid grid-cols-2 gap-3">
-          <Field label="Entry price">
-            <input
-              type="number"
-              step="any"
-              value={form.entry_price}
-              onChange={(e) => setForm({ ...form, entry_price: e.target.value })}
-              required
-              className="w-full bg-white border border-gray-300 rounded-xl px-3 py-2 text-sm text-gray-900"
-            />
-          </Field>
-          <Field label="Exit price">
-            <input
-              type="number"
-              step="any"
-              value={form.exit_price}
-              onChange={(e) => setForm({ ...form, exit_price: e.target.value })}
-              className="w-full bg-white border border-gray-300 rounded-xl px-3 py-2 text-sm text-gray-900"
-            />
-          </Field>
-        </div>
-
-        <div className="grid grid-cols-2 gap-3">
-          <Field label="Stop loss">
-            <input
-              type="number"
-              step="any"
-              value={form.stop_loss}
-              onChange={(e) => setForm({ ...form, stop_loss: e.target.value })}
-              className="w-full bg-white border border-gray-300 rounded-xl px-3 py-2 text-sm text-gray-900"
-            />
-          </Field>
-          <Field label="Take profit">
-            <input
-              type="number"
-              step="any"
-              value={form.take_profit}
-              onChange={(e) => setForm({ ...form, take_profit: e.target.value })}
-              className="w-full bg-white border border-gray-300 rounded-xl px-3 py-2 text-sm text-gray-900"
-            />
-          </Field>
-        </div>
-
-        <div className="grid grid-cols-2 gap-3">
-          <Field label="Size / lots">
-            <input
-              type="number"
-              step="any"
-              value={form.size}
-              onChange={(e) => setForm({ ...form, size: e.target.value })}
-              required
-              className="w-full bg-white border border-gray-300 rounded-xl px-3 py-2 text-sm text-gray-900"
-            />
-          </Field>
-          <Field label="P&L">
-            <input
-              type="number"
-              step="any"
-              value={form.pnl}
-              onChange={(e) => setForm({ ...form, pnl: e.target.value })}
-              className="w-full bg-white border border-gray-300 rounded-xl px-3 py-2 text-sm text-gray-900"
-            />
-          </Field>
-        </div>
-
-        <Field label={`Risk amount ($) — optional, overrides default${defaultRiskAmount ? ` ($${defaultRiskAmount})` : ''} and price-based calc`}>
-          <input
-            type="number"
-            step="any"
-            placeholder={defaultRiskAmount ? `Using default: ${defaultRiskAmount}` : 'e.g. 20'}
-            value={form.risk_amount}
-            onChange={(e) => setForm({ ...form, risk_amount: e.target.value })}
-            className="w-full bg-white border border-gray-300 rounded-xl px-3 py-2 text-sm text-gray-900"
-          />
-        </Field>
-
-        <div className="grid grid-cols-2 gap-3">
-          <Field label="Entry time">
-            <input
-              type="datetime-local"
-              value={form.entry_time}
-              onChange={(e) => setForm({ ...form, entry_time: e.target.value })}
-              className="w-full bg-white border border-gray-300 rounded-xl px-3 py-2 text-sm text-gray-900"
-            />
-          </Field>
-          <Field label="Exit time">
-            <input
-              type="datetime-local"
-              value={form.exit_time}
-              onChange={(e) => setForm({ ...form, exit_time: e.target.value })}
-              className="w-full bg-white border border-gray-300 rounded-xl px-3 py-2 text-sm text-gray-900"
-            />
-          </Field>
-        </div>
-
-        <Field label="Rule adherence — did you follow your plan?">
-          <select
-            value={form.rule_adherence}
-            onChange={(e) => setForm({ ...form, rule_adherence: e.target.value })}
-            className="w-full bg-white border border-gray-300 rounded-xl px-3 py-2 text-sm text-gray-900"
-          >
-            {RULE_OPTIONS.map((o) => (
-              <option key={o.value} value={o.value}>
-                {o.label}
-              </option>
-            ))}
-          </select>
-        </Field>
-
-        <Field label="Setup type">
-          <input
-            placeholder="e.g. breakout, reversal, continuation, liquidity sweep"
-            value={form.setup_type}
-            onChange={(e) => setForm({ ...form, setup_type: e.target.value })}
-            className="w-full bg-white border border-gray-300 rounded-xl px-3 py-2 text-sm text-gray-900"
-          />
-        </Field>
-
-        <Field label="Trade emotion / mindset (optional, separate from the day's overall mood above)">
-          <select
-            value={form.emotion}
-            onChange={(e) => setForm({ ...form, emotion: e.target.value })}
-            className="w-full bg-white border border-gray-300 rounded-xl px-3 py-2 text-sm text-gray-900"
-          >
-            <option value="">— none —</option>
-            {EMOTIONS.map((em) => (
-              <option key={em} value={em}>
-                {em}
-              </option>
-            ))}
-          </select>
-        </Field>
-
-        <Field label="Tags (comma separated)">
-          <input
-            placeholder="e.g. breakout, trend-following"
-            value={form.tags}
-            onChange={(e) => setForm({ ...form, tags: e.target.value })}
-            className="w-full bg-white border border-gray-300 rounded-xl px-3 py-2 text-sm text-gray-900"
-          />
-        </Field>
-
-        <Field label="Trade note">
-          <textarea
-            value={form.notes}
-            onChange={(e) => setForm({ ...form, notes: e.target.value })}
-            rows={3}
-            placeholder="What was your setup, reasoning, execution?"
-            className="w-full bg-white border border-gray-300 rounded-xl px-3 py-2 text-sm text-gray-900"
-          />
-        </Field>
-
-        {error && <p className="text-sm text-red-500">{error}</p>}
-
-        <div className="flex gap-2">
-          <button
-            type="submit"
-            disabled={saving}
-            className="flex-1 bg-indigo-600 hover:bg-indigo-500 disabled:opacity-50 text-white rounded-xl py-2 text-sm font-medium"
-          >
-            {saving ? 'Saving...' : editingId ? 'Update Trade' : 'Add Trade'}
-          </button>
-          {editingId && (
-            <button type="button" onClick={resetForm} className="px-4 rounded-xl border border-gray-300 text-sm text-gray-600">
-              Cancel
-            </button>
-          )}
-        </div>
-      </form>
-
-      <TradeSummaryCard trade={viewingTrade} defaultRiskAmount={defaultRiskAmount} onClose={() => setViewingTrade(null)} />
-    </div>
-  );
-}
