@@ -82,7 +82,20 @@ export default function JournalPage() {
         'id, broker_server, broker_type, mt5_login, starting_balance, daily_loss_limit_pct, max_loss_limit_pct, profit_target_pct, status, last_synced_at'
       )
       .order('created_at', { ascending: true })
-      .then(({ data }) => setAccounts(data || []));
+      .then(({ data }) => {
+        const list = data || [];
+        setAccounts(list);
+        // Drop any previously-selected account ids that no longer exist
+        // (e.g. deleted/recreated accounts) so the filter label and
+        // checkboxes stay consistent.
+        const validIds = new Set(list.map((a) => a.id));
+        setAccountFilter((prev) => {
+          if (prev.allSelected) return prev;
+          const cleaned = prev.selectedIds.filter((id) => validIds.has(id));
+          if (cleaned.length === prev.selectedIds.length) return prev;
+          return { ...prev, selectedIds: cleaned };
+        });
+      });
 
     supabase
       .from('strategies')
