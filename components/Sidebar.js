@@ -1,14 +1,13 @@
 'use client';
 
-import ThemeToggle from './ThemeToggle';
 import { useRouter, usePathname } from 'next/navigation';
 import { useEffect, useState } from 'react';
-import { JournalGlyph, TradesGlyph, BrokerGlyph, ProfileGlyph } from './AnimeIcons';
-import Logo from './Logo';
+import { JournalGlyph, TradesGlyph, BrokerGlyph, ProfileGlyph, PlaybookGlyph } from './AnimeIcons';
 
 const NAV_ITEMS = [
   { key: 'journal', label: 'Journal', icon: JournalGlyph, path: '/journal' },
   { key: 'trades', label: 'Trades', icon: TradesGlyph, path: '/trades' },
+  { key: 'strategies', label: 'Strategies', icon: PlaybookGlyph, path: '/strategies' },
   { key: 'broker', label: 'Broker', icon: BrokerGlyph, path: '/broker' },
   { key: 'profile', label: 'Profile', icon: ProfileGlyph, path: '/profile' },
 ];
@@ -67,7 +66,6 @@ export default function Sidebar() {
         );
       })}
 
-<ThemeToggle compact />
       <button
         onClick={toggle}
         className="mt-auto w-8 h-8 rounded-lg bg-white/5 hover:bg-white/10 text-gray-500 hover:text-gray-300 flex items-center justify-center transition-colors"
