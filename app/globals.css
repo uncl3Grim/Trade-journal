@@ -6,3 +6,7 @@ body {
   background-color: #f7f7fb;
   color: #111827;
 }
+h1, h2, h3, .font-heading {
+  font-family: var(--font-heading), sans-serif;
+  letter-spacing: -0.01em;
+}
