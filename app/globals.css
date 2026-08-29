@@ -22,3 +22,7 @@ h1, h2, h3, .font-heading {
 .dark .text-gray-600,
 .dark .text-gray-500 { color: #9ca3af !important; }
 .dark .text-gray-400 { color: #71717a !important; }
+@media print {
+  .no-print { display: none !important; }
+  body { background: white !important; }
+}
