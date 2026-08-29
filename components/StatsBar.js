@@ -2,6 +2,7 @@
 
 import { rMultiple } from '../lib/tradeMath';
 import { formatMoney } from '../lib/format';
+import StreakIndicator from './StreakIndicator';
 
 export default function StatsBar({ trades, mode = 'dollar', defaultRiskAmount, accountBalance }) {
   const closed = trades.filter((t) => t.exit_price !== null && t.exit_price !== undefined);
@@ -45,7 +46,8 @@ export default function StatsBar({ trades, mode = 'dollar', defaultRiskAmount, a
   ];
 
   return (
-    <div className="grid grid-cols-2 sm:grid-cols-5 gap-3 mb-2">
+    <div className="grid grid-cols-2 sm:grid-cols-6 gap-3 mb-2">
+      <StreakIndicator trades={trades} />
       {stats.map((s) => (
         <div key={s.label} className="bg-white border border-gray-200 rounded-2xl shadow-sm p-3">
           <div className="text-xs text-gray-400 mb-1">{s.label}</div>
