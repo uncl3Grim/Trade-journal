@@ -147,21 +147,35 @@ export default function ImportCSV({ userId, onImported }) {
             return;
           }
 
+          // Postgres can't run ON CONFLICT DO UPDATE twice against the same row
+          // in one statement. If two rows in this file land on the same
+          // symbol+entry_time+account (e.g. two trades opened the same second),
+          // collapse them to the last one before sending the batch.
+          const byKey = new Map();
+          for (const t of trades) {
+            const key = `${t.symbol}||${t.entry_time}||${t.broker_connection_id ?? ''}`;
+            byKey.set(key, t);
+          }
+          const dedupedTrades = Array.from(byKey.values());
+          const collapsedCount = trades.length - dedupedTrades.length;
+
           const { error, data: inserted } = await supabase
             .from('trades')
-            .upsert(trades, { onConflict: 'user_id,symbol,entry_time,broker_connection_id' })
+            .upsert(dedupedTrades, { onConflict: 'user_id,symbol,entry_time,broker_connection_id' })
             .select();
 
           setBusy(false);
           if (error) {
             setStatus(`Error saving to database: ${error.message}`);
           } else {
-            const affectedCount = inserted?.length ?? trades.length;
+            const affectedCount = inserted?.length ?? dedupedTrades.length;
             const formatLabel = detected !== 'template' ? ` (auto-converted, format: ${detected})` : '';
             setStatus(
               `${affectedCount} trade(s) imported or updated${formatLabel}.${
-                skipped > 0 ? ` ${skipped} row(s) skipped for missing/invalid data.` : ''
-              }`
+                collapsedCount > 0
+                  ? ` ${collapsedCount} row(s) in the file shared the same symbol/time as another row and were merged.`
+                  : ''
+              }${skipped > 0 ? ` ${skipped} row(s) skipped for missing/invalid data.` : ''}`
             );
             onImported?.();
           }
