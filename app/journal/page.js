@@ -208,7 +208,7 @@ export default function JournalPage() {
               <SyncStatusWidget account={activeAccountObj} onSynced={() => { loadTrades(); loadAllTrades(); }} />
             )}
             {activeAccountObj && <PropFirmTracker trades={allTrades} account={activeAccountObj} />}
-            <AnimatedOverview trades={allTrades} />
+            <AnimatedOverview trades={allTrades} account={activeAccountObj} startingBalance={startingBalance} />
             <DrawdownStats
               trades={allTrades}
               defaultRiskAmount={defaultRiskAmount}
