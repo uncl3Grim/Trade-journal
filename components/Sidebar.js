@@ -1,5 +1,6 @@
 'use client';
 
+import ThemeToggle from './ThemeToggle';
 import { useRouter, usePathname } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import { JournalGlyph, TradesGlyph, BrokerGlyph, ProfileGlyph } from './AnimeIcons';
@@ -66,6 +67,7 @@ export default function Sidebar() {
         );
       })}
 
+<ThemeToggle compact />
       <button
         onClick={toggle}
         className="mt-auto w-8 h-8 rounded-lg bg-white/5 hover:bg-white/10 text-gray-500 hover:text-gray-300 flex items-center justify-center transition-colors"
