@@ -1,6 +1,5 @@
 'use client';
 
-import SyncStatusWidget from '../../components/SyncStatusWidget';
 import { useEffect, useState, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import { format, addMonths, subMonths, startOfMonth, endOfMonth, startOfWeek, endOfWeek } from 'date-fns';
@@ -18,8 +17,8 @@ import PeriodStatsHeader from '../../components/PeriodStatsHeader';
 import WeeklyTotals from '../../components/WeeklyTotals';
 import PropFirmTracker from '../../components/PropFirmTracker';
 import AnimatedOverview from '../../components/AnimatedOverview';
-import Sidebar from '../../components/Sidebar';
-import MobileNav from '../../components/MobileNav';
+import SyncStatusWidget from '../../components/SyncStatusWidget';
+import AppShell from '../../components/AppShell';
 import { computeDailyStats } from '../../lib/dailyStats';
 import { applyAccountFilter, computeActiveAccountId } from '../../lib/accountFilter';
 
@@ -35,6 +34,7 @@ export default function JournalPage() {
   const [loading, setLoading] = useState(true);
   const [tab, setTab] = useState('calendar');
   const [accounts, setAccounts] = useState([]);
+  const [strategies, setStrategies] = useState([]);
   const [defaultRiskAmount, setDefaultRiskAmount] = useState(null);
   const [accountBalance, setAccountBalance] = useState(null);
   const [mode, setMode] = useState('dollar');
@@ -80,9 +80,17 @@ export default function JournalPage() {
     if (!user) return;
     supabase
       .from('broker_connections')
-      .select('id, broker_server, broker_type, mt5_login, starting_balance, daily_loss_limit_pct, max_loss_limit_pct, profit_target_pct, status, last_synced_at')
+      .select(
+        'id, broker_server, broker_type, mt5_login, starting_balance, daily_loss_limit_pct, max_loss_limit_pct, profit_target_pct, status, last_synced_at'
+      )
       .order('created_at', { ascending: true })
       .then(({ data }) => setAccounts(data || []));
+
+    supabase
+      .from('strategies')
+      .select('*')
+      .order('created_at', { ascending: true })
+      .then(({ data }) => setStrategies(data || []));
 
     supabase
       .from('user_settings')
@@ -143,9 +151,8 @@ export default function JournalPage() {
     : [];
 
   return (
-    <div className="flex bg-[#f7f7fb] min-h-screen">
-      <Sidebar />
-      <div className="flex-1 max-w-6xl mx-auto px-4 py-6 pb-20 md:pb-6">
+    <AppShell>
+      <div className="max-w-6xl mx-auto px-4 py-6">
         <PsychologyQuotes />
 
         <div className="flex items-center justify-between mb-6">
@@ -197,8 +204,8 @@ export default function JournalPage() {
 
         {tab === 'calendar' && (
           <>
+            {activeAccountObj && <SyncStatusWidget account={activeAccountObj} onSynced={() => { loadTrades(); loadAllTrades(); }} />}
             {activeAccountObj && <PropFirmTracker trades={allTrades} account={activeAccountObj} />}
-             {activeAccountObj && <SyncStatusWidget account={activeAccountObj} onSynced={() => { loadTrades(); loadAllTrades(); }} />}                                             
             <AnimatedOverview trades={allTrades} />
             <DrawdownStats
               trades={allTrades}
@@ -241,6 +248,7 @@ export default function JournalPage() {
                   trades={selectedDayTrades}
                   userId={user?.id}
                   accounts={accounts}
+                  strategies={strategies}
                   defaultRiskAmount={defaultRiskAmount}
                   activeAccountId={activeAccountId}
                   onChanged={() => {
@@ -257,7 +265,6 @@ export default function JournalPage() {
         {tab === 'review' && <ReviewPanel trades={allTrades} defaultRiskAmount={defaultRiskAmount} mode={mode} />}
         {tab === 'notes' && <NotesView userId={user?.id} accountFilter={accountFilter} accounts={accounts} />}
       </div>
-      <MobileNav />
-    </div>
+    </AppShell>
   );
 }
