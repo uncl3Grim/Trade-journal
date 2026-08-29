@@ -97,8 +97,18 @@ export async function POST(request) {
         broker_connection_id: connectionId,
       }));
 
-    if (validRows.length > 0) {
-      const { error: insertError } = await supabase.from('trades').upsert(validRows, {
+    // Collapse any rows in this batch that share the same conflict key —
+    // Postgres can't run ON CONFLICT DO UPDATE twice against the same row
+    // in a single statement.
+    const byKey = new Map();
+    for (const r of validRows) {
+      const key = `${r.symbol}||${r.entry_time}||${r.broker_connection_id ?? ''}`;
+      byKey.set(key, r);
+    }
+    const dedupedRows = Array.from(byKey.values());
+
+    if (dedupedRows.length > 0) {
+      const { error: insertError } = await supabase.from('trades').upsert(dedupedRows, {
         onConflict: 'user_id,symbol,entry_time,broker_connection_id',
       });
       if (insertError) {
@@ -111,7 +121,7 @@ export async function POST(request) {
       .update({ status: 'connected', last_synced_at: new Date().toISOString() })
       .eq('id', connectionId);
 
-    return Response.json({ success: true, tradesSynced: validRows.length });
+    return Response.json({ success: true, tradesSynced: dedupedRows.length });
   } catch (err) {
     return Response.json({ error: err.message || 'Unknown error' }, { status: 500 });
   }
