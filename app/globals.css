@@ -11,17 +11,54 @@ h1, h2, h3, .font-heading {
   letter-spacing: -0.01em;
 }
 .dark body { background-color: #0b0b0f; color: #e5e7eb; }
-.dark .bg-\[\#f7f7fb\] { background-color: #0b0b0f !important; }
+.dark .bg-\[\#f7f7fb\] { background-color: transparent !important; }
 .dark .bg-white { background-color: #15151b !important; }
 .dark .bg-gray-50 { background-color: #1c1c22 !important; }
 .dark .bg-gray-100 { background-color: #22222a !important; }
 .dark .border-gray-200,
-.dark .border-gray-100 { border-color: #2a2a33 !important; }
+.dark .border-gray-100,
+.dark .border-gray-300 { border-color: #2a2a33 !important; }
 .dark .text-gray-900 { color: #f3f4f6 !important; }
 .dark .text-gray-700 { color: #d1d5db !important; }
 .dark .text-gray-600,
 .dark .text-gray-500 { color: #9ca3af !important; }
 .dark .text-gray-400 { color: #71717a !important; }
+
+/* Tinted highlight cards */
+.dark .bg-purple-50 { background-color: #241a33 !important; }
+.dark .border-purple-100,
+.dark .border-purple-200 { border-color: #3b2a52 !important; }
+.dark .bg-indigo-50 { background-color: #1e2140 !important; }
+.dark .border-indigo-100 { border-color: #33366b !important; }
+.dark .bg-green-50 { background-color: #10261c !important; }
+.dark .border-green-100,
+.dark .border-green-200 { border-color: #1d4632 !important; }
+.dark .bg-red-50 { background-color: #2c1616 !important; }
+.dark .border-red-100,
+.dark .border-red-200 { border-color: #4a2323 !important; }
+.dark .bg-yellow-50 { background-color: #2e2712 !important; }
+.dark .border-yellow-100,
+.dark .border-yellow-200 { border-color: #4d3f1a !important; }
+.dark .bg-orange-100 { background-color: #3a2414 !important; }
+
+/* Badge/pill backgrounds used for tags, emotions, statuses */
+.dark .bg-purple-100 { background-color: #33224a !important; }
+.dark .bg-indigo-100 { background-color: #292c57 !important; }
+.dark .bg-green-100 { background-color: #16332390 !important; }
+.dark .bg-red-100 { background-color: #3a1f1f !important; }
+.dark .bg-yellow-100 { background-color: #3d331a !important; }
+.dark .bg-gray-200 { background-color: #292930 !important; }
+
+/* Inputs and form fields */
+.dark input,
+.dark select,
+.dark textarea {
+  background-color: #1c1c22 !important;
+  border-color: #33333d !important;
+  color: #e5e7eb !important;
+}
+.dark input::placeholder,
+.dark textarea::placeholder { color: #6b7280 !important; }
 @media print {
   .no-print { display: none !important; }
   body { background: white !important; }
