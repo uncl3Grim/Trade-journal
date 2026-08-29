@@ -124,10 +124,14 @@ export default function VerifyPage() {
                       {formatMoney(Number(t.pnl))}
                     </td>
                     <td className="px-4 py-3">
-                      {t.screenshot_url ? (
-                        <a href={t.screenshot_url} target="_blank" rel="noopener noreferrer">
-                          <img src={t.screenshot_url} alt="Trade screenshot" className="h-10 rounded border border-gray-200" />
-                        </a>
+                      {t.screenshot_urls?.length > 0 ? (
+                        <div className="flex gap-1">
+                          {t.screenshot_urls.map((url) => (
+                            <a key={url} href={url} target="_blank" rel="noopener noreferrer">
+                              <img src={url} alt="Trade screenshot" className="h-10 w-10 object-cover rounded border border-gray-200" />
+                            </a>
+                          ))}
+                        </div>
                       ) : (
                         <span className="text-gray-300">—</span>
                       )}
