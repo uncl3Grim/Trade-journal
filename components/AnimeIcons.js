@@ -42,6 +42,7 @@ export function ProfileGlyph({ size = 20, className = '' }) {
     </svg>
   );
 }
+
 export function WalletGlyph({ size = 20, className = '' }) {
   return (
     <svg width={size} height={size} viewBox="0 0 24 24" fill="none" className={className}>
@@ -62,6 +63,16 @@ export function TargetGlyph({ size = 20, className = '' }) {
       <circle cx="12" cy="12" r="1.2" fill="currentColor" />
       <path d="M12 2V5M12 19V22M2 12H5M19 12H22" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" />
       <path d="M18 6L19 5" stroke="currentColor" strokeWidth="1" strokeLinecap="round" opacity="0.6" />
+    </svg>
+  );
+}
+
+export function PlaybookGlyph({ size = 20, className = '' }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" className={className}>
+      <rect x="4" y="3" width="16" height="18" rx="2" stroke="currentColor" strokeWidth="1.6" />
+      <path d="M8 8H16M8 12H16M8 16H12" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" />
+      <path d="M15 15L17 17L21 12" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round" opacity="0.8" />
     </svg>
   );
 }
