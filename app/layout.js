@@ -1,4 +1,7 @@
 import './globals.css';
+import { Space_Grotesk } from 'next/font/google';
+
+const spaceGrotesk = Space_Grotesk({ subsets: ['latin'], variable: '--font-heading' });
 
 export const metadata = {
   title: 'Trade Journal',
@@ -9,6 +12,7 @@ export default function RootLayout({ children }) {
   return (
     <html lang="en">
       <body>{children}</body>
+    <body className={spaceGrotesk.variable}>
     </html>
   );
 }
