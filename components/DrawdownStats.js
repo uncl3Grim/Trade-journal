@@ -78,13 +78,13 @@ export default function DrawdownStats({ trades, defaultRiskAmount, startingBalan
         </div>
 
         <div className="bg-gray-50 border border-gray-100 rounded-xl p-3 flex flex-col items-center text-center">
-          <div className="text-xs text-gray-400 mb-1">Current Drawdown</div>
+          <div className="text-xs text-gray-400 mb-1">Max Drawdown</div>
           <BatteryCellIcon percent={ddOfMaxPct} size={40} color="red" />
           <div className="text-[10px] text-gray-400 mt-1">{formatMoney(dd.currentDrawdown).replace(/^\+/, '')}</div>
         </div>
 
         <div className="bg-gray-50 border border-gray-100 rounded-xl p-3 flex flex-col items-center text-center">
-          <div className="text-xs text-gray-400 mb-1">Max Drawdown</div>
+          <div className="text-xs text-gray-400 mb-1">Current Drawdown</div>
           <BatteryCellIcon percent={maxDrawdownOfLimitPct} size={40} color="indigo" />
           <div className="text-[10px] text-gray-400 mt-1">
             {formatMoney(dd.maxDrawdown).replace(/^\+/, '')}
