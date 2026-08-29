@@ -5,6 +5,14 @@ import Papa from 'papaparse';
 import { supabase } from '../lib/supabaseClient';
 import { detectFormat, convertOrderLevelRows, convertMyfxbookStatementRows } from '../lib/csvFormats';
 
+// Postgres returns timestamps in a different string format than what we
+// send in (e.g. "+00:00" vs ".000Z") — same instant, different text. Compare
+// by parsed value, not raw string, or existing rows won't be recognized.
+function timeKey(value) {
+  const t = new Date(value).getTime();
+  return isNaN(t) ? String(value) : t;
+}
+
 function toISO(dateStr) {
   if (!dateStr) return null;
   const d = new Date(dateStr);
@@ -169,7 +177,7 @@ export default function ImportCSV({ userId, onImported }) {
           const bySymbolTime = new Map();
           for (const row of existingRows || []) {
             if (row.broker_ticket) byTicket.set(row.broker_ticket, row.id);
-            bySymbolTime.set(`${row.symbol}||${row.entry_time}`, row.id);
+            bySymbolTime.set(`${row.symbol}||${timeKey(row.entry_time)}`, row.id);
           }
 
           // Collapse exact duplicates within the file itself (same resolved
@@ -179,9 +187,9 @@ export default function ImportCSV({ userId, onImported }) {
           for (const t of trades) {
             const existingId =
               (t.broker_ticket && byTicket.get(t.broker_ticket)) ||
-              bySymbolTime.get(`${t.symbol}||${t.entry_time}`) ||
+              bySymbolTime.get(`${t.symbol}||${timeKey(t.entry_time)}`) ||
               null;
-            const key = existingId ? `id:${existingId}` : `new:${t.broker_ticket || `${t.symbol}||${t.entry_time}`}`;
+            const key = existingId ? `id:${existingId}` : `new:${t.broker_ticket || `${t.symbol}||${timeKey(t.entry_time)}`}`;
             seen.set(key, existingId ? { ...t, id: existingId } : t);
           }
           const finalTrades = Array.from(seen.values());
