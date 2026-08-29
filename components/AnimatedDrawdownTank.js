@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react';
 
-export default function AnimatedDrawdownTank({ percent }) {
+export default function AnimatedDrawdownTank({ percent, label = 'of max drawdown' }) {
   const [display, setDisplay] = useState(0);
 
   useEffect(() => {
@@ -19,7 +19,7 @@ export default function AnimatedDrawdownTank({ percent }) {
         />
       </div>
       <div className="text-lg font-bold text-red-500 mt-2">{percent.toFixed(0)}%</div>
-      <div className="text-[10px] text-gray-400">of max drawdown</div>
+      <div className="text-[10px] text-gray-400">{label}</div>
     </div>
   );
 }
