@@ -7,7 +7,7 @@ import { formatMoney } from '../lib/format';
 import { WalletGlyph, TargetGlyph } from './AnimeIcons';
 import BatteryCellIcon from './BatteryCellIcon';
 
-export default function DrawdownStats({ trades, defaultRiskAmount, startingBalance, balanceApplicable }) {
+export default function DrawdownStats({ trades, defaultRiskAmount, startingBalance, balanceApplicable, account }) {
   const [mode, setMode] = useState('trailing');
 
   const closed = trades.filter((t) => t.exit_price !== null && t.exit_price !== undefined);
@@ -24,6 +24,18 @@ export default function DrawdownStats({ trades, defaultRiskAmount, startingBalan
       : null;
 
   const ddOfMaxPct = dd.maxDrawdown > 0 ? (dd.currentDrawdown / dd.maxDrawdown) * 100 : 0;
+
+  // Max drawdown as % of the account's starting balance, then compared against
+  // the prop firm's allowed max-loss limit (if one is set on this account).
+  const maxDrawdownPctOfBalance =
+    startingBalance && startingBalance > 0 ? (dd.maxDrawdown / startingBalance) * 100 : null;
+
+  const maxLossLimitPct = account?.max_loss_limit_pct || null;
+
+  const maxDrawdownOfLimitPct =
+    maxLossLimitPct && maxDrawdownPctOfBalance !== null
+      ? Math.min(100, (maxDrawdownPctOfBalance / maxLossLimitPct) * 100)
+      : 100; // fall back to old behavior if no limit is set on this account
 
   return (
     <div className="bg-white border border-gray-200 rounded-2xl shadow-sm p-4 mb-6">
@@ -73,8 +85,15 @@ export default function DrawdownStats({ trades, defaultRiskAmount, startingBalan
 
         <div className="bg-gray-50 border border-gray-100 rounded-xl p-3 flex flex-col items-center text-center">
           <div className="text-xs text-gray-400 mb-1">Max Drawdown</div>
-          <BatteryCellIcon percent={100} size={40} color="indigo" />
-          <div className="text-[10px] text-gray-400 mt-1">{formatMoney(dd.maxDrawdown).replace(/^\+/, '')}</div>
+          <BatteryCellIcon percent={maxDrawdownOfLimitPct} size={40} color="indigo" />
+          <div className="text-[10px] text-gray-400 mt-1">
+            {formatMoney(dd.maxDrawdown).replace(/^\+/, '')}
+            {maxLossLimitPct && maxDrawdownPctOfBalance !== null && (
+              <span className="block">
+                {maxDrawdownPctOfBalance.toFixed(2)}% / {maxLossLimitPct}% limit
+              </span>
+            )}
+          </div>
         </div>
       </div>
 
