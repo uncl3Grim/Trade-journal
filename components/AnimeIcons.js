@@ -76,3 +76,27 @@ export function PlaybookGlyph({ size = 20, className = '' }) {
     </svg>
   );
 }
+
+export function StreakCalendarGlyph({ size = 20, className = '' }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" className={className}>
+      <rect x="3.5" y="5" width="17" height="16" rx="2.5" stroke="currentColor" strokeWidth="1.6" />
+      <path d="M3.5 9.5H20.5" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" />
+      <path d="M8 3V6.5M16 3V6.5" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" />
+      <path d="M8.5 14L10.7 16.2L15.3 11.6" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" />
+      <path d="M4.5 12L5.3 11.2M19.5 12L18.7 11.2" stroke="currentColor" strokeWidth="1" strokeLinecap="round" opacity="0.6" />
+    </svg>
+  );
+}
+
+export function StackedTradesGlyph({ size = 20, className = '' }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" className={className}>
+      <rect x="5" y="4" width="14" height="6" rx="1.8" stroke="currentColor" strokeWidth="1.6" />
+      <rect x="5" y="10.5" width="14" height="6" rx="1.8" stroke="currentColor" strokeWidth="1.6" opacity="0.85" />
+      <rect x="5" y="17" width="14" height="3.5" rx="1.5" stroke="currentColor" strokeWidth="1.6" opacity="0.6" />
+      <path d="M8 7H12M8 13.5H12" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" />
+      <path d="M2 6L2.9 5.1M22 6L21.1 5.1" stroke="currentColor" strokeWidth="1" strokeLinecap="round" opacity="0.5" />
+    </svg>
+  );
+}
