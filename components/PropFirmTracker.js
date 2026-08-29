@@ -26,17 +26,29 @@ export default function PropFirmTracker({ trades, account }) {
     dailyLossLimitPct: account.daily_loss_limit_pct,
     maxLossLimitPct: account.max_loss_limit_pct,
     profitTargetPct: account.profit_target_pct,
+    consistencyLimitPct: account.consistency_limit_pct,
   });
 
   if (!compliance) return null;
 
-  const breached = compliance.maxDdBreached || compliance.dailyBreaches.length > 0;
+  const breached = compliance.maxDdBreached || compliance.dailyBreaches.length > 0 || compliance.consistencyBreached;
   const statusLabel = breached ? 'RULE BREACHED' : compliance.profitTargetHit ? 'TARGET HIT' : 'IN PROGRESS';
   const statusColor = breached ? 'bg-red-100 text-red-700' : compliance.profitTargetHit ? 'bg-green-100 text-green-700' : 'bg-yellow-100 text-yellow-700';
 
   const currentDdOfLimitPct = account.max_loss_limit_pct
     ? Math.min(100, (compliance.currentDrawdownPct / account.max_loss_limit_pct) * 100)
     : 0;
+
+  const consistencyColor =
+    compliance.consistencyPct === null
+      ? 'text-gray-500'
+      : compliance.consistencyBreached
+      ? 'text-red-500'
+      : compliance.consistencyPct <= 30
+      ? 'text-green-600'
+      : compliance.consistencyPct <= 50
+      ? 'text-yellow-600'
+      : 'text-red-500';
 
   return (
     <div className="bg-white border border-gray-200 rounded-2xl shadow-sm p-5 mb-6">
@@ -45,7 +57,7 @@ export default function PropFirmTracker({ trades, account }) {
         <span className={`text-xs font-semibold px-2 py-1 rounded-full ${statusColor}`}>{statusLabel}</span>
       </div>
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
         {account.daily_loss_limit_pct && (
           <div className="bg-gray-50 border border-gray-100 rounded-xl p-3">
             <div className="flex justify-between text-xs text-gray-500 mb-1">
@@ -96,6 +108,26 @@ export default function PropFirmTracker({ trades, account }) {
             </div>
           </div>
         )}
+
+        <div className="bg-gray-50 border border-gray-100 rounded-xl p-3">
+          <div className="flex justify-between text-xs text-gray-500 mb-1">
+            <span>Consistency</span>
+            <span>
+              {account.consistency_limit_pct
+                ? `${compliance.consistencyPct === null ? '—' : compliance.consistencyPct.toFixed(2) + '%'} / ${account.consistency_limit_pct}%`
+                : compliance.consistencyPct === null
+                ? '—'
+                : `${compliance.consistencyPct.toFixed(2)}%`}
+            </span>
+          </div>
+          {account.consistency_limit_pct ? (
+            <Bar value={compliance.consistencyPct || 0} limit={account.consistency_limit_pct} />
+          ) : (
+            <div className={`text-sm font-semibold mt-1 ${consistencyColor}`}>
+              {compliance.consistencyPct === null ? 'No profit yet' : 'best day / total profit'}
+            </div>
+          )}
+        </div>
       </div>
 
       {compliance.dailyBreaches.length > 0 && (
@@ -108,6 +140,14 @@ export default function PropFirmTracker({ trades, account }) {
               {format(new Date(b.day), 'MMM d, yyyy')}: {formatMoney(b.dayPnl)} ({b.dayLossPct.toFixed(2)}% loss)
             </div>
           ))}
+        </div>
+      )}
+
+      {compliance.consistencyBreached && (
+        <div className="mt-4 bg-red-50 border border-red-100 rounded-xl p-3">
+          <div className="text-xs font-medium text-red-600">
+            Consistency rule breached: best day is {compliance.consistencyPct.toFixed(2)}% of total profit (limit {account.consistency_limit_pct}%).
+          </div>
         </div>
       )}
 
