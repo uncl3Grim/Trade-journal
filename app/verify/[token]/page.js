@@ -98,6 +98,7 @@ export default function VerifyPage() {
                 <th className="px-4 py-3 font-medium">Entry</th>
                 <th className="px-4 py-3 font-medium">Exit</th>
                 <th className="px-4 py-3 font-medium">P&L</th>
+                <th className="px-4 py-3 font-medium">Screenshot</th>
               </tr>
             </thead>
             <tbody>
@@ -121,6 +122,15 @@ export default function VerifyPage() {
                     <td className="px-4 py-3 text-gray-600">{t.exit_price ?? '—'}</td>
                     <td className={`px-4 py-3 font-medium ${Number(t.pnl) >= 0 ? 'text-green-600' : 'text-red-500'}`}>
                       {formatMoney(Number(t.pnl))}
+                    </td>
+                    <td className="px-4 py-3">
+                      {t.screenshot_url ? (
+                        <a href={t.screenshot_url} target="_blank" rel="noopener noreferrer">
+                          <img src={t.screenshot_url} alt="Trade screenshot" className="h-10 rounded border border-gray-200" />
+                        </a>
+                      ) : (
+                        <span className="text-gray-300">—</span>
+                      )}
                     </td>
                   </tr>
                 ))}
