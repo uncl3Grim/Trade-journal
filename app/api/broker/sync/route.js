@@ -100,7 +100,6 @@ export async function POST(request) {
     if (validRows.length > 0) {
       const { error: insertError } = await supabase.from('trades').upsert(validRows, {
         onConflict: 'user_id,symbol,entry_time,broker_connection_id',
-        ignoreDuplicates: true,
       });
       if (insertError) {
         return Response.json({ error: insertError.message }, { status: 500 });
