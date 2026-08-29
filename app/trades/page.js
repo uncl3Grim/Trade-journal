@@ -7,6 +7,7 @@ import { supabase } from '../../lib/supabaseClient';
 import { applyAccountFilter } from '../../lib/accountFilter';
 import { rMultiple } from '../../lib/tradeMath';
 import { formatMoney } from '../../lib/format';
+import { tradesToCsv, downloadCsv } from '../../lib/exportCsv';
 import TradeSummaryCard from '../../components/TradeSummaryCard';
 import AppShell from '../../components/AppShell';
 
@@ -76,9 +77,17 @@ export default function TradesPage() {
       <div className="max-w-6xl mx-auto px-4 py-6">
         <div className="flex items-center justify-between mb-6">
           <h1 className="text-xl font-semibold text-gray-900">Trade History</h1>
-          <button onClick={() => router.push('/journal')} className="text-sm text-gray-500 hover:text-gray-800">
-            Back to Journal
-          </button>
+          <div className="flex items-center gap-3">
+            <button
+              onClick={() => downloadCsv(tradesToCsv(trades), `trades-export-${format(new Date(), 'yyyy-MM-dd')}.csv`)}
+              className="text-sm text-indigo-600 hover:text-indigo-500"
+            >
+              Export CSV
+            </button>
+            <button onClick={() => router.push('/journal')} className="text-sm text-gray-500 hover:text-gray-800">
+              Back to Journal
+            </button>
+          </div>
         </div>
 
         {loading ? (
@@ -107,18 +116,30 @@ export default function TradesPage() {
                 {trades.map((t) => {
                   const r = rMultiple(t, defaultRiskAmount);
                   return (
-                    <tr key={t.id} onClick={() => setSelectedTrade(t)} className="border-b border-gray-50 last:border-0 cursor-pointer hover:bg-gray-50">
-                      <td className="px-4 py-3 whitespace-nowrap text-gray-700">{format(new Date(t.entry_time), 'MMM d, yyyy')}</td>
+                    <tr
+                      key={t.id}
+                      onClick={() => setSelectedTrade(t)}
+                      className="border-b border-gray-50 last:border-0 cursor-pointer hover:bg-gray-50"
+                    >
+                      <td className="px-4 py-3 whitespace-nowrap text-gray-700">
+                        {format(new Date(t.entry_time), 'MMM d, yyyy')}
+                      </td>
                       <td className="px-4 py-3 font-medium text-gray-900">{t.symbol}</td>
                       <td className="px-4 py-3">
-                        <span className={`text-xs px-2 py-0.5 rounded-full ${t.direction === 'long' ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}`}>
+                        <span
+                          className={`text-xs px-2 py-0.5 rounded-full ${
+                            t.direction === 'long' ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'
+                          }`}
+                        >
                           {t.direction}
                         </span>
                       </td>
                       <td className="px-4 py-3 text-gray-600">{t.entry_price}</td>
                       <td className="px-4 py-3 text-gray-600">{t.exit_price ?? '—'}</td>
                       <td className="px-4 py-3 text-gray-600">{t.size}</td>
-                      <td className={`px-4 py-3 font-medium ${Number(t.pnl) >= 0 ? 'text-green-600' : 'text-red-500'}`}>{formatMoney(Number(t.pnl))}</td>
+                      <td className={`px-4 py-3 font-medium ${Number(t.pnl) >= 0 ? 'text-green-600' : 'text-red-500'}`}>
+                        {formatMoney(Number(t.pnl))}
+                      </td>
                       <td className="px-4 py-3 text-gray-500">{r !== null ? `${r >= 0 ? '+' : ''}${r.toFixed(2)}R` : '—'}</td>
                       <td className="px-4 py-3 text-gray-400 text-xs">{accountName(t.broker_connection_id)}</td>
                     </tr>
