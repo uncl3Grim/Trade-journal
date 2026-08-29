@@ -148,45 +148,64 @@ export default function ImportCSV({ userId, onImported }) {
             return;
           }
 
-          // A trade's own broker ticket is the true identity — two trades on
-          // the same symbol in the same minute are only "the same trade" if
-          // they share a ticket. Only fall back to symbol+time matching for
-          // rows with no ticket at all (manual/template imports).
-          // Postgres also can't run ON CONFLICT DO UPDATE twice against the
-          // same row in one statement, so within each group we still collapse
-          // any true duplicates down to the last occurrence.
-          const ticketed = new Map();
-          const untickered = new Map();
-          for (const t of trades) {
-            if (t.broker_ticket) {
-              ticketed.set(`${t.broker_ticket}||${t.broker_connection_id ?? ''}`, t);
-            } else {
-              untickered.set(`${t.symbol}||${t.entry_time}||${t.broker_connection_id ?? ''}`, t);
-            }
+          // A trade's own broker ticket is the true identity when present;
+          // otherwise symbol+time is the identity. The table enforces BOTH
+          // as separate unique constraints, so we can't resolve conflicts
+          // with a single ON CONFLICT target — a ticketed row can silently
+          // collide with an existing ticket-less row (or vice versa) on the
+          // OTHER constraint, which ON CONFLICT can't catch. Instead, look
+          // up existing matches first and split into explicit insert/update.
+          let existingQuery = supabase
+            .from('trades')
+            .select('id, symbol, entry_time, broker_ticket')
+            .eq('user_id', userId);
+          existingQuery = accountId
+            ? existingQuery.eq('broker_connection_id', accountId)
+            : existingQuery.is('broker_connection_id', null);
+          const { data: existingRows, error: lookupError } = await existingQuery;
+          if (lookupError) throw new Error(lookupError.message);
+
+          const byTicket = new Map();
+          const bySymbolTime = new Map();
+          for (const row of existingRows || []) {
+            if (row.broker_ticket) byTicket.set(row.broker_ticket, row.id);
+            bySymbolTime.set(`${row.symbol}||${row.entry_time}`, row.id);
           }
-          const ticketedTrades = Array.from(ticketed.values());
-          const untickeredTrades = Array.from(untickered.values());
-          const collapsedCount = trades.length - ticketedTrades.length - untickeredTrades.length;
+
+          // Collapse exact duplicates within the file itself (same resolved
+          // identity), keeping the last occurrence — a row can only be
+          // inserted/updated once per statement.
+          const seen = new Map();
+          for (const t of trades) {
+            const existingId =
+              (t.broker_ticket && byTicket.get(t.broker_ticket)) ||
+              bySymbolTime.get(`${t.symbol}||${t.entry_time}`) ||
+              null;
+            const key = existingId ? `id:${existingId}` : `new:${t.broker_ticket || `${t.symbol}||${t.entry_time}`}`;
+            seen.set(key, existingId ? { ...t, id: existingId } : t);
+          }
+          const finalTrades = Array.from(seen.values());
+          const collapsedCount = trades.length - finalTrades.length;
+
+          const toInsert = finalTrades.filter((t) => !t.id);
+          const toUpdate = finalTrades.filter((t) => t.id);
 
           let affectedCount = 0;
           let dbError = null;
 
-          if (ticketedTrades.length) {
-            const { error, data } = await supabase
-              .from('trades')
-              .upsert(ticketedTrades, { onConflict: 'user_id,broker_connection_id,broker_ticket' })
-              .select();
+          if (toInsert.length) {
+            const { error, data } = await supabase.from('trades').insert(toInsert).select();
             if (error) dbError = error;
-            else affectedCount += data?.length ?? ticketedTrades.length;
+            else affectedCount += data?.length ?? toInsert.length;
           }
 
-          if (!dbError && untickeredTrades.length) {
+          if (!dbError && toUpdate.length) {
             const { error, data } = await supabase
               .from('trades')
-              .upsert(untickeredTrades, { onConflict: 'user_id,symbol,entry_time,broker_connection_id' })
+              .upsert(toUpdate, { onConflict: 'id' })
               .select();
             if (error) dbError = error;
-            else affectedCount += data?.length ?? untickeredTrades.length;
+            else affectedCount += data?.length ?? toUpdate.length;
           }
 
           setBusy(false);
