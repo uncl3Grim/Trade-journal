@@ -36,6 +36,8 @@ export default function TradeSummaryCard({ trade, defaultRiskAmount, onClose }) 
   const points =
     trade.exit_price && trade.entry_price ? Math.abs(Number(trade.exit_price) - Number(trade.entry_price)) : null;
 
+  const screenshots = (trade.screenshot_urls?.length > 0 ? trade.screenshot_urls : trade.screenshot_url ? [trade.screenshot_url] : []).filter(Boolean);
+
   return (
     <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4" onClick={onClose}>
       <div
@@ -107,6 +109,16 @@ export default function TradeSummaryCard({ trade, defaultRiskAmount, onClose }) 
               </div>
             </div>
           </div>
+
+          {screenshots.length > 0 && (
+            <div className="flex gap-2 mt-4 flex-wrap">
+              {screenshots.map((url) => (
+                <a key={url} href={url} target="_blank" rel="noopener noreferrer">
+                  <img src={url} alt="Trade screenshot" className="h-16 w-16 object-cover rounded-lg border border-white/20" />
+                </a>
+              ))}
+            </div>
+          )}
 
           {(trade.tags?.length > 0 || trade.emotion) && (
             <div className="flex flex-wrap gap-1 mt-4">
