@@ -132,7 +132,7 @@ export default function ImportCSV({ userId, onImported }) {
               pnl: r.pnl ? parseFloat(r.pnl) : 0,
               stop_loss: r.stop_loss ? parseFloat(r.stop_loss) : null,
               take_profit: r.take_profit ? parseFloat(r.take_profit) : null,
-              notes: r.notes || '',
+              ...(r.notes ? { notes: r.notes } : {}),
               source: 'csv_import',
               broker_connection_id: accountId,
             });
@@ -149,18 +149,17 @@ export default function ImportCSV({ userId, onImported }) {
 
           const { error, data: inserted } = await supabase
             .from('trades')
-            .upsert(trades, { onConflict: 'user_id,symbol,entry_time,broker_connection_id', ignoreDuplicates: true })
+            .upsert(trades, { onConflict: 'user_id,symbol,entry_time,broker_connection_id' })
             .select();
 
           setBusy(false);
           if (error) {
             setStatus(`Error saving to database: ${error.message}`);
           } else {
-            const addedCount = inserted?.length ?? trades.length;
-            const dupeCount = trades.length - addedCount;
+            const affectedCount = inserted?.length ?? trades.length;
             const formatLabel = detected !== 'template' ? ` (auto-converted, format: ${detected})` : '';
             setStatus(
-              `${addedCount} new trade(s) added${formatLabel}.${dupeCount > 0 ? ` ${dupeCount} already existed and were skipped.` : ''}${
+              `${affectedCount} trade(s) imported or updated${formatLabel}.${
                 skipped > 0 ? ` ${skipped} row(s) skipped for missing/invalid data.` : ''
               }`
             );
