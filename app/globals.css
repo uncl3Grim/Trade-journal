@@ -10,3 +10,15 @@ h1, h2, h3, .font-heading {
   font-family: var(--font-heading), sans-serif;
   letter-spacing: -0.01em;
 }
+.dark body { background-color: #0b0b0f; color: #e5e7eb; }
+.dark .bg-\[\#f7f7fb\] { background-color: #0b0b0f !important; }
+.dark .bg-white { background-color: #15151b !important; }
+.dark .bg-gray-50 { background-color: #1c1c22 !important; }
+.dark .bg-gray-100 { background-color: #22222a !important; }
+.dark .border-gray-200,
+.dark .border-gray-100 { border-color: #2a2a33 !important; }
+.dark .text-gray-900 { color: #f3f4f6 !important; }
+.dark .text-gray-700 { color: #d1d5db !important; }
+.dark .text-gray-600,
+.dark .text-gray-500 { color: #9ca3af !important; }
+.dark .text-gray-400 { color: #71717a !important; }
