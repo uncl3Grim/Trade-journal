@@ -1,5 +1,6 @@
 'use client';
 
+import { useRouter } from 'next/navigation';
 import { useEffect, useState, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import { format, addMonths, subMonths, startOfMonth, endOfMonth, startOfWeek, endOfWeek } from 'date-fns';
@@ -233,30 +234,15 @@ export default function JournalPage() {
                   <Calendar
                     month={month}
                     dailyStats={dailyStats}
-                    onDayClick={setSelectedDate}
+                    onDayClick={(day) => router.push(`/journal/day/${format(day, 'yyyy-MM-dd')}`)}
                     selectedDate={selectedDate}
                     mode={mode}
                     accountBalance={startingBalance}
                   />
                 )}
               </div>
-
-              <div>
+<div>
                 <WeeklyTotals month={month} dailyStats={dailyStats} mode={mode} />
-                <DayPanel
-                  date={selectedDate}
-                  trades={selectedDayTrades}
-                  userId={user?.id}
-                  accounts={accounts}
-                  strategies={strategies}
-                  defaultRiskAmount={defaultRiskAmount}
-                  activeAccountId={activeAccountId}
-                  onChanged={() => {
-                    loadTrades();
-                    loadAllTrades();
-                  }}
-                  onClose={() => setSelectedDate(null)}
-                />
               </div>
             </div>
           </>
