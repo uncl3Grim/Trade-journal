@@ -16,7 +16,7 @@ function Bar({ value, limit, dangerAt = 90 }) {
   );
 }
 
-export default function PropFirmTracker({ trades, account }) {
+export default function PropFirmTracker({ trades, account, ddMode = 'trailing' }) {
   if (!account?.starting_balance) return null;
 
   const hasAnyRule = account.daily_loss_limit_pct || account.max_loss_limit_pct || account.profit_target_pct;
@@ -27,17 +27,18 @@ export default function PropFirmTracker({ trades, account }) {
     maxLossLimitPct: account.max_loss_limit_pct,
     profitTargetPct: account.profit_target_pct,
     consistencyLimitPct: account.consistency_limit_pct,
+    mode: ddMode,
   });
 
   if (!compliance) return null;
 
-  const breached = compliance.maxDdBreached || compliance.dailyBreaches.length > 0 || compliance.consistencyBreached;
+  const breached =
+    compliance.maxDdBreached ||
+    compliance.dailyBreaches.length > 0 ||
+    compliance.consistencyBreached ||
+    compliance.dailyBreachedToday;
   const statusLabel = breached ? 'RULE BREACHED' : compliance.profitTargetHit ? 'TARGET HIT' : 'IN PROGRESS';
   const statusColor = breached ? 'bg-red-100 text-red-700' : compliance.profitTargetHit ? 'bg-green-100 text-green-700' : 'bg-yellow-100 text-yellow-700';
-
-  const currentDdOfLimitPct = account.max_loss_limit_pct
-    ? Math.min(100, (compliance.currentDrawdownPct / account.max_loss_limit_pct) * 100)
-    : 0;
 
   const consistencyColor =
     compliance.consistencyPct === null
@@ -59,36 +60,57 @@ export default function PropFirmTracker({ trades, account }) {
 
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
         {account.daily_loss_limit_pct && (
-          <div className="bg-gray-50 border border-gray-100 rounded-xl p-3">
-            <div className="flex justify-between text-xs text-gray-500 mb-1">
-              <span>Worst daily loss</span>
-              <span>
-                {compliance.worstDailyLossPct.toFixed(2)}% / {account.daily_loss_limit_pct}%
-              </span>
+          <div className="bg-gray-50 border border-gray-100 rounded-xl p-3 flex flex-col items-center text-center">
+            <div className="text-xs text-gray-500 mb-1">Daily loss (today)</div>
+            <BatteryCellIcon
+              percent={compliance.dailyBreachMeterPct}
+              size={36}
+              color={compliance.dailyBreachMeterPct >= 90 ? 'red' : 'indigo'}
+            />
+            <div className="text-[10px] text-gray-400 mt-1">
+              {formatMoney(-compliance.todayLossDollar).replace(/^\+/, '')} of {formatMoney(compliance.dailyLossLimitDollar)}
             </div>
-            <Bar value={compliance.worstDailyLossPct} limit={account.daily_loss_limit_pct} />
+            {compliance.dailyEquityBreachLevel !== null && (
+              <div className="text-[9px] text-gray-400">
+                Breach below {formatMoney(compliance.dailyEquityBreachLevel)}
+              </div>
+            )}
           </div>
         )}
 
         {account.max_loss_limit_pct && (
           <div className="bg-gray-50 border border-gray-100 rounded-xl p-3 flex flex-col items-center text-center">
-            <div className="text-xs text-gray-500 mb-1">Current drawdown</div>
-            <BatteryCellIcon percent={currentDdOfLimitPct} size={36} color={currentDdOfLimitPct >= 90 ? 'red' : 'indigo'} />
+            <div className="text-xs text-gray-500 mb-1">Current {ddMode} drawdown</div>
+            <BatteryCellIcon
+              percent={compliance.maxBreachMeterPct}
+              size={36}
+              color={compliance.maxBreachMeterPct >= 90 ? 'red' : 'indigo'}
+            />
             <div className="text-[10px] text-gray-400 mt-1">
               {compliance.currentDrawdownPct.toFixed(2)}% / {account.max_loss_limit_pct}% limit
             </div>
+            {compliance.maxEquityBreachLevel !== null && (
+              <div className="text-[9px] text-gray-400">
+                Breach below {formatMoney(compliance.maxEquityBreachLevel)}
+              </div>
+            )}
           </div>
         )}
 
         {account.max_loss_limit_pct && (
           <div className="bg-gray-50 border border-gray-100 rounded-xl p-3">
             <div className="flex justify-between text-xs text-gray-500 mb-1">
-              <span>Max drawdown</span>
+              <span>Max {ddMode} drawdown</span>
               <span>
                 {compliance.maxDrawdownPct.toFixed(2)}% / {account.max_loss_limit_pct}%
               </span>
             </div>
             <Bar value={compliance.maxDrawdownPct} limit={account.max_loss_limit_pct} />
+            {ddMode === 'trailing' && (
+              <div className="text-[9px] text-gray-400 mt-1">
+                High-water mark: {formatMoney(compliance.highWaterMarkBalance)}
+              </div>
+            )}
           </div>
         )}
 
@@ -123,7 +145,7 @@ export default function PropFirmTracker({ trades, account }) {
           {account.consistency_limit_pct ? (
             <Bar value={compliance.consistencyPct || 0} limit={account.consistency_limit_pct} />
           ) : (
-            <div className={`text-sm font-semibold mt-1 ${consistencyColor}`}>
+            <div className={`text-[10px] mt-1 ${consistencyColor}`}>
               {compliance.consistencyPct === null ? 'No profit yet' : 'best day / total profit'}
             </div>
           )}
