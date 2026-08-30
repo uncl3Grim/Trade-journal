@@ -230,7 +230,7 @@ export default function JournalPage() {
               account={activeAccountObj}
             />
             <PeriodStatsHeader trades={allTrades} mode={mode} defaultRiskAmount={defaultRiskAmount} accountBalance={startingBalance} />
-            <StatsBar trades={trades} mode={mode} defaultRiskAmount={defaultRiskAmount} accountBalance={startingBalance} />
+            <StatsBar trades={alltrades} mode={mode} defaultRiskAmount={defaultRiskAmount} accountBalance={startingBalance} />
 
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mt-6">
               <div className="lg:col-span-2">
