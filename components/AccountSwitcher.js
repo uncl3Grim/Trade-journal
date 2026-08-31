@@ -37,9 +37,22 @@ export default function AccountSwitcher({ accounts, allSelected, selectedIds, in
     onChange({ allSelected: false, selectedIds, includeManual: !includeManual });
   }
 
-  const label = allSelected
-    ? 'All accounts'
-    : `${selectedIds.length + (includeManual ? 1 : 0)} account${selectedIds.length + (includeManual ? 1 : 0) !== 1 ? 's' : ''}`;
+  const totalSelectedCount = selectedIds.length + (includeManual ? 1 : 0);
+
+  let label;
+  if (allSelected) {
+    label = 'All accounts';
+  } else if (totalSelectedCount === 0) {
+    label = 'No accounts';
+  } else if (selectedIds.length === 1 && !includeManual) {
+    // Exactly one real account selected — show its actual name instead of a generic count.
+    const acc = accounts.find((a) => a.id === selectedIds[0]);
+    label = acc ? acc.broker_server : '1 account';
+  } else if (selectedIds.length === 0 && includeManual) {
+    label = 'Manual entries';
+  } else {
+    label = `${totalSelectedCount} account${totalSelectedCount !== 1 ? 's' : ''}`;
+  }
 
   return (
     <div className="relative" ref={ref}>
