@@ -36,6 +36,7 @@ export default function JournalPage() {
   const [defaultRiskAmount, setDefaultRiskAmount] = useState(null);
   const [accountBalance, setAccountBalance] = useState(null);
   const [mode, setMode] = useState('dollar');
+  const [ddMode, setDdMode] = useState('trailing');
   const [accountFilter, setAccountFilter] = useState(DEFAULT_ACCOUNT_FILTER);
 
   useEffect(() => {
@@ -44,6 +45,8 @@ export default function JournalPage() {
       if (savedFilter) setAccountFilter(JSON.parse(savedFilter));
       const savedMode = localStorage.getItem('tj_display_mode');
       if (savedMode) setMode(savedMode);
+      const savedDdMode = localStorage.getItem('tj_dd_mode');
+      if (savedDdMode) setDdMode(savedDdMode);
     } catch {}
   }, []);
 
@@ -58,6 +61,12 @@ export default function JournalPage() {
       localStorage.setItem('tj_display_mode', mode);
     } catch {}
   }, [mode]);
+
+  useEffect(() => {
+    try {
+      localStorage.setItem('tj_dd_mode', ddMode);
+    } catch {}
+  }, [ddMode]);
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
@@ -85,9 +94,6 @@ export default function JournalPage() {
       .then(({ data }) => {
         const list = data || [];
         setAccounts(list);
-        // Drop any previously-selected account ids that no longer exist
-        // (e.g. deleted/recreated accounts) so the filter label and
-        // checkboxes stay consistent.
         const validIds = new Set(list.map((a) => a.id));
         setAccountFilter((prev) => {
           if (prev.allSelected) return prev;
@@ -220,14 +226,16 @@ export default function JournalPage() {
             {activeAccountObj && (
               <SyncStatusWidget account={activeAccountObj} onSynced={() => { loadTrades(); loadAllTrades(); }} />
             )}
-            {activeAccountObj && <PropFirmTracker trades={allTrades} account={activeAccountObj} />}
-            <AnimatedOverview trades={allTrades} account={activeAccountObj} startingBalance={startingBalance} />
+            {activeAccountObj && <PropFirmTracker trades={allTrades} account={activeAccountObj} ddMode={ddMode} />}
+            <AnimatedOverview trades={allTrades} account={activeAccountObj} startingBalance={startingBalance} ddMode={ddMode} />
             <DrawdownStats
               trades={allTrades}
               defaultRiskAmount={defaultRiskAmount}
               startingBalance={startingBalance}
               balanceApplicable={balanceApplicable}
               account={activeAccountObj}
+              mode={ddMode}
+              onModeChange={setDdMode}
             />
             <PeriodStatsHeader trades={allTrades} mode={mode} defaultRiskAmount={defaultRiskAmount} accountBalance={startingBalance} />
             <StatsBar trades={allTrades} mode={mode} defaultRiskAmount={defaultRiskAmount} accountBalance={startingBalance} />
