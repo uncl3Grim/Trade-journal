@@ -1,6 +1,5 @@
 'use client';
 
-import { useState } from 'react';
 import { format } from 'date-fns';
 import { computeDrawdown } from '../lib/drawdown';
 import { rMultiple } from '../lib/tradeMath';
@@ -8,9 +7,7 @@ import { formatMoney } from '../lib/format';
 import { WalletGlyph, TargetGlyph, StreakCalendarGlyph, StackedTradesGlyph } from './AnimeIcons';
 import BatteryCellIcon from './BatteryCellIcon';
 
-export default function DrawdownStats({ trades, defaultRiskAmount, startingBalance, balanceApplicable, account }) {
-  const [mode, setMode] = useState('trailing');
-
+export default function DrawdownStats({ trades, defaultRiskAmount, startingBalance, balanceApplicable, account, mode, onModeChange }) {
   const closed = trades.filter((t) => t.exit_price !== null && t.exit_price !== undefined);
   const totalR = closed
     .map((t) => rMultiple(t, defaultRiskAmount))
@@ -39,19 +36,21 @@ export default function DrawdownStats({ trades, defaultRiskAmount, startingBalan
 
   const totalTradesCount = trades.length;
 
+  const ddHeading = mode === 'trailing' ? 'Max Trailing DD' : 'Max Static DD';
+
   return (
     <div className="bg-white border border-gray-200 rounded-2xl shadow-sm p-4 mb-6">
       <div className="flex items-center justify-between mb-3">
         <h3 className="font-semibold text-gray-900 text-sm">Account Overview</h3>
         <div className="flex gap-1 bg-gray-100 rounded-lg p-0.5">
           <button
-            onClick={() => setMode('static')}
+            onClick={() => onModeChange('static')}
             className={`px-2.5 py-1 rounded-md text-xs font-medium ${mode === 'static' ? 'bg-white shadow-sm text-gray-900' : 'text-gray-500'}`}
           >
             Static
           </button>
           <button
-            onClick={() => setMode('trailing')}
+            onClick={() => onModeChange('trailing')}
             className={`px-2.5 py-1 rounded-md text-xs font-medium ${mode === 'trailing' ? 'bg-white shadow-sm text-gray-900' : 'text-gray-500'}`}
           >
             Trailing
@@ -80,7 +79,7 @@ export default function DrawdownStats({ trades, defaultRiskAmount, startingBalan
         </div>
 
         <div className="bg-gray-50 border border-gray-100 rounded-xl p-3 flex flex-col items-center text-center">
-          <div className="text-xs text-gray-400 mb-1">Current Drawdown</div>
+          <div className="text-xs text-gray-400 mb-1">{ddHeading}</div>
           <BatteryCellIcon percent={maxDrawdownOfLimitPct} size={40} color="indigo" />
           <div className="text-[10px] text-gray-400 mt-1">
             {formatMoney(dd.maxDrawdown).replace(/^\+/, '')}
@@ -89,7 +88,6 @@ export default function DrawdownStats({ trades, defaultRiskAmount, startingBalan
                 {maxDrawdownPctOfBalance.toFixed(2)}% / {maxLossLimitPct}% limit
               </span>
             )}
-            <span className="block">Current {mode} drawdown</span>
           </div>
         </div>
 
