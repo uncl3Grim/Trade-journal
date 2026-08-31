@@ -17,6 +17,7 @@ import WeeklyTotals from '../../components/WeeklyTotals';
 import PropFirmTracker from '../../components/PropFirmTracker';
 import AnimatedOverview from '../../components/AnimatedOverview';
 import EquityCurveChart from '../../components/EquityCurveChart';
+import WeeklyInsights from '../../components/WeeklyInsights';
 import SyncStatusWidget from '../../components/SyncStatusWidget';
 import AppShell from '../../components/AppShell';
 import { computeDailyStats } from '../../lib/dailyStats';
@@ -168,6 +169,7 @@ export default function JournalPage() {
     <AppShell>
       <div className="max-w-6xl mx-auto px-4 py-6">
         <PsychologyQuotes />
+        <WeeklyInsights trades={allTrades} />
 
         <div className="flex items-center justify-between mb-6">
           <h1 className="text-xl font-semibold text-gray-900 dark:text-gray-100">Trade Journal</h1>
