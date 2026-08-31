@@ -16,6 +16,7 @@ import PeriodStatsHeader from '../../components/PeriodStatsHeader';
 import WeeklyTotals from '../../components/WeeklyTotals';
 import PropFirmTracker from '../../components/PropFirmTracker';
 import AnimatedOverview from '../../components/AnimatedOverview';
+import EquityCurveChart from '../../components/EquityCurveChart';
 import SyncStatusWidget from '../../components/SyncStatusWidget';
 import AppShell from '../../components/AppShell';
 import { computeDailyStats } from '../../lib/dailyStats';
@@ -228,6 +229,7 @@ export default function JournalPage() {
             )}
             {activeAccountObj && <PropFirmTracker trades={allTrades} account={activeAccountObj} ddMode={ddMode} />}
             <AnimatedOverview trades={allTrades} account={activeAccountObj} startingBalance={startingBalance} ddMode={ddMode} />
+            <EquityCurveChart trades={allTrades} startingBalance={startingBalance} />
             <DrawdownStats
               trades={allTrades}
               defaultRiskAmount={defaultRiskAmount}
