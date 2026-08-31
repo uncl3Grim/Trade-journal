@@ -8,6 +8,7 @@ import BrokerConnect from '../../components/BrokerConnect';
 import ImportCSV from '../../components/ImportCSV';
 import ShareReport from '../../components/ShareReport';
 import AppShell from '../../components/AppShell';
+import DrawdownLimitSelect from '../../components/DrawdownLimitSelect';
 
 function BalanceEditor({ connection, onSaved }) {
   const [value, setValue] = useState(connection.starting_balance ?? '');
@@ -42,9 +43,10 @@ function BalanceEditor({ connection, onSaved }) {
 }
 
 function RulesEditor({ connection, onSaved }) {
-  const [daily, setDaily] = useState(connection.daily_loss_limit_pct ?? '');
-  const [maxDd, setMaxDd] = useState(connection.max_loss_limit_pct ?? '');
-  const [target, setTarget] = useState(connection.profit_target_pct ?? '');
+  const [daily, setDaily] = useState(connection.daily_loss_limit_pct ?? null);
+  const [maxDd, setMaxDd] = useState(connection.max_loss_limit_pct ?? null);
+  const [target, setTarget] = useState(connection.profit_target_pct ?? null);
+  const [consistency, setConsistency] = useState(connection.consistency_limit_pct ?? null);
   const [saving, setSaving] = useState(false);
   const [open, setOpen] = useState(false);
 
@@ -53,9 +55,10 @@ function RulesEditor({ connection, onSaved }) {
     await supabase
       .from('broker_connections')
       .update({
-        daily_loss_limit_pct: daily === '' ? null : parseFloat(daily),
-        max_loss_limit_pct: maxDd === '' ? null : parseFloat(maxDd),
-        profit_target_pct: target === '' ? null : parseFloat(target),
+        daily_loss_limit_pct: daily,
+        max_loss_limit_pct: maxDd,
+        profit_target_pct: target,
+        consistency_limit_pct: consistency,
       })
       .eq('id', connection.id);
     setSaving(false);
@@ -71,20 +74,12 @@ function RulesEditor({ connection, onSaved }) {
   }
 
   return (
-    <div className="mt-2 grid grid-cols-3 gap-2">
-      <div>
-        <label className="block text-[10px] text-gray-400 mb-1">Daily loss limit (%)</label>
-        <input type="number" step="any" placeholder="e.g. 5" value={daily} onChange={(e) => setDaily(e.target.value)} className="w-full bg-white border border-gray-300 rounded-lg px-2 py-1 text-xs text-gray-900" />
-      </div>
-      <div>
-        <label className="block text-[10px] text-gray-400 mb-1">Max drawdown (%)</label>
-        <input type="number" step="any" placeholder="e.g. 10" value={maxDd} onChange={(e) => setMaxDd(e.target.value)} className="w-full bg-white border border-gray-300 rounded-lg px-2 py-1 text-xs text-gray-900" />
-      </div>
-      <div>
-        <label className="block text-[10px] text-gray-400 mb-1">Profit target (%)</label>
-        <input type="number" step="any" placeholder="e.g. 8" value={target} onChange={(e) => setTarget(e.target.value)} className="w-full bg-white border border-gray-300 rounded-lg px-2 py-1 text-xs text-gray-900" />
-      </div>
-      <button onClick={save} disabled={saving} className="col-span-3 text-xs text-indigo-600 hover:text-indigo-500 disabled:opacity-50 mt-1">
+    <div className="mt-2 grid grid-cols-2 sm:grid-cols-4 gap-2">
+      <DrawdownLimitSelect label="Daily loss limit (%)" value={daily} onChange={setDaily} />
+      <DrawdownLimitSelect label="Max drawdown (%)" value={maxDd} onChange={setMaxDd} />
+      <DrawdownLimitSelect label="Profit target (%)" value={target} onChange={setTarget} />
+      <DrawdownLimitSelect label="Consistency limit (%)" value={consistency} onChange={setConsistency} />
+      <button onClick={save} disabled={saving} className="col-span-2 sm:col-span-4 text-xs text-indigo-600 hover:text-indigo-500 disabled:opacity-50 mt-1">
         {saving ? 'Saving...' : 'Save rules'}
       </button>
     </div>
