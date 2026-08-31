@@ -4,12 +4,12 @@ import { computeDrawdown } from '../lib/drawdown';
 import AnimatedDrawdownTank from './AnimatedDrawdownTank';
 import AnimatedWinRateRing from './AnimatedWinRateRing';
 
-export default function AnimatedOverview({ trades, account, startingBalance }) {
+export default function AnimatedOverview({ trades, account, startingBalance, ddMode = 'trailing' }) {
   const closed = trades.filter((t) => t.exit_price !== null && t.exit_price !== undefined);
   const wins = closed.filter((t) => Number(t.pnl) > 0);
   const winRate = closed.length ? (wins.length / closed.length) * 100 : 0;
 
-  const dd = computeDrawdown(trades, 'trailing');
+  const dd = computeDrawdown(trades, ddMode);
 
   // Current drawdown as % of the account's starting balance
   const currentDdPctOfBalance =
