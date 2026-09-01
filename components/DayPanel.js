@@ -5,6 +5,7 @@ import { format } from 'date-fns';
 import { supabase } from '../lib/supabaseClient';
 import { rMultiple } from '../lib/tradeMath';
 import { formatMoney } from '../lib/format';
+import { getTradeSession } from '../lib/session';
 import TradeScreenshot from './TradeScreenshot';
 import TradeSummaryCard from './TradeSummaryCard';
 
@@ -312,8 +313,12 @@ export default function DayPanel({
                     </button>
                   </div>
                 </div>
-                {(t.tags?.length > 0 || t.emotion || t.rule_adherence || t.setup_type) && (
-                  <div className="flex flex-wrap gap-1 mt-2">
+                <div className="flex flex-wrap gap-1 mt-2">
+                    {getTradeSession(t.entry_time) && (
+                      <span className="text-[10px] px-2 py-0.5 rounded-full bg-blue-100 text-blue-700">
+                        {getTradeSession(t.entry_time)}
+                      </span>
+                    )}
                     {t.emotion && (
                       <span className="text-[10px] px-2 py-0.5 rounded-full bg-purple-100 text-purple-700">
                         {t.emotion}
@@ -339,7 +344,6 @@ export default function DayPanel({
                       </span>
                     ))}
                   </div>
-                )}
                 {t.notes && <p className="text-xs text-gray-500 mt-2 whitespace-pre-wrap">{t.notes}</p>}
                 <TradeScreenshot trade={t} userId={userId} onUpdated={onChanged} />
               </div>
