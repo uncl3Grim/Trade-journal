@@ -13,6 +13,22 @@ import AppShell from '../../components/AppShell';
 
 const DEFAULT_ACCOUNT_FILTER = { allSelected: true, selectedIds: [], includeManual: false };
 
+// Same values used in DayPanel.js — kept in sync so a trade tagged here
+// looks identical to one tagged from the day view.
+const EMOTIONS = ['disciplined', 'confident', 'hesitant', 'fomo', 'revenge', 'bored', 'anxious'];
+const RULE_OPTIONS = [
+  { value: 'followed_plan', label: 'Followed plan' },
+  { value: 'impulse_entry', label: 'Impulse entry' },
+  { value: 'moved_stop', label: 'Moved stop' },
+  { value: 'oversized', label: 'Oversized' },
+  { value: 'other', label: 'Other deviation' },
+];
+const BULK_FIELDS = [
+  { value: 'rule_adherence', label: 'Rule adherence' },
+  { value: 'emotion', label: 'Emotion' },
+  { value: 'setup_type', label: 'Setup type' },
+];
+
 export default function TradesPage() {
   const router = useRouter();
   const [user, setUser] = useState(null);
@@ -22,6 +38,10 @@ export default function TradesPage() {
   const [accountFilter, setAccountFilter] = useState(DEFAULT_ACCOUNT_FILTER);
   const [loading, setLoading] = useState(true);
   const [selectedTrade, setSelectedTrade] = useState(null);
+  const [selectedIds, setSelectedIds] = useState([]);
+  const [bulkField, setBulkField] = useState('rule_adherence');
+  const [bulkValue, setBulkValue] = useState('');
+  const [applying, setApplying] = useState(false);
 
   useEffect(() => {
     try {
@@ -66,6 +86,39 @@ export default function TradesPage() {
     load();
   }, [load]);
 
+  // Selection refers to rows currently on screen — clear it whenever the
+  // underlying trade list changes so we never act on stale ids.
+  useEffect(() => {
+    setSelectedIds([]);
+  }, [trades]);
+
+  function toggleOne(id) {
+    setSelectedIds((prev) => (prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]));
+  }
+
+  function toggleAll() {
+    setSelectedIds((prev) => (prev.length === trades.length ? [] : trades.map((t) => t.id)));
+  }
+
+  async function applyBulkTag() {
+    if (!bulkValue || selectedIds.length === 0) return;
+    setApplying(true);
+    const { error } = await supabase
+      .from('trades')
+      .update({ [bulkField]: bulkValue })
+      .in('id', selectedIds);
+    setApplying(false);
+    if (error) {
+      alert(`Failed to apply tag: ${error.message}`);
+      return;
+    }
+    setTrades((prev) =>
+      prev.map((t) => (selectedIds.includes(t.id) ? { ...t, [bulkField]: bulkValue } : t))
+    );
+    setSelectedIds([]);
+    setBulkValue('');
+  }
+
   function accountName(id) {
     if (!id) return 'Manual';
     const a = accounts.find((x) => x.id === id);
@@ -90,6 +143,78 @@ export default function TradesPage() {
           </div>
         </div>
 
+        {selectedIds.length > 0 && (
+          <div className="sticky top-2 z-10 bg-indigo-600 text-white rounded-2xl shadow-lg px-4 py-3 mb-4 flex flex-wrap items-center gap-3">
+            <span className="text-sm font-medium">{selectedIds.length} selected</span>
+
+            <select
+              value={bulkField}
+              onChange={(e) => {
+                setBulkField(e.target.value);
+                setBulkValue('');
+              }}
+              className="text-sm rounded-lg px-2 py-1 text-gray-900"
+            >
+              {BULK_FIELDS.map((f) => (
+                <option key={f.value} value={f.value}>
+                  {f.label}
+                </option>
+              ))}
+            </select>
+
+            {bulkField === 'rule_adherence' && (
+              <select
+                value={bulkValue}
+                onChange={(e) => setBulkValue(e.target.value)}
+                className="text-sm rounded-lg px-2 py-1 text-gray-900"
+              >
+                <option value="">Choose a value…</option>
+                {RULE_OPTIONS.map((o) => (
+                  <option key={o.value} value={o.value}>
+                    {o.label}
+                  </option>
+                ))}
+              </select>
+            )}
+
+            {bulkField === 'emotion' && (
+              <select
+                value={bulkValue}
+                onChange={(e) => setBulkValue(e.target.value)}
+                className="text-sm rounded-lg px-2 py-1 text-gray-900"
+              >
+                <option value="">Choose a value…</option>
+                {EMOTIONS.map((em) => (
+                  <option key={em} value={em}>
+                    {em}
+                  </option>
+                ))}
+              </select>
+            )}
+
+            {bulkField === 'setup_type' && (
+              <input
+                placeholder="e.g. breakout, reversal, liquidity sweep"
+                value={bulkValue}
+                onChange={(e) => setBulkValue(e.target.value)}
+                className="text-sm rounded-lg px-2 py-1 text-gray-900"
+              />
+            )}
+
+            <button
+              onClick={applyBulkTag}
+              disabled={!bulkValue || applying}
+              className="text-sm bg-white text-indigo-600 font-medium px-3 py-1 rounded-lg disabled:opacity-50"
+            >
+              {applying ? 'Applying…' : `Apply to ${selectedIds.length} trade${selectedIds.length !== 1 ? 's' : ''}`}
+            </button>
+
+            <button onClick={() => setSelectedIds([])} className="text-sm text-indigo-100 hover:text-white ml-auto">
+              Clear selection
+            </button>
+          </div>
+        )}
+
         {loading ? (
           <p className="text-gray-400 text-sm">Loading trades...</p>
         ) : trades.length === 0 ? (
@@ -101,6 +226,14 @@ export default function TradesPage() {
             <table className="w-full text-sm">
               <thead>
                 <tr className="border-b border-gray-100 text-left text-xs text-gray-400">
+                  <th className="px-4 py-3 font-medium">
+                    <input
+                      type="checkbox"
+                      checked={selectedIds.length === trades.length && trades.length > 0}
+                      onChange={toggleAll}
+                      className="rounded"
+                    />
+                  </th>
                   <th className="px-4 py-3 font-medium">Date</th>
                   <th className="px-4 py-3 font-medium">Symbol</th>
                   <th className="px-4 py-3 font-medium">Side</th>
@@ -119,8 +252,18 @@ export default function TradesPage() {
                     <tr
                       key={t.id}
                       onClick={() => setSelectedTrade(t)}
-                      className="border-b border-gray-50 last:border-0 cursor-pointer hover:bg-gray-50"
+                      className={`border-b border-gray-50 last:border-0 cursor-pointer hover:bg-gray-50 ${
+                        selectedIds.includes(t.id) ? 'bg-indigo-50/50' : ''
+                      }`}
                     >
+                      <td className="px-4 py-3" onClick={(e) => e.stopPropagation()}>
+                        <input
+                          type="checkbox"
+                          checked={selectedIds.includes(t.id)}
+                          onChange={() => toggleOne(t.id)}
+                          className="rounded"
+                        />
+                      </td>
                       <td className="px-4 py-3 whitespace-nowrap text-gray-700">
                         {format(new Date(t.entry_time), 'MMM d, yyyy')}
                       </td>
