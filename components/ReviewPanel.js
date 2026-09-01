@@ -1,6 +1,7 @@
 'use client';
 
 import SetupStatsCard from './SetupStatsCard';
+import SessionStatsCard from './SessionStatsCard';
 import TradeSummaryStats from './TradeSummaryStats';
 import { useState } from 'react';
 import {
@@ -214,6 +215,7 @@ export default function ReviewPanel({ trades, defaultRiskAmount, mode = 'dollar'
       <PsychologyInsights trades={trades} />
       <RuleAdherenceCard trades={trades} />
     <SetupStatsCard trades={trades} />
+      <SessionStatsCard trades={trades} />
       <TraderScoreCard trades={trades} />
       <DailyPnLBarChart trades={trades} />
       <AdvancedStats trades={trades} />
