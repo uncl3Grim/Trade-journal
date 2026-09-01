@@ -27,6 +27,7 @@ const BULK_FIELDS = [
   { value: 'rule_adherence', label: 'Rule adherence' },
   { value: 'emotion', label: 'Emotion' },
   { value: 'setup_type', label: 'Setup type' },
+  { value: 'strategy_id', label: 'Strategy' },
 ];
 
 export default function TradesPage() {
@@ -34,6 +35,7 @@ export default function TradesPage() {
   const [user, setUser] = useState(null);
   const [trades, setTrades] = useState([]);
   const [accounts, setAccounts] = useState([]);
+  const [strategies, setStrategies] = useState([]);
   const [defaultRiskAmount, setDefaultRiskAmount] = useState(null);
   const [accountFilter, setAccountFilter] = useState(DEFAULT_ACCOUNT_FILTER);
   const [loading, setLoading] = useState(true);
@@ -64,6 +66,11 @@ export default function TradesPage() {
       .select('id, broker_server, mt5_login')
       .order('created_at', { ascending: true })
       .then(({ data }) => setAccounts(data || []));
+    supabase
+      .from('strategies')
+      .select('*')
+      .order('created_at', { ascending: true })
+      .then(({ data }) => setStrategies(data || []));
     supabase
       .from('user_settings')
       .select('default_risk_amount')
@@ -199,6 +206,21 @@ export default function TradesPage() {
                 onChange={(e) => setBulkValue(e.target.value)}
                 className="text-sm rounded-lg px-2 py-1 text-gray-900"
               />
+            )}
+
+            {bulkField === 'strategy_id' && (
+              <select
+                value={bulkValue}
+                onChange={(e) => setBulkValue(e.target.value)}
+                className="text-sm rounded-lg px-2 py-1 text-gray-900"
+              >
+                <option value="">Choose a strategy…</option>
+                {strategies.map((s) => (
+                  <option key={s.id} value={s.id}>
+                    {s.name}
+                  </option>
+                ))}
+              </select>
             )}
 
             <button
