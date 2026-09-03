@@ -3,7 +3,12 @@
 import { useState, useEffect, useCallback } from 'react';
 import Papa from 'papaparse';
 import { supabase } from '../lib/supabaseClient';
-import { detectFormat, convertOrderLevelRows, convertMyfxbookStatementRows } from '../lib/csvFormats';
+import {
+  detectFormat,
+  convertOrderLevelRows,
+  convertMyfxbookStatementRows,
+  convertRMultipleModelRows,
+} from '../lib/csvFormats';
 
 // Postgres returns timestamps in a different string format than what we
 // send in (e.g. "+00:00" vs ".000Z") — same instant, different text. Compare
@@ -20,6 +25,10 @@ function toISO(dateStr) {
   return d.toISOString();
 }
 
+// Formats where entry_time/exit_time are already full ISO strings produced
+// by the converter itself (so they should NOT be re-parsed with toISO).
+const RAW_DATE_FORMATS = ['order_level', 'myfxbook_statement', 'r_multiple_model'];
+
 export default function ImportCSV({ userId, onImported }) {
   const [status, setStatus] = useState('');
   const [busy, setBusy] = useState(false);
@@ -27,6 +36,12 @@ export default function ImportCSV({ userId, onImported }) {
   const [selectedAccountId, setSelectedAccountId] = useState('');
   const [creatingNew, setCreatingNew] = useState(false);
   const [newAccountName, setNewAccountName] = useState('');
+
+  // Set only for formats that need extra input (currently: R-multiple model
+  // backtests, which have no dollar values at all) before we can actually
+  // build and save trades.
+  const [pendingRMultiple, setPendingRMultiple] = useState(null); // { rawRows, accountId, sampleR }
+  const [dollarPerR, setDollarPerR] = useState('');
 
   const loadCsvAccounts = useCallback(async () => {
     if (!userId) return;
@@ -80,11 +95,140 @@ export default function ImportCSV({ userId, onImported }) {
     return selectedAccountId || null;
   }
 
+  // Shared save path: takes already-normalized rows (fields: symbol,
+  // direction, entry_price, exit_price, size, entry_time, exit_time, pnl,
+  // stop_loss, take_profit, risk_amount, notes, ticket) and does the
+  // validate -> lookup-existing -> insert/update dance, then reports status.
+  async function finalizeImport(normalizedRows, usesRawDates, accountId, detected) {
+    let skipped = 0;
+    const trades = [];
+
+    for (const r of normalizedRows) {
+      if (!r.symbol || !r.entry_price) {
+        skipped++;
+        continue;
+      }
+      const entryTime = usesRawDates ? r.entry_time : toISO(r.entry_time) || new Date().toISOString();
+      const exitTime = usesRawDates ? r.exit_time || null : r.exit_time ? toISO(r.exit_time) : null;
+
+      const entryPrice = parseFloat(r.entry_price);
+      if (isNaN(entryPrice) || !entryTime) {
+        skipped++;
+        continue;
+      }
+
+      trades.push({
+        user_id: userId,
+        symbol: String(r.symbol).toUpperCase().trim(),
+        direction: (r.direction || 'long').toString().toLowerCase().trim() === 'short' ? 'short' : 'long',
+        entry_price: entryPrice,
+        exit_price: r.exit_price !== '' && r.exit_price !== null && r.exit_price !== undefined ? parseFloat(r.exit_price) : null,
+        size: parseFloat(r.size || 0) || 0,
+        entry_time: entryTime,
+        exit_time: exitTime,
+        pnl: r.pnl ? parseFloat(r.pnl) : 0,
+        stop_loss: r.stop_loss ? parseFloat(r.stop_loss) : null,
+        take_profit: r.take_profit ? parseFloat(r.take_profit) : null,
+        ...(r.risk_amount ? { risk_amount: parseFloat(r.risk_amount) } : {}),
+        ...(r.notes ? { notes: r.notes } : {}),
+        ...(r.ticket ? { broker_ticket: String(r.ticket) } : {}),
+        source: 'csv_import',
+        broker_connection_id: accountId,
+      });
+    }
+
+    if (trades.length === 0) {
+      setStatus(
+        `No valid rows found (${skipped} skipped, detected format: ${detected}). Check your CSV matches the template or a supported broker export.`
+      );
+      setBusy(false);
+      return;
+    }
+
+    // A trade's own broker ticket is the true identity when present;
+    // otherwise symbol+time is the identity. The table enforces BOTH
+    // as separate unique constraints, so we can't resolve conflicts
+    // with a single ON CONFLICT target — a ticketed row can silently
+    // collide with an existing ticket-less row (or vice versa) on the
+    // OTHER constraint, which ON CONFLICT can't catch. Instead, look
+    // up existing matches first and split into explicit insert/update.
+    let existingQuery = supabase
+      .from('trades')
+      .select('id, symbol, entry_time, broker_ticket')
+      .eq('user_id', userId);
+    existingQuery = accountId
+      ? existingQuery.eq('broker_connection_id', accountId)
+      : existingQuery.is('broker_connection_id', null);
+    const { data: existingRows, error: lookupError } = await existingQuery;
+    if (lookupError) {
+      setStatus(`Error saving to database: ${lookupError.message}`);
+      setBusy(false);
+      return;
+    }
+
+    const byTicket = new Map();
+    const bySymbolTime = new Map();
+    for (const row of existingRows || []) {
+      if (row.broker_ticket) byTicket.set(row.broker_ticket, row.id);
+      bySymbolTime.set(`${row.symbol}||${timeKey(row.entry_time)}`, row.id);
+    }
+
+    // Collapse exact duplicates within the file itself (same resolved
+    // identity), keeping the last occurrence — a row can only be
+    // inserted/updated once per statement.
+    const seen = new Map();
+    for (const t of trades) {
+      const existingId =
+        (t.broker_ticket && byTicket.get(t.broker_ticket)) ||
+        bySymbolTime.get(`${t.symbol}||${timeKey(t.entry_time)}`) ||
+        null;
+      const key = existingId ? `id:${existingId}` : `new:${t.broker_ticket || `${t.symbol}||${timeKey(t.entry_time)}`}`;
+      seen.set(key, existingId ? { ...t, id: existingId } : t);
+    }
+    const finalTrades = Array.from(seen.values());
+    const collapsedCount = trades.length - finalTrades.length;
+
+    const toInsert = finalTrades.filter((t) => !t.id);
+    const toUpdate = finalTrades.filter((t) => t.id);
+
+    let affectedCount = 0;
+    let dbError = null;
+
+    if (toInsert.length) {
+      const { error, data } = await supabase.from('trades').insert(toInsert).select();
+      if (error) dbError = error;
+      else affectedCount += data?.length ?? toInsert.length;
+    }
+
+    if (!dbError && toUpdate.length) {
+      const { error, data } = await supabase
+        .from('trades')
+        .upsert(toUpdate, { onConflict: 'id' })
+        .select();
+      if (error) dbError = error;
+      else affectedCount += data?.length ?? toUpdate.length;
+    }
+
+    setBusy(false);
+    if (dbError) {
+      setStatus(`Error saving to database: ${dbError.message}`);
+    } else {
+      const formatLabel = detected !== 'template' ? ` (auto-converted, format: ${detected})` : '';
+      setStatus(
+        `${affectedCount} trade(s) imported or updated${formatLabel}.${
+          collapsedCount > 0 ? ` ${collapsedCount} exact duplicate row(s) in the file were merged.` : ''
+        }${skipped > 0 ? ` ${skipped} row(s) skipped for missing/invalid data.` : ''}`
+      );
+      onImported?.();
+    }
+  }
+
   function handleFile(e) {
     const file = e.target.files[0];
     if (!file) return;
     setBusy(true);
     setStatus('Parsing...');
+    setPendingRMultiple(null);
 
     Papa.parse(file, {
       header: true,
@@ -95,6 +239,16 @@ export default function ImportCSV({ userId, onImported }) {
           const rawRows = results.data;
           const headers = results.meta.fields || [];
           const detected = detectFormat(headers);
+
+          // This format has no dollar values at all — pause and ask for a
+          // $-per-1R value before we can build any trades from it.
+          if (detected === 'r_multiple_model') {
+            setBusy(false);
+            setStatus('This file only has R-multiples, no dollar amounts — enter a $ value per 1R below to continue.');
+            setPendingRMultiple({ rawRows, accountId });
+            e.target.value = '';
+            return;
+          }
 
           let normalizedRows;
           if (detected === 'order_level') {
@@ -109,127 +263,8 @@ export default function ImportCSV({ userId, onImported }) {
             });
           }
 
-          const usesRawDates = detected === 'order_level' || detected === 'myfxbook_statement';
-
-          let skipped = 0;
-          const trades = [];
-
-          for (const r of normalizedRows) {
-            if (!r.symbol || !r.entry_price) {
-              skipped++;
-              continue;
-            }
-            const entryTime = usesRawDates ? r.entry_time : toISO(r.entry_time) || new Date().toISOString();
-            const exitTime = usesRawDates ? r.exit_time || null : r.exit_time ? toISO(r.exit_time) : null;
-
-            const entryPrice = parseFloat(r.entry_price);
-            if (isNaN(entryPrice) || !entryTime) {
-              skipped++;
-              continue;
-            }
-
-            trades.push({
-              user_id: userId,
-              symbol: String(r.symbol).toUpperCase().trim(),
-              direction: (r.direction || 'long').toString().toLowerCase().trim() === 'short' ? 'short' : 'long',
-              entry_price: entryPrice,
-              exit_price: r.exit_price ? parseFloat(r.exit_price) : null,
-              size: parseFloat(r.size || 0) || 0,
-              entry_time: entryTime,
-              exit_time: exitTime,
-              pnl: r.pnl ? parseFloat(r.pnl) : 0,
-              stop_loss: r.stop_loss ? parseFloat(r.stop_loss) : null,
-              take_profit: r.take_profit ? parseFloat(r.take_profit) : null,
-              ...(r.notes ? { notes: r.notes } : {}),
-              ...(r.ticket ? { broker_ticket: String(r.ticket) } : {}),
-              source: 'csv_import',
-              broker_connection_id: accountId,
-            });
-          }
-
-          if (trades.length === 0) {
-            setStatus(
-              `No valid rows found (${skipped} skipped, detected format: ${detected}). Check your CSV matches the template or a supported broker export.`
-            );
-            setBusy(false);
-            e.target.value = '';
-            return;
-          }
-
-          // A trade's own broker ticket is the true identity when present;
-          // otherwise symbol+time is the identity. The table enforces BOTH
-          // as separate unique constraints, so we can't resolve conflicts
-          // with a single ON CONFLICT target — a ticketed row can silently
-          // collide with an existing ticket-less row (or vice versa) on the
-          // OTHER constraint, which ON CONFLICT can't catch. Instead, look
-          // up existing matches first and split into explicit insert/update.
-          let existingQuery = supabase
-            .from('trades')
-            .select('id, symbol, entry_time, broker_ticket')
-            .eq('user_id', userId);
-          existingQuery = accountId
-            ? existingQuery.eq('broker_connection_id', accountId)
-            : existingQuery.is('broker_connection_id', null);
-          const { data: existingRows, error: lookupError } = await existingQuery;
-          if (lookupError) throw new Error(lookupError.message);
-
-          const byTicket = new Map();
-          const bySymbolTime = new Map();
-          for (const row of existingRows || []) {
-            if (row.broker_ticket) byTicket.set(row.broker_ticket, row.id);
-            bySymbolTime.set(`${row.symbol}||${timeKey(row.entry_time)}`, row.id);
-          }
-
-          // Collapse exact duplicates within the file itself (same resolved
-          // identity), keeping the last occurrence — a row can only be
-          // inserted/updated once per statement.
-          const seen = new Map();
-          for (const t of trades) {
-            const existingId =
-              (t.broker_ticket && byTicket.get(t.broker_ticket)) ||
-              bySymbolTime.get(`${t.symbol}||${timeKey(t.entry_time)}`) ||
-              null;
-            const key = existingId ? `id:${existingId}` : `new:${t.broker_ticket || `${t.symbol}||${timeKey(t.entry_time)}`}`;
-            seen.set(key, existingId ? { ...t, id: existingId } : t);
-          }
-          const finalTrades = Array.from(seen.values());
-          const collapsedCount = trades.length - finalTrades.length;
-
-          const toInsert = finalTrades.filter((t) => !t.id);
-          const toUpdate = finalTrades.filter((t) => t.id);
-
-          let affectedCount = 0;
-          let dbError = null;
-
-          if (toInsert.length) {
-            const { error, data } = await supabase.from('trades').insert(toInsert).select();
-            if (error) dbError = error;
-            else affectedCount += data?.length ?? toInsert.length;
-          }
-
-          if (!dbError && toUpdate.length) {
-            const { error, data } = await supabase
-              .from('trades')
-              .upsert(toUpdate, { onConflict: 'id' })
-              .select();
-            if (error) dbError = error;
-            else affectedCount += data?.length ?? toUpdate.length;
-          }
-
-          setBusy(false);
-          if (dbError) {
-            setStatus(`Error saving to database: ${dbError.message}`);
-          } else {
-            const formatLabel = detected !== 'template' ? ` (auto-converted, format: ${detected})` : '';
-            setStatus(
-              `${affectedCount} trade(s) imported or updated${formatLabel}.${
-                collapsedCount > 0
-                  ? ` ${collapsedCount} exact duplicate row(s) in the file were merged.`
-                  : ''
-              }${skipped > 0 ? ` ${skipped} row(s) skipped for missing/invalid data.` : ''}`
-            );
-            onImported?.();
-          }
+          const usesRawDates = RAW_DATE_FORMATS.includes(detected);
+          await finalizeImport(normalizedRows, usesRawDates, accountId, detected);
         } catch (err) {
           setBusy(false);
           setStatus(`Error: ${err.message}`);
@@ -241,6 +276,21 @@ export default function ImportCSV({ userId, onImported }) {
         setStatus(`Error parsing file: ${err.message}`);
       },
     });
+  }
+
+  async function confirmRMultipleImport() {
+    if (!pendingRMultiple || !dollarPerR) return;
+    setBusy(true);
+    setStatus('Importing...');
+    try {
+      const normalizedRows = convertRMultipleModelRows(pendingRMultiple.rawRows, dollarPerR);
+      await finalizeImport(normalizedRows, true, pendingRMultiple.accountId, 'r_multiple_model');
+    } catch (err) {
+      setBusy(false);
+      setStatus(`Error: ${err.message}`);
+    }
+    setPendingRMultiple(null);
+    setDollarPerR('');
   }
 
   return (
@@ -310,6 +360,43 @@ export default function ImportCSV({ userId, onImported }) {
           Download template
         </button>
       </div>
+
+      {pendingRMultiple && (
+        <div className="mt-3 bg-indigo-50 border border-indigo-200 rounded-xl p-3">
+          <label className="block text-xs text-indigo-700 mb-1">
+            Dollar value per 1R (used to convert every trade's R-multiple into a dollar P&L)
+          </label>
+          <div className="flex gap-2">
+            <input
+              type="number"
+              step="any"
+              autoFocus
+              placeholder="e.g. 200"
+              value={dollarPerR}
+              onChange={(e) => setDollarPerR(e.target.value)}
+              className="flex-1 bg-white border border-indigo-300 rounded-lg px-3 py-2 text-sm text-gray-900"
+            />
+            <button
+              onClick={confirmRMultipleImport}
+              disabled={!dollarPerR || busy}
+              className="bg-indigo-600 hover:bg-indigo-500 disabled:opacity-50 text-white rounded-lg px-4 py-2 text-sm font-medium"
+            >
+              {busy ? 'Importing…' : 'Import'}
+            </button>
+            <button
+              onClick={() => {
+                setPendingRMultiple(null);
+                setDollarPerR('');
+                setStatus('');
+              }}
+              className="px-3 rounded-lg border border-gray-300 text-sm text-gray-600"
+            >
+              Cancel
+            </button>
+          </div>
+        </div>
+      )}
+
       {status && <p className="text-sm text-gray-500 mt-2">{status}</p>}
     </div>
   );
