@@ -2,7 +2,7 @@
 
 import { useEffect, useState, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
-import { format, addMonths, subMonths, startOfMonth, endOfMonth, startOfWeek, endOfWeek } from 'date-fns';
+import { format, addMonths, subMonths, addYears, subYears, startOfMonth, endOfMonth, startOfWeek, endOfWeek, isSameMonth } from 'date-fns';
 import { supabase } from '../../lib/supabaseClient';
 import Calendar from '../../components/Calendar';
 import StatsBar from '../../components/StatsBar';
@@ -21,7 +21,10 @@ import WeeklyInsights from '../../components/WeeklyInsights';
 import SyncStatusWidget from '../../components/SyncStatusWidget';
 import AppShell from '../../components/AppShell';
 import { computeDailyStats } from '../../lib/dailyStats';
+import YearCalendar from '../../components/YearCalendar';
 import { applyAccountFilter, computeActiveAccountId } from '../../lib/accountFilter';
+import { rMultiple } from '../../lib/tradeMath';
+import { formatMoney } from '../../lib/format';
 
 const DEFAULT_ACCOUNT_FILTER = { allSelected: true, selectedIds: [], includeManual: false };
 
@@ -39,6 +42,7 @@ export default function JournalPage() {
   const [accountBalance, setAccountBalance] = useState(null);
   const [mode, setMode] = useState('dollar');
   const [ddMode, setDdMode] = useState('trailing');
+  const [calendarView, setCalendarView] = useState('month');
   const [accountFilter, setAccountFilter] = useState(DEFAULT_ACCOUNT_FILTER);
 
   useEffect(() => {
@@ -49,6 +53,8 @@ export default function JournalPage() {
       if (savedMode) setMode(savedMode);
       const savedDdMode = localStorage.getItem('tj_dd_mode');
       if (savedDdMode) setDdMode(savedDdMode);
+      const savedView = localStorage.getItem('tj_calendar_view');
+      if (savedView) setCalendarView(savedView);
     } catch {}
   }, []);
 
@@ -69,6 +75,12 @@ export default function JournalPage() {
       localStorage.setItem('tj_dd_mode', ddMode);
     } catch {}
   }, [ddMode]);
+
+  useEffect(() => {
+    try {
+      localStorage.setItem('tj_calendar_view', calendarView);
+    } catch {}
+  }, [calendarView]);
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
@@ -165,6 +177,23 @@ export default function JournalPage() {
   const startingBalance = activeAccountObj ? activeAccountObj.starting_balance : manualOnly ? accountBalance : null;
   const balanceApplicable = !!activeAccountObj || manualOnly;
 
+  // Stats scoped to only the currently displayed month (trades includes
+  // some padding days from adjacent months for the calendar grid, so we
+  // filter those out here rather than reusing the array as-is).
+  const monthClosedTrades = trades.filter(
+    (t) => t.exit_price !== null && t.exit_price !== undefined && t.entry_time && isSameMonth(new Date(t.entry_time), month)
+  );
+  const yearTrades = allTrades.filter(
+    (t) => t.entry_time && new Date(t.entry_time).getFullYear() === month.getFullYear()
+  );
+  const yearDailyStats = computeDailyStats(yearTrades, defaultRiskAmount);
+
+  const monthPnl = monthClosedTrades.reduce((sum, t) => sum + Number(t.pnl || 0), 0);
+  const monthR = monthClosedTrades
+    .map((t) => rMultiple(t, defaultRiskAmount))
+    .filter((r) => r !== null)
+    .reduce((sum, r) => sum + r, 0);
+
   return (
     <AppShell>
       <div className="max-w-6xl mx-auto px-4 py-6">
@@ -246,31 +275,90 @@ export default function JournalPage() {
 
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mt-6">
               <div className="lg:col-span-2">
-                <div className="flex items-center justify-between mb-4">
-                  <button
-                    onClick={() => setMonth(subMonths(month, 1))}
-                    className="px-3 py-1 rounded-xl bg-white dark:bg-[#15151b] border border-gray-200 dark:border-gray-800 hover:bg-gray-50 dark:hover:bg-gray-800 text-sm text-gray-700 dark:text-gray-200"
-                  >
-                    ← Prev
-                  </button>
-                  <h2 className="font-medium text-gray-900 dark:text-gray-100">{format(month, 'MMMM yyyy')}</h2>
-                  <button
-                    onClick={() => setMonth(addMonths(month, 1))}
-                    className="px-3 py-1 rounded-xl bg-white dark:bg-[#15151b] border border-gray-200 dark:border-gray-800 hover:bg-gray-50 dark:hover:bg-gray-800 text-sm text-gray-700 dark:text-gray-200"
-                  >
-                    Next →
-                  </button>
+                <div className="flex items-center justify-end mb-3">
+                  <div className="flex gap-1 bg-gray-100 rounded-lg p-0.5">
+                    <button
+                      onClick={() => setCalendarView('month')}
+                      className={`px-3 py-1 rounded-md text-xs font-medium ${calendarView === 'month' ? 'bg-white shadow-sm text-gray-900' : 'text-gray-500'}`}
+                    >
+                      Month
+                    </button>
+                    <button
+                      onClick={() => setCalendarView('year')}
+                      className={`px-3 py-1 rounded-md text-xs font-medium ${calendarView === 'year' ? 'bg-white shadow-sm text-gray-900' : 'text-gray-500'}`}
+                    >
+                      Year
+                    </button>
+                  </div>
                 </div>
-                {loading ? (
-                  <p className="text-gray-400 text-sm">Loading trades...</p>
+
+                {calendarView === 'month' ? (
+                  <>
+                    <div className="flex items-center justify-between mb-4 flex-wrap gap-2">
+                      <button
+                        onClick={() => setMonth(subMonths(month, 1))}
+                        className="px-3 py-1 rounded-xl bg-white dark:bg-[#15151b] border border-gray-200 dark:border-gray-800 hover:bg-gray-50 dark:hover:bg-gray-800 text-sm text-gray-700 dark:text-gray-200"
+                      >
+                        ← Prev
+                      </button>
+
+                      <div className="relative flex items-center gap-2 cursor-pointer">
+                        <input
+                          type="month"
+                          value={format(month, 'yyyy-MM')}
+                          onChange={(e) => {
+                            if (e.target.value) setMonth(new Date(`${e.target.value}-01T00:00:00`));
+                          }}
+                          className="absolute inset-0 opacity-0 cursor-pointer w-full h-full"
+                          aria-label="Jump to month"
+                        />
+                        <h2 className="font-medium text-gray-900 dark:text-gray-100 whitespace-nowrap pointer-events-none">
+                          {format(month, 'MMMM yyyy')}
+                        </h2>
+                        {monthClosedTrades.length > 0 && (
+                          <span
+                            className={`text-xs font-medium whitespace-nowrap pointer-events-none ${
+                              monthPnl >= 0 ? 'text-green-600' : 'text-red-500'
+                            }`}
+                          >
+                            {monthPnl >= 0 ? '+' : ''}
+                            {formatMoney(monthPnl)} · {monthR >= 0 ? '+' : ''}
+                            {monthR.toFixed(2)}R
+                          </span>
+                        )}
+                      </div>
+
+                      <button
+                        onClick={() => setMonth(addMonths(month, 1))}
+                        className="px-3 py-1 rounded-xl bg-white dark:bg-[#15151b] border border-gray-200 dark:border-gray-800 hover:bg-gray-50 dark:hover:bg-gray-800 text-sm text-gray-700 dark:text-gray-200"
+                      >
+                        Next →
+                      </button>
+                    </div>
+                    {loading ? (
+                      <p className="text-gray-400 text-sm">Loading trades...</p>
+                    ) : (
+                      <Calendar
+                        month={month}
+                        dailyStats={dailyStats}
+                        onDayClick={(day) => router.push(`/journal/day/${format(day, 'yyyy-MM-dd')}`)}
+                        selectedDate={null}
+                        mode={mode}
+                        accountBalance={startingBalance}
+                      />
+                    )}
+                  </>
                 ) : (
-                  <Calendar
-                    month={month}
-                    dailyStats={dailyStats}
+                  <YearCalendar
+                    year={month.getFullYear()}
+                    dailyStats={yearDailyStats}
+                    onMonthClick={(d) => {
+                      setMonth(d);
+                      setCalendarView('month');
+                    }}
                     onDayClick={(day) => router.push(`/journal/day/${format(day, 'yyyy-MM-dd')}`)}
-                    selectedDate={null}
-                    mode={mode}
-                    accountBalance={startingBalance}
+                    onPrevYear={() => setMonth(subYears(month, 1))}
+                    onNextYear={() => setMonth(addYears(month, 1))}
                   />
                 )}
               </div>
