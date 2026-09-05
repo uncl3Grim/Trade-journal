@@ -1,6 +1,6 @@
 'use client';
 
-import { startOfMonth, endOfMonth, eachDayOfInterval, isSameDay, format } from 'date-fns';
+import { startOfMonth, endOfMonth, eachDayOfInterval, isSameDay, format, isValid } from 'date-fns';
 import { summarizePeriod } from '../lib/periodStats';
 import { rMultiple } from '../lib/tradeMath';
 import { formatMoney } from '../lib/format';
@@ -14,10 +14,13 @@ function fmt(v, mode, accountBalance) {
 }
 
 // `month` is the month currently selected on the calendar (not necessarily
-// today's real month) — both cards below are scoped to it.
+// today's real month) — both cards below are scoped to it. Falls back to
+// today if `month` is ever missing or invalid, so this can never crash the
+// build/render.
 export default function PeriodStatsHeader({ trades, month, mode, defaultRiskAmount, accountBalance }) {
-  const rangeStart = startOfMonth(month);
-  const rangeEnd = endOfMonth(month);
+  const safeMonth = month instanceof Date && isValid(month) ? month : new Date();
+  const rangeStart = startOfMonth(safeMonth);
+  const rangeEnd = endOfMonth(safeMonth);
   const monthly = summarizePeriod(trades, rangeStart, rangeEnd, defaultRiskAmount);
   const monthValue = mode === 'r' ? monthly.totalR : monthly.totalPnl;
 
@@ -48,7 +51,7 @@ export default function PeriodStatsHeader({ trades, month, mode, defaultRiskAmou
   return (
     <div className="grid grid-cols-2 gap-3 mb-4">
       <div className="bg-white border border-gray-200 rounded-2xl shadow-sm p-3">
-        <div className="text-xs text-gray-400 mb-1">{format(month, 'MMMM yyyy')}</div>
+        <div className="text-xs text-gray-400 mb-1">{format(safeMonth, 'MMMM yyyy')}</div>
         <div className={`text-lg font-semibold ${monthValue >= 0 ? 'text-green-600' : 'text-red-500'}`}>
           {fmt(monthValue, mode, accountBalance)}
         </div>
