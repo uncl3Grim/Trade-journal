@@ -83,7 +83,7 @@ export function ToastStack({ toasts, onDismiss }) {
         return (
           <div
             key={t.id}
-            className={`flex items-start gap-2 rounded-xl border px-4 py-3 text-sm shadow-lg ${s.wrap}`}
+            className={`flex items-start gap-2 rounded-xl border px-4 py-3 text-sm shadow-lg animate-pop-in ${s.wrap}`}
           >
             {s.icon}
             <span className="flex-1 leading-snug">{t.message}</span>
