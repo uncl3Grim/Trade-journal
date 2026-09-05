@@ -24,11 +24,17 @@ export default function MobileNav() {
           <button
             key={item.key}
             onClick={() => router.push(item.path)}
-            className={`flex flex-col items-center gap-0.5 px-2.5 py-1 flex-shrink-0 transition-all duration-200 ${
+            className={`relative flex flex-col items-center gap-0.5 px-2.5 py-1 flex-shrink-0 transition-all duration-200 ${
               isActive ? 'text-indigo-400' : 'text-gray-500'
             }`}
           >
-            <Icon size={20} className={`transition-transform duration-200 ${isActive ? 'scale-110' : ''}`} />
+            {isActive && (
+              <span className="absolute -top-2 w-1 h-1 rounded-full bg-gradient-to-r from-indigo-400 to-violet-500 animate-scale-in" />
+            )}
+            <Icon
+              size={20}
+              className={`transition-transform duration-200 ${isActive ? 'scale-110 -translate-y-0.5' : ''}`}
+            />
             <span className="text-[9px] font-medium">{item.label}</span>
           </button>
         );
