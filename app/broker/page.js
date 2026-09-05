@@ -273,7 +273,7 @@ function AccountCard({ connection, onSaved, onSync, onDelete, syncing, deleting,
       </button>
 
       {advancedOpen && (
-        <div className="mt-3 pt-3 border-t border-gray-100 dark:border-gray-800 space-y-3">
+  <div className="mt-3 pt-3 border-t border-gray-100 dark:border-gray-800 space-y-3 animate-fade-in-up">
           <BalanceEditor connection={connection} onSaved={onSaved} notify={notify} />
           <RulesEditor connection={connection} onSaved={onSaved} notify={notify} />
           <ShareReport connection={connection} />
