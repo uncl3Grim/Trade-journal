@@ -284,8 +284,14 @@ export default function JournalPage() {
               mode={ddMode}
               onModeChange={setDdMode}
             />
-            <PeriodStatsHeader trades={allTrades} mode={mode} defaultRiskAmount={defaultRiskAmount} accountBalance={startingBalance} />
-            <StatsBar trades={allTrades} mode={mode} defaultRiskAmount={defaultRiskAmount} accountBalance={startingBalance} />
+            <PeriodStatsHeader
+              trades={allTrades}
+              month={month}
+              mode={mode}
+              defaultRiskAmount={defaultRiskAmount}
+              accountBalance={startingBalance}
+            />
+            <StatsBar trades={monthClosedTrades} mode={mode} defaultRiskAmount={defaultRiskAmount} accountBalance={startingBalance} />
 
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mt-6">
               <div className="lg:col-span-2">
