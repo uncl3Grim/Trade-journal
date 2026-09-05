@@ -57,7 +57,7 @@ export default function WeeklyRecap({ trades, defaultRiskAmount, onClose, appNam
 
   return (
     <div className="fixed inset-0 z-50 flex items-start sm:items-center justify-center bg-black/60 backdrop-blur-sm p-4 overflow-y-auto">
-      <div className="bg-[#0b0d1a] border border-white/10 rounded-[32px] p-4 sm:p-6 w-full max-w-xl my-8">
+      <div className="bg-[#0b0d1a] border border-white/10 rounded-[32px] p-4 sm:p-6 w-full max-w-xl my-8 animate-scale-in">
         <div className="flex items-center justify-between mb-4">
           <h2 className="text-white font-semibold text-sm">Weekly recap</h2>
           <button
