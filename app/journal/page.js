@@ -18,6 +18,7 @@ import PropFirmTracker from '../../components/PropFirmTracker';
 import AnimatedOverview from '../../components/AnimatedOverview';
 import EquityCurveChart from '../../components/EquityCurveChart';
 import WeeklyInsights from '../../components/WeeklyInsights';
+import WeeklyRecap from '../../components/WeeklyRecap';
 import SyncStatusWidget from '../../components/SyncStatusWidget';
 import AppShell from '../../components/AppShell';
 import { computeDailyStats } from '../../lib/dailyStats';
@@ -44,6 +45,7 @@ export default function JournalPage() {
   const [ddMode, setDdMode] = useState('trailing');
   const [calendarView, setCalendarView] = useState('month');
   const [accountFilter, setAccountFilter] = useState(DEFAULT_ACCOUNT_FILTER);
+  const [showRecap, setShowRecap] = useState(false);
 
   useEffect(() => {
     try {
@@ -202,8 +204,20 @@ export default function JournalPage() {
 
         <div className="flex items-center justify-between mb-6">
           <h1 className="text-xl font-semibold text-gray-900 dark:text-gray-100">Trade Journal</h1>
-          <span className="text-sm text-gray-400">{user?.email}</span>
+          <div className="flex items-center gap-3">
+            <button
+              onClick={() => setShowRecap(true)}
+              className="text-xs font-medium text-white bg-gradient-to-br from-indigo-600 to-violet-600 hover:opacity-90 rounded-lg px-3 py-1.5"
+            >
+              Weekly recap
+            </button>
+            <span className="text-sm text-gray-400">{user?.email}</span>
+          </div>
         </div>
+
+        {showRecap && (
+          <WeeklyRecap trades={allTrades} defaultRiskAmount={defaultRiskAmount} onClose={() => setShowRecap(false)} />
+        )}
 
         <div className="flex items-center justify-between mb-6 flex-wrap gap-3">
           <div className="flex gap-2">
