@@ -51,7 +51,7 @@ export default function StatsBar({ trades, mode = 'dollar', defaultRiskAmount, a
       <StreakIndicator trades={trades} />
       <ProcessStreakIndicator trades={trades} />
       {stats.map((s) => (
-        <div key={s.label} className="bg-white border border-gray-200 rounded-2xl shadow-sm p-3">
+        <div key={s.label} className="bg-white border border-gray-200 rounded-2xl shadow-sm p-3 hover-lift">
           <div className="text-xs text-gray-400 mb-1">{s.label}</div>
           <div className={`text-lg font-semibold ${s.color}`}>{s.value}</div>
         </div>
