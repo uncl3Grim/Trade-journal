@@ -3,6 +3,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import Papa from 'papaparse';
 import { supabase } from '../lib/supabaseClient';
+import { Alert } from './Notice';
 import {
   detectFormat,
   convertOrderLevelRows,
@@ -29,8 +30,11 @@ function toISO(dateStr) {
 // by the converter itself (so they should NOT be re-parsed with toISO).
 const RAW_DATE_FORMATS = ['order_level', 'myfxbook_statement', 'r_multiple_model'];
 
+const inputClass =
+  'w-full bg-white dark:bg-[#101019] border border-gray-300 dark:border-gray-700 rounded-xl px-3 py-2.5 text-sm text-gray-900 dark:text-gray-100 placeholder:text-gray-400 dark:placeholder:text-gray-500 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 outline-none transition-colors';
+
 export default function ImportCSV({ userId, onImported }) {
-  const [status, setStatus] = useState('');
+  const [status, setStatus] = useState(null); // { type: 'info' | 'success' | 'error', text }
   const [busy, setBusy] = useState(false);
   const [csvAccounts, setCsvAccounts] = useState([]);
   const [selectedAccountId, setSelectedAccountId] = useState('');
@@ -138,9 +142,10 @@ export default function ImportCSV({ userId, onImported }) {
     }
 
     if (trades.length === 0) {
-      setStatus(
-        `No valid rows found (${skipped} skipped, detected format: ${detected}). Check your CSV matches the template or a supported broker export.`
-      );
+      setStatus({
+        type: 'error',
+        text: `No valid rows found (${skipped} skipped, detected format: ${detected}). Check your CSV matches the template or a supported broker export.`,
+      });
       setBusy(false);
       return;
     }
@@ -161,7 +166,7 @@ export default function ImportCSV({ userId, onImported }) {
       : existingQuery.is('broker_connection_id', null);
     const { data: existingRows, error: lookupError } = await existingQuery;
     if (lookupError) {
-      setStatus(`Error saving to database: ${lookupError.message}`);
+      setStatus({ type: 'error', text: `Error saving to database: ${lookupError.message}` });
       setBusy(false);
       return;
     }
@@ -211,14 +216,15 @@ export default function ImportCSV({ userId, onImported }) {
 
     setBusy(false);
     if (dbError) {
-      setStatus(`Error saving to database: ${dbError.message}`);
+      setStatus({ type: 'error', text: `Error saving to database: ${dbError.message}` });
     } else {
       const formatLabel = detected !== 'template' ? ` (auto-converted, format: ${detected})` : '';
-      setStatus(
-        `${affectedCount} trade(s) imported or updated${formatLabel}.${
+      setStatus({
+        type: 'success',
+        text: `${affectedCount} trade(s) imported or updated${formatLabel}.${
           collapsedCount > 0 ? ` ${collapsedCount} exact duplicate row(s) in the file were merged.` : ''
-        }${skipped > 0 ? ` ${skipped} row(s) skipped for missing/invalid data.` : ''}`
-      );
+        }${skipped > 0 ? ` ${skipped} row(s) skipped for missing/invalid data.` : ''}`,
+      });
       onImported?.();
     }
   }
@@ -227,7 +233,7 @@ export default function ImportCSV({ userId, onImported }) {
     const file = e.target.files[0];
     if (!file) return;
     setBusy(true);
-    setStatus('Parsing...');
+    setStatus({ type: 'info', text: 'Parsing…' });
     setPendingRMultiple(null);
 
     Papa.parse(file, {
@@ -244,7 +250,10 @@ export default function ImportCSV({ userId, onImported }) {
           // $-per-1R value before we can build any trades from it.
           if (detected === 'r_multiple_model') {
             setBusy(false);
-            setStatus('This file only has R-multiples, no dollar amounts — enter a $ value per 1R below to continue.');
+            setStatus({
+              type: 'info',
+              text: 'This file only has R-multiples, no dollar amounts — enter a $ value per 1R below to continue.',
+            });
             setPendingRMultiple({ rawRows, accountId });
             e.target.value = '';
             return;
@@ -267,13 +276,13 @@ export default function ImportCSV({ userId, onImported }) {
           await finalizeImport(normalizedRows, usesRawDates, accountId, detected);
         } catch (err) {
           setBusy(false);
-          setStatus(`Error: ${err.message}`);
+          setStatus({ type: 'error', text: err.message });
         }
         e.target.value = '';
       },
       error: (err) => {
         setBusy(false);
-        setStatus(`Error parsing file: ${err.message}`);
+        setStatus({ type: 'error', text: `Error parsing file: ${err.message}` });
       },
     });
   }
@@ -281,28 +290,35 @@ export default function ImportCSV({ userId, onImported }) {
   async function confirmRMultipleImport() {
     if (!pendingRMultiple || !dollarPerR) return;
     setBusy(true);
-    setStatus('Importing...');
+    setStatus({ type: 'info', text: 'Importing…' });
     try {
       const normalizedRows = convertRMultipleModelRows(pendingRMultiple.rawRows, dollarPerR);
       await finalizeImport(normalizedRows, true, pendingRMultiple.accountId, 'r_multiple_model');
     } catch (err) {
       setBusy(false);
-      setStatus(`Error: ${err.message}`);
+      setStatus({ type: 'error', text: err.message });
     }
     setPendingRMultiple(null);
     setDollarPerR('');
   }
 
   return (
-    <div className="bg-white border border-gray-200 rounded-2xl shadow-sm p-5 mb-6">
-      <h2 className="font-semibold mb-1 text-gray-900">Import trades</h2>
-      <p className="text-xs text-gray-400 mb-3">
+    <div className="bg-white dark:bg-[#15151b] border border-gray-200 dark:border-gray-800 rounded-2xl shadow-sm p-5">
+      <div className="flex items-center gap-2 mb-1">
+        <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-indigo-500 to-violet-500 flex items-center justify-center text-white flex-shrink-0">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="w-4 h-4">
+            <path strokeLinecap="round" strokeLinejoin="round" d="M12 16V4m0 12l-4-4m4 4l4-4M4 20h16" />
+          </svg>
+        </div>
+        <h2 className="font-semibold text-gray-900 dark:text-gray-100">Import trades</h2>
+      </div>
+      <p className="text-xs text-gray-500 dark:text-gray-400 mb-4 ml-10">
         Upload our CSV template, or a raw TradingView/Alchemy Markets or MyFXBook Statement export —
         all are auto-detected and converted. Re-importing the same file is safe.
       </p>
 
       <div className="mb-3">
-        <label className="block text-xs text-gray-500 mb-1">Import into account</label>
+        <label className="block text-xs font-medium text-gray-500 dark:text-gray-400 mb-1.5">Import into account</label>
         {!creatingNew ? (
           <select
             value={selectedAccountId}
@@ -313,7 +329,7 @@ export default function ImportCSV({ userId, onImported }) {
                 setSelectedAccountId(e.target.value);
               }
             }}
-            className="w-full bg-white border border-gray-300 rounded-xl px-3 py-2 text-sm text-gray-900"
+            className={inputClass}
           >
             <option value="">No account (unassigned)</option>
             {csvAccounts.map((a) => (
@@ -330,14 +346,14 @@ export default function ImportCSV({ userId, onImported }) {
               placeholder="e.g. Prop Firm Challenge 1"
               value={newAccountName}
               onChange={(e) => setNewAccountName(e.target.value)}
-              className="flex-1 bg-white border border-gray-300 rounded-xl px-3 py-2 text-sm text-gray-900"
+              className={`flex-1 ${inputClass}`}
             />
             <button
               onClick={() => {
                 setCreatingNew(false);
                 setNewAccountName('');
               }}
-              className="px-3 rounded-xl border border-gray-300 text-sm text-gray-600"
+              className="px-3 rounded-xl border border-gray-300 dark:border-gray-700 text-sm text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800"
             >
               Cancel
             </button>
@@ -346,9 +362,9 @@ export default function ImportCSV({ userId, onImported }) {
       </div>
 
       <div className="flex flex-wrap items-center gap-3">
-        <label className="cursor-pointer bg-gray-100 hover:bg-gray-200 border border-gray-300 rounded-xl px-3 py-2 text-sm text-gray-700">
+        <label className="cursor-pointer bg-gray-100 dark:bg-[#101019] hover:bg-gray-200 dark:hover:bg-[#1a1a24] border border-gray-300 dark:border-gray-700 rounded-xl px-3 py-2 text-sm text-gray-700 dark:text-gray-200 font-medium transition-colors">
           Choose CSV file
-         <input
+          <input
             type="file"
             accept=".csv,text/csv,text/comma-separated-values,application/vnd.ms-excel,text/plain"
             onChange={handleFile}
@@ -356,14 +372,14 @@ export default function ImportCSV({ userId, onImported }) {
             className="hidden"
           />
         </label>
-        <button onClick={downloadTemplate} className="text-sm text-indigo-600 hover:text-indigo-500">
+        <button onClick={downloadTemplate} className="text-sm text-indigo-600 dark:text-indigo-400 hover:text-indigo-500 font-medium">
           Download template
         </button>
       </div>
 
       {pendingRMultiple && (
-        <div className="mt-3 bg-indigo-50 border border-indigo-200 rounded-xl p-3">
-          <label className="block text-xs text-indigo-700 mb-1">
+        <div className="mt-3 bg-indigo-50 dark:bg-indigo-950/30 border border-indigo-200 dark:border-indigo-900 rounded-xl p-3">
+          <label className="block text-xs text-indigo-700 dark:text-indigo-300 mb-1">
             Dollar value per 1R (used to convert every trade's R-multiple into a dollar P&L)
           </label>
           <div className="flex gap-2">
@@ -374,7 +390,7 @@ export default function ImportCSV({ userId, onImported }) {
               placeholder="e.g. 200"
               value={dollarPerR}
               onChange={(e) => setDollarPerR(e.target.value)}
-              className="flex-1 bg-white border border-indigo-300 rounded-lg px-3 py-2 text-sm text-gray-900"
+              className="flex-1 bg-white dark:bg-[#101019] border border-indigo-300 dark:border-indigo-800 rounded-lg px-3 py-2 text-sm text-gray-900 dark:text-gray-100 outline-none"
             />
             <button
               onClick={confirmRMultipleImport}
@@ -387,9 +403,9 @@ export default function ImportCSV({ userId, onImported }) {
               onClick={() => {
                 setPendingRMultiple(null);
                 setDollarPerR('');
-                setStatus('');
+                setStatus(null);
               }}
-              className="px-3 rounded-lg border border-gray-300 text-sm text-gray-600"
+              className="px-3 rounded-lg border border-gray-300 dark:border-gray-700 text-sm text-gray-600 dark:text-gray-300"
             >
               Cancel
             </button>
@@ -397,7 +413,11 @@ export default function ImportCSV({ userId, onImported }) {
         </div>
       )}
 
-      {status && <p className="text-sm text-gray-500 mt-2">{status}</p>}
+      {status && (
+        <div className="mt-3">
+          <Alert type={status.type}>{status.text}</Alert>
+        </div>
+      )}
     </div>
   );
 }
