@@ -57,6 +57,11 @@ export default function JournalPage() {
       if (savedDdMode) setDdMode(savedDdMode);
       const savedView = localStorage.getItem('tj_calendar_view');
       if (savedView) setCalendarView(savedView);
+      const savedMonth = localStorage.getItem('tj_month');
+      if (savedMonth) {
+        const parsed = new Date(savedMonth);
+        if (!isNaN(parsed.getTime())) setMonth(parsed);
+      }
     } catch {}
   }, []);
 
@@ -83,6 +88,12 @@ export default function JournalPage() {
       localStorage.setItem('tj_calendar_view', calendarView);
     } catch {}
   }, [calendarView]);
+
+  useEffect(() => {
+    try {
+      localStorage.setItem('tj_month', month.toISOString());
+    } catch {}
+  }, [month]);
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
