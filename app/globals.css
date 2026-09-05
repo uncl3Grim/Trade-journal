@@ -63,3 +63,114 @@ h1, h2, h3, .font-heading {
   .no-print { display: none !important; }
   body { background: white !important; }
 }
+
+/* ================================================================
+   Sitewide motion layer — reaches every page automatically without
+   needing to touch each component. Buttons/links/inputs everywhere
+   get a smooth hover + a satisfying press-down, and focus rings get
+   a softer, more modern look.
+   ================================================================ */
+button,
+a,
+input,
+select,
+textarea,
+[role='button'] {
+  transition: background-color 150ms ease, border-color 150ms ease, color 150ms ease,
+    box-shadow 150ms ease, opacity 150ms ease, transform 120ms cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+button:not(:disabled):active,
+[role='button']:not(:disabled):active {
+  transform: scale(0.96);
+}
+
+button:not(:disabled):hover,
+a:hover {
+  filter: brightness(1.04);
+}
+
+.dark button:not(:disabled):hover,
+.dark a:hover {
+  filter: brightness(1.15);
+}
+
+input:focus,
+select:focus,
+textarea:focus {
+  outline: none;
+  box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.15);
+}
+
+/* Smoother native scrollbars */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(120, 120, 140, 0.35) transparent;
+}
+*::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+*::-webkit-scrollbar-thumb {
+  background-color: rgba(120, 120, 140, 0.35);
+  border-radius: 999px;
+}
+*::-webkit-scrollbar-thumb:hover {
+  background-color: rgba(120, 120, 140, 0.55);
+}
+
+/* Reusable entrance animations — apply as classNames anywhere
+   (modals, cards, dropdowns, toasts) for a consistent, slightly
+   bouncy "pop" feel instead of things just snapping into view. */
+.animate-fade-in-up {
+  animation: fadeInUp 0.25s ease-out both;
+}
+.animate-scale-in {
+  animation: scaleIn 0.2s cubic-bezier(0.34, 1.56, 0.64, 1) both;
+}
+.animate-pop-in {
+  animation: popIn 0.35s cubic-bezier(0.34, 1.56, 0.64, 1) both;
+}
+
+@keyframes fadeInUp {
+  0% { opacity: 0; transform: translateY(8px); }
+  100% { opacity: 1; transform: translateY(0); }
+}
+@keyframes scaleIn {
+  0% { opacity: 0; transform: scale(0.95); }
+  100% { opacity: 1; transform: scale(1); }
+}
+@keyframes popIn {
+  0% { opacity: 0; transform: scale(0.85); }
+  60% { opacity: 1; transform: scale(1.04); }
+  100% { opacity: 1; transform: scale(1); }
+}
+
+/* Skeleton loading shimmer — swap "Loading..." text for a shimmering
+   placeholder block using className="skeleton" wherever needed. */
+.skeleton {
+  background: linear-gradient(90deg, rgba(0, 0, 0, 0.06) 25%, rgba(0, 0, 0, 0.12) 37%, rgba(0, 0, 0, 0.06) 63%);
+  background-size: 400px 100%;
+  animation: shimmer 1.4s ease infinite;
+  border-radius: 0.5rem;
+}
+.dark .skeleton {
+  background: linear-gradient(90deg, rgba(255, 255, 255, 0.04) 25%, rgba(255, 255, 255, 0.09) 37%, rgba(255, 255, 255, 0.04) 63%);
+  background-size: 400px 100%;
+}
+@keyframes shimmer {
+  0% { background-position: -400px 0; }
+  100% { background-position: 400px 0; }
+}
+
+/* Number/stat cards feel nicer with a soft lift on hover */
+.hover-lift {
+  transition: transform 180ms cubic-bezier(0.34, 1.56, 0.64, 1), box-shadow 180ms ease;
+}
+.hover-lift:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 24px -8px rgba(0, 0, 0, 0.15);
+}
+.dark .hover-lift:hover {
+  box-shadow: 0 8px 24px -8px rgba(0, 0, 0, 0.5);
+}
