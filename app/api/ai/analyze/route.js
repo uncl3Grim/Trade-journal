@@ -25,7 +25,8 @@ export async function POST(request) {
     const { data: trades, error: tradesError } = await supabase
       .from('trades')
       .select('*')
-      .order('entry_time', { ascending: true });
+      .order('entry_time', { ascending: true })
+      .range(0, 49999);
 
     if (tradesError) {
       return Response.json({ error: tradesError.message }, { status: 500 });
