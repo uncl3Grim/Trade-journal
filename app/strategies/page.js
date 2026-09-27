@@ -84,7 +84,7 @@ export default function StrategiesPage() {
     if (!user) return;
     const [{ data: s }, { data: t }] = await Promise.all([
       supabase.from('strategies').select('*').order('created_at', { ascending: true }),
-      supabase.from('trades').select('id, pnl, exit_price, strategy_id'),
+      supabase.from('trades').select('id, pnl, exit_price, strategy_id').range(0, 49999),
     ]);
     setStrategies(s || []);
     setTrades(t || []);
