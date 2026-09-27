@@ -82,7 +82,7 @@ export default function TradesPage() {
   const load = useCallback(async () => {
     if (!user) return;
     setLoading(true);
-    let query = supabase.from('trades').select('*').order('entry_time', { ascending: false });
+    let query = supabase.from('trades').select('*').order('entry_time', { ascending: false }).range(0, 49999);
     query = applyAccountFilter(query, accountFilter);
     const { data, error } = await query;
     if (!error) setTrades(data || []);
