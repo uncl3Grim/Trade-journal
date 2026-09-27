@@ -158,7 +158,8 @@ export default function JournalPage() {
       .select('*')
       .gte('entry_time', rangeStart.toISOString())
       .lte('entry_time', rangeEnd.toISOString())
-      .order('entry_time', { ascending: true });
+      .order('entry_time', { ascending: true })
+      .range(0, 9999);
 
     query = applyAccountFilter(query, accountFilter);
 
@@ -169,7 +170,15 @@ export default function JournalPage() {
 
   const loadAllTrades = useCallback(async () => {
     if (!user) return;
-    let query = supabase.from('trades').select('*').order('entry_time', { ascending: true });
+    // Supabase/PostgREST caps any unpaginated query at 1000 rows by default.
+    // With large CSV imports (backtests especially) that cap silently
+    // truncates the result — .range() here explicitly asks for far more
+    // than any realistic trade count, overriding that default.
+    let query = supabase
+      .from('trades')
+      .select('*')
+      .order('entry_time', { ascending: true })
+      .range(0, 49999);
     query = applyAccountFilter(query, accountFilter);
     const { data, error } = await query;
     if (!error) setAllTrades(data || []);
