@@ -5,8 +5,20 @@ import { addWeeks, subWeeks, format, isSameWeek } from 'date-fns';
 import { computeWeeklyRecap } from '../lib/weeklyRecap';
 import WeeklyRecapCard from './WeeklyRecapCard';
 
+function mostRecentTradeDate(trades) {
+  const closed = trades.filter((t) => t.entry_time && t.exit_price !== null && t.exit_price !== undefined);
+  if (closed.length === 0) return new Date();
+  return closed.reduce((latest, t) => {
+    const d = new Date(t.entry_time);
+    return d > latest ? d : latest;
+  }, new Date(closed[0].entry_time));
+}
+
 export default function WeeklyRecap({ trades, defaultRiskAmount, onClose, appName }) {
-  const [anchor, setAnchor] = useState(new Date());
+  // Default to the most recent week that actually has trades, rather than
+  // the real current calendar week — useful when viewing historical/backtest
+  // imports that don't extend up to today.
+  const [anchor, setAnchor] = useState(() => mostRecentTradeDate(trades));
   const [mode, setMode] = useState('dollar');
   const [exporting, setExporting] = useState(false);
   const cardRef = useRef(null);
