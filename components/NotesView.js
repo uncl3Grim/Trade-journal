@@ -62,7 +62,8 @@ export default function NotesView({ userId, accountFilter, accounts = [] }) {
       .not('notes', 'is', null)
       .neq('notes', '')
       .eq('pinned', false)
-      .order('entry_time', { ascending: false });
+      .order('entry_time', { ascending: false })
+      .range(0, 49999);
     let dailyQuery = supabase
       .from('daily_notes')
       .select('*')
@@ -81,7 +82,8 @@ export default function NotesView({ userId, accountFilter, accounts = [] }) {
       .not('notes', 'is', null)
       .neq('notes', '')
       .eq('pinned', true)
-      .order('entry_time', { ascending: false });
+      .order('entry_time', { ascending: false })
+      .range(0, 49999);
     const pinnedDailyQuery = supabase
       .from('daily_notes')
       .select('*')
