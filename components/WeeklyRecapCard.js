@@ -12,10 +12,12 @@ function DayCell({ day, isBest, mode }) {
 
   return (
     <div
-      className={`relative rounded-2xl px-3 py-3.5 flex flex-col items-center text-center gap-1.5 border transition-colors ${
+      className={`relative rounded-2xl px-3 py-3.5 flex flex-col items-center text-center gap-1.5 border backdrop-blur-md transition-all duration-300 ease-out ${
+        hasTrades ? 'hover:-translate-y-1 hover:scale-[1.03]' : ''
+      } ${
         isBest
-          ? 'border-emerald-400/50 bg-emerald-400/[0.08] shadow-[0_0_0_1px_rgba(52,211,153,0.15)]'
-          : 'border-white/[0.06] bg-white/[0.03]'
+          ? 'border-emerald-300/40 bg-emerald-300/10 shadow-[0_0_0_1px_rgba(52,211,153,0.15)] hover:shadow-[0_8px_24px_-4px_rgba(52,211,153,0.35)]'
+          : 'border-white/10 bg-white/[0.07] hover:bg-white/[0.12] hover:border-white/20 hover:shadow-[0_8px_24px_-4px_rgba(99,102,241,0.25)]'
       }`}
     >
       <span className={`text-[10px] font-semibold tracking-wider uppercase ${isBest ? 'text-emerald-300/80' : 'text-slate-500'}`}>
@@ -37,7 +39,7 @@ function DayCell({ day, isBest, mode }) {
       <span className="text-[9px] text-slate-500">{hasTrades ? `${day.trades} trade${day.trades !== 1 ? 's' : ''}` : 'No trades'}</span>
 
       {isBest && (
-        <div className="w-full mt-1 pt-1.5 border-t border-emerald-400/20 flex flex-col gap-0.5">
+        <div className="w-full mt-1 pt-1.5 border-t border-emerald-300/20 flex flex-col gap-0.5">
           <span className="text-[9px] text-emerald-300/70 uppercase tracking-wide">Win rate</span>
           <span className="text-[11px] font-semibold text-emerald-200">{day.winRate}%</span>
         </div>
@@ -104,10 +106,10 @@ const WeeklyRecapCard = forwardRef(function WeeklyRecapCard({ recap, mode, appNa
 
         {/* badges */}
         <div className="flex items-center gap-2 mb-6">
-          <span className="text-[11px] font-semibold text-slate-200 bg-white/[0.06] border border-white/10 rounded-full px-3 py-1">
+          <span className="text-[11px] font-semibold text-slate-200 bg-white/[0.08] backdrop-blur-md border border-white/10 rounded-full px-3 py-1 transition-colors duration-300 hover:bg-white/[0.14]">
             {recap.winRate}% win rate
           </span>
-          <span className="text-[11px] font-semibold text-slate-200 bg-white/[0.06] border border-white/10 rounded-full px-3 py-1 flex items-center gap-1.5">
+          <span className="text-[11px] font-semibold text-slate-200 bg-white/[0.08] backdrop-blur-md border border-white/10 rounded-full px-3 py-1 flex items-center gap-1.5 transition-colors duration-300 hover:bg-white/[0.14]">
             <span className={`w-1.5 h-1.5 rounded-full ${recap.avgR >= 0 ? 'bg-emerald-400' : 'bg-rose-400'}`} />
             {recap.avgR >= 0 ? '+' : ''}
             {recap.avgR.toFixed(2)}R avg
@@ -122,14 +124,14 @@ const WeeklyRecapCard = forwardRef(function WeeklyRecapCard({ recap, mode, appNa
         </div>
 
         {/* footer stats */}
-        <div className="grid grid-cols-4 gap-2 bg-white/[0.03] border border-white/[0.06] rounded-2xl px-4 py-4 mb-5">
+        <div className="grid grid-cols-4 gap-2 bg-white/[0.05] backdrop-blur-md border border-white/[0.08] rounded-2xl px-4 py-4 mb-5">
           {[
             { label: 'Trades', value: recap.totalTrades },
             { label: 'Win rate', value: `${recap.winRate}%` },
             { label: 'Avg R', value: `${recap.avgR >= 0 ? '+' : ''}${recap.avgR.toFixed(2)}R` },
             { label: 'Best day', value: recap.bestDay ? recap.bestDay.label : '—' },
           ].map((stat) => (
-            <div key={stat.label} className="text-center">
+            <div key={stat.label} className="text-center rounded-xl transition-transform duration-300 hover:scale-[1.06]">
               <div className="text-[9px] font-semibold uppercase tracking-wider text-slate-500 mb-1">{stat.label}</div>
               <div className="text-[13px] font-bold text-white">{stat.value}</div>
             </div>
