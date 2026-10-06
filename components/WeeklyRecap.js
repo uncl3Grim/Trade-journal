@@ -74,7 +74,7 @@ export default function WeeklyRecap({ trades, defaultRiskAmount, onClose, appNam
           <h2 className="text-white font-semibold text-sm">Weekly recap</h2>
           <button
             onClick={onClose}
-            className="w-7 h-7 rounded-full bg-white/5 hover:bg-white/10 text-slate-300 flex items-center justify-center text-sm"
+            className="w-7 h-7 rounded-full bg-white/5 hover:bg-white/10 text-slate-300 flex items-center justify-center text-sm transition-colors"
             aria-label="Close"
           >
             ×
@@ -84,7 +84,7 @@ export default function WeeklyRecap({ trades, defaultRiskAmount, onClose, appNam
         <div className="flex items-center justify-between mb-4 gap-2">
           <button
             onClick={() => setAnchor((d) => subWeeks(d, 1))}
-            className="px-3 py-1.5 rounded-xl bg-white/5 hover:bg-white/10 text-xs text-slate-300 border border-white/10"
+            className="px-3 py-1.5 rounded-xl bg-white/5 hover:bg-white/10 text-xs text-slate-300 border border-white/10 transition-colors"
           >
             ← Prev week
           </button>
@@ -97,7 +97,7 @@ export default function WeeklyRecap({ trades, defaultRiskAmount, onClose, appNam
               <button
                 key={o.key}
                 onClick={() => setMode(o.key)}
-                className={`px-3 py-1 rounded-md text-xs font-medium ${
+                className={`px-3 py-1 rounded-md text-xs font-medium transition-colors ${
                   mode === o.key ? 'bg-white/15 text-white' : 'text-slate-400'
                 }`}
               >
@@ -109,7 +109,7 @@ export default function WeeklyRecap({ trades, defaultRiskAmount, onClose, appNam
           <button
             onClick={() => setAnchor((d) => addWeeks(d, 1))}
             disabled={isCurrentWeek}
-            className="px-3 py-1.5 rounded-xl bg-white/5 hover:bg-white/10 disabled:opacity-30 disabled:cursor-not-allowed text-xs text-slate-300 border border-white/10"
+            className="px-3 py-1.5 rounded-xl bg-white/5 hover:bg-white/10 disabled:opacity-30 disabled:cursor-not-allowed text-xs text-slate-300 border border-white/10 transition-colors"
           >
             Next week →
           </button>
@@ -121,14 +121,14 @@ export default function WeeklyRecap({ trades, defaultRiskAmount, onClose, appNam
           <button
             onClick={handleDownload}
             disabled={exporting}
-            className="flex-1 bg-gradient-to-br from-indigo-600 to-violet-600 hover:opacity-90 disabled:opacity-50 text-white text-sm font-medium rounded-xl px-4 py-2.5"
+            className="flex-1 bg-gradient-to-br from-indigo-600 to-violet-600 hover:opacity-90 disabled:opacity-50 text-white text-sm font-medium rounded-xl px-4 py-2.5 transition-opacity"
           >
             {exporting ? 'Preparing…' : 'Download PNG'}
           </button>
           <button
             onClick={handleShare}
             disabled={exporting}
-            className="px-4 py-2.5 rounded-xl bg-white/5 hover:bg-white/10 disabled:opacity-50 text-sm font-medium text-slate-200 border border-white/10"
+            className="px-4 py-2.5 rounded-xl bg-white/5 hover:bg-white/10 disabled:opacity-50 text-sm font-medium text-slate-200 border border-white/10 transition-colors"
           >
             Share
           </button>
