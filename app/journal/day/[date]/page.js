@@ -6,6 +6,7 @@ import { format, parseISO } from 'date-fns';
 import { supabase } from '../../../../lib/supabaseClient';
 import DayPanel from '../../../../components/DayPanel';
 import AppShell from '../../../../components/AppShell';
+import DailyRecap from '../../../../components/DailyRecap';
 import { applyAccountFilter, computeActiveAccountId } from '../../../../lib/accountFilter';
 
 const DEFAULT_ACCOUNT_FILTER = { allSelected: true, selectedIds: [], includeManual: false };
@@ -20,6 +21,7 @@ export default function DayEditPage() {
   const [defaultRiskAmount, setDefaultRiskAmount] = useState(null);
   const [accountFilter, setAccountFilter] = useState(DEFAULT_ACCOUNT_FILTER);
   const [loading, setLoading] = useState(true);
+  const [showDailyRecap, setShowDailyRecap] = useState(false);
 
   const dateStr = params.date;
   const date = dateStr ? parseISO(dateStr) : null;
@@ -92,15 +94,32 @@ export default function DayEditPage() {
   return (
     <AppShell>
       <div className="max-w-2xl mx-auto px-4 py-6">
-        <div className="flex items-center justify-between mb-6">
+        <div className="flex items-center justify-between mb-6 flex-wrap gap-2">
           <h1 className="text-xl font-semibold text-gray-900 dark:text-gray-100">{format(date, 'EEEE, MMM d, yyyy')}</h1>
-          <button
-            onClick={() => router.push('/journal')}
-            className="bg-indigo-600 hover:bg-indigo-500 text-white rounded-xl px-4 py-2 text-sm font-medium"
-          >
-            ← Back to Calendar
-          </button>
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => setShowDailyRecap(true)}
+              className="text-xs font-medium text-white bg-gradient-to-br from-indigo-600 to-violet-600 hover:opacity-90 rounded-lg px-3 py-1.5"
+            >
+              Daily recap
+            </button>
+            <button
+              onClick={() => router.push('/journal')}
+              className="bg-indigo-600 hover:bg-indigo-500 text-white rounded-xl px-4 py-2 text-sm font-medium"
+            >
+              ← Back to Calendar
+            </button>
+          </div>
         </div>
+
+        {showDailyRecap && (
+          <DailyRecap
+            trades={trades}
+            date={date}
+            defaultRiskAmount={defaultRiskAmount}
+            onClose={() => setShowDailyRecap(false)}
+          />
+        )}
 
         {loading ? (
           <p className="text-gray-400 text-sm">Loading...</p>
