@@ -1,9 +1,10 @@
 'use client';
 
-import { useMemo, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { addWeeks, subWeeks, format, isSameWeek } from 'date-fns';
 import { computeWeeklyRecap } from '../lib/weeklyRecap';
 import WeeklyRecapCard from './WeeklyRecapCard';
+import { supabase } from '../lib/supabaseClient';
 
 function mostRecentTradeDate(trades) {
   const closed = trades.filter((t) => t.entry_time && t.exit_price !== null && t.exit_price !== undefined);
@@ -14,7 +15,21 @@ function mostRecentTradeDate(trades) {
   }, new Date(closed[0].entry_time));
 }
 
-export default function WeeklyRecap({ trades, defaultRiskAmount, onClose, appName }) {
+export default function WeeklyRecap({ trades, defaultRiskAmount, onClose, appName, userId }) {
+  const [bg, setBg] = useState({ url: null, dim: 0.55 });
+
+  useEffect(() => {
+    if (!userId) return;
+    supabase
+      .from('user_settings')
+      .select('weekly_recap_bg_url, weekly_recap_bg_dim')
+      .eq('user_id', userId)
+      .maybeSingle()
+      .then(({ data }) => {
+        setBg({ url: data?.weekly_recap_bg_url || null, dim: data?.weekly_recap_bg_dim ?? 0.55 });
+      });
+  }, [userId]);
+
   // Default to the most recent week that actually has trades, rather than
   // the real current calendar week — useful when viewing historical/backtest
   // imports that don't extend up to today.
@@ -115,7 +130,7 @@ export default function WeeklyRecap({ trades, defaultRiskAmount, onClose, appNam
           </button>
         </div>
 
-        <WeeklyRecapCard ref={cardRef} recap={recap} mode={mode} appName={appName} />
+        <WeeklyRecapCard ref={cardRef} recap={recap} mode={mode} appName={appName} backgroundUrl={bg.url} backgroundDim={bg.dim} />
 
         <div className="flex gap-2 mt-5">
           <button
