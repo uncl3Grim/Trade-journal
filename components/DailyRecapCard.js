@@ -1,7 +1,10 @@
 'use client';
 
 import { forwardRef } from 'react';
+import { Bricolage_Grotesque } from 'next/font/google';
 import { formatMoney } from '../lib/format';
+
+const bricolage = Bricolage_Grotesque({ subsets: ['latin'], weight: ['400', '500', '600', '700', '800'] });
 
 function fmtPrice(v) {
   if (v === null || v === undefined || v === '') return '—';
@@ -47,7 +50,7 @@ function TradeRow({ trade, isBest, mode }) {
 }
 
 const DailyRecapCard = forwardRef(function DailyRecapCard(
-  { recap, mode, appName = 'Edgewise', backgroundUrl, backgroundDim = 0.6 },
+  { recap, mode, appName = 'Trade Journal', backgroundUrl, backgroundDim = 0.6 },
   ref
 ) {
   const total = mode === 'r' ? recap.totalR : recap.totalPnl;
@@ -59,11 +62,11 @@ const DailyRecapCard = forwardRef(function DailyRecapCard(
   return (
     <div
       ref={ref}
-      className="relative w-full max-w-[540px] mx-auto overflow-hidden rounded-2xl border border-neutral-800 p-6 sm:p-7"
+      className={`relative w-full max-w-[540px] mx-auto overflow-hidden rounded-2xl border border-neutral-800 p-6 sm:p-7 ${bricolage.className}`}
       style={
         backgroundUrl
-          ? { backgroundImage: `url(${backgroundUrl})`, backgroundSize: 'cover', backgroundPosition: 'center', fontFamily: 'inherit' }
-          : { backgroundColor: '#0a0a0a', fontFamily: 'inherit' }
+          ? { backgroundImage: `url(${backgroundUrl})`, backgroundSize: 'cover', backgroundPosition: 'center' }
+          : { backgroundColor: '#0a0a0a' }
       }
     >
       {backgroundUrl && (
@@ -91,8 +94,7 @@ const DailyRecapCard = forwardRef(function DailyRecapCard(
 
         {/* headline number */}
         <div className={`text-4xl sm:text-5xl font-bold tracking-tight mb-4 leading-none ${isPositive ? 'text-emerald-400' : 'text-rose-400'}`}>
-          {isPositive ? '+' : ''}
-          {mode === 'r' ? `${total.toFixed(2)}${suffix}` : formatMoney(total)}
+          {mode === 'r' ? `${isPositive ? '+' : ''}${total.toFixed(2)}${suffix}` : formatMoney(total)}
         </div>
 
         {/* stat row */}
