@@ -39,7 +39,7 @@ function TradeCell({ trade, isBest, mode }) {
   );
 }
 
-const DailyRecapCard = forwardRef(function DailyRecapCard({ recap, mode, appName = 'Edgewise' }, ref) {
+const DailyRecapCard = forwardRef(function DailyRecapCard({ recap, mode, appName = 'Edgewise', backgroundUrl, backgroundDim = 0.55 }, ref) {
   const total = mode === 'r' ? recap.totalR : recap.totalPnl;
   const isPositive = total >= 0;
   const suffix = mode === 'r' ? 'R' : '';
@@ -50,22 +50,32 @@ const DailyRecapCard = forwardRef(function DailyRecapCard({ recap, mode, appName
     <div
       ref={ref}
       className="relative w-full max-w-[520px] mx-auto overflow-hidden rounded-[28px] p-7 sm:p-8"
-      style={{
-        background: 'linear-gradient(155deg, #0a0d1c 0%, #0f1129 45%, #150f28 100%)',
-        fontFamily: 'inherit',
-      }}
+      style={
+        backgroundUrl
+          ? { backgroundImage: `url(${backgroundUrl})`, backgroundSize: 'cover', backgroundPosition: 'center', fontFamily: 'inherit' }
+          : { background: 'linear-gradient(155deg, #0a0d1c 0%, #0f1129 45%, #150f28 100%)', fontFamily: 'inherit' }
+      }
     >
-      {/* decorative glow */}
-      <div className="pointer-events-none absolute -top-24 -right-16 w-64 h-64 rounded-full bg-indigo-500/20 blur-[80px]" />
-      <div className="pointer-events-none absolute -bottom-28 -left-16 w-72 h-72 rounded-full bg-violet-500/15 blur-[90px]" />
-      <div
-        className="pointer-events-none absolute inset-0 opacity-[0.04]"
-        style={{
-          backgroundImage:
-            'linear-gradient(#fff 1px, transparent 1px), linear-gradient(90deg, #fff 1px, transparent 1px)',
-          backgroundSize: '28px 28px',
-        }}
-      />
+      {backgroundUrl ? (
+        <div
+          className="pointer-events-none absolute inset-0"
+          style={{ background: `linear-gradient(155deg, rgba(10,13,28,${backgroundDim + 0.25}) 0%, rgba(10,13,28,${backgroundDim}) 100%)` }}
+        />
+      ) : (
+        <>
+          {/* decorative glow */}
+          <div className="pointer-events-none absolute -top-24 -right-16 w-64 h-64 rounded-full bg-indigo-500/20 blur-[80px]" />
+          <div className="pointer-events-none absolute -bottom-28 -left-16 w-72 h-72 rounded-full bg-violet-500/15 blur-[90px]" />
+          <div
+            className="pointer-events-none absolute inset-0 opacity-[0.04]"
+            style={{
+              backgroundImage:
+                'linear-gradient(#fff 1px, transparent 1px), linear-gradient(90deg, #fff 1px, transparent 1px)',
+              backgroundSize: '28px 28px',
+            }}
+          />
+        </>
+      )}
 
       <div className="relative">
         {/* header */}
