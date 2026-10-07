@@ -1,6 +1,7 @@
 'use client';
 
 import BackgroundSettings from '../../components/BackgroundSettings';
+import RecapBackgroundSettings from '../../components/RecapBackgroundSettings';
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { supabase } from '../../lib/supabaseClient';
@@ -48,6 +49,8 @@ export default function ProfilePage() {
         <h2 className="text-sm font-semibold text-gray-700 mb-2">Settings</h2>
         <RiskSettings userId={user?.id} onSaved={() => {}} />
   <BackgroundSettings userId={user?.id} />
+            <RecapBackgroundSettings userId={user?.id} kind="weekly" label="Weekly Recap" />
+            <RecapBackgroundSettings userId={user?.id} kind="daily" label="Daily Recap" />
 
         <button
           onClick={handleSignOut}
