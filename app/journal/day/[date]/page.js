@@ -118,6 +118,7 @@ export default function DayEditPage() {
             date={date}
             defaultRiskAmount={defaultRiskAmount}
             onClose={() => setShowDailyRecap(false)}
+            userId={user?.id}
           />
         )}
 
