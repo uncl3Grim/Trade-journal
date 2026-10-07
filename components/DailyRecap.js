@@ -1,11 +1,26 @@
 'use client';
 
-import { useMemo, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { addDays, subDays, format, isSameDay } from 'date-fns';
 import { computeDailyRecap } from '../lib/dailyRecap';
 import DailyRecapCard from './DailyRecapCard';
+import { supabase } from '../lib/supabaseClient';
 
-export default function DailyRecap({ trades, date, defaultRiskAmount, onClose, appName }) {
+export default function DailyRecap({ trades, date, defaultRiskAmount, onClose, appName, userId }) {
+  const [bg, setBg] = useState({ url: null, dim: 0.55 });
+
+  useEffect(() => {
+    if (!userId) return;
+    supabase
+      .from('user_settings')
+      .select('daily_recap_bg_url, daily_recap_bg_dim')
+      .eq('user_id', userId)
+      .maybeSingle()
+      .then(({ data }) => {
+        setBg({ url: data?.daily_recap_bg_url || null, dim: data?.daily_recap_bg_dim ?? 0.55 });
+      });
+  }, [userId]);
+
   const [anchor, setAnchor] = useState(date || new Date());
   const [mode, setMode] = useState('dollar');
   const [exporting, setExporting] = useState(false);
@@ -103,7 +118,7 @@ export default function DailyRecap({ trades, date, defaultRiskAmount, onClose, a
           </button>
         </div>
 
-        <DailyRecapCard ref={cardRef} recap={recap} mode={mode} appName={appName} />
+        <DailyRecapCard ref={cardRef} recap={recap} mode={mode} appName={appName} backgroundUrl={bg.url} backgroundDim={bg.dim} />
 
         <div className="flex gap-2 mt-5">
           <button
