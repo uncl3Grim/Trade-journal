@@ -12,43 +12,37 @@ function DayCell({ day, isBest, mode }) {
 
   return (
     <div
-      className={`relative rounded-2xl px-3 py-3.5 flex flex-col items-center text-center gap-1.5 border backdrop-blur-md transition-all duration-300 ease-out ${
-        hasTrades ? 'hover:-translate-y-1 hover:scale-[1.03]' : ''
-      } ${
+      className={`rounded-lg px-2.5 py-3 flex flex-col items-center text-center gap-1 border transition-all duration-200 ${
         isBest
-          ? 'border-emerald-300/40 bg-emerald-300/10 shadow-[0_0_0_1px_rgba(52,211,153,0.15)] hover:shadow-[0_8px_24px_-4px_rgba(52,211,153,0.35)]'
-          : 'border-white/10 bg-white/[0.07] hover:bg-white/[0.12] hover:border-white/20 hover:shadow-[0_8px_24px_-4px_rgba(99,102,241,0.25)]'
-      }`}
+          ? 'border-neutral-700 bg-neutral-900/80'
+          : 'border-neutral-800 bg-neutral-900/50 hover:border-neutral-700 hover:bg-neutral-900/80'
+      } ${hasTrades ? 'hover:-translate-y-0.5' : ''}`}
     >
-      <span className={`text-[10px] font-semibold tracking-wider uppercase ${isBest ? 'text-emerald-300/80' : 'text-slate-500'}`}>
-        {day.label}
-      </span>
+      <span className="text-[9px] font-medium uppercase tracking-wide text-neutral-500">{day.label}</span>
 
       {hasTrades ? (
-        <span
-          className={`text-[15px] font-bold tabular-nums ${
-            isWin ? 'text-emerald-300' : isLoss ? 'text-rose-300' : 'text-slate-300'
-          }`}
-        >
+        <span className={`text-[13px] font-semibold tabular-nums ${isWin ? 'text-emerald-400' : isLoss ? 'text-rose-400' : 'text-neutral-300'}`}>
           {mode === 'r' ? `${value >= 0 ? '+' : ''}${value.toFixed(1)}R` : formatMoney(value)}
         </span>
       ) : (
-        <span className="text-[15px] font-bold text-slate-600">—</span>
+        <span className="text-[13px] font-semibold text-neutral-700">—</span>
       )}
 
-      <span className="text-[9px] text-slate-500">{hasTrades ? `${day.trades} trade${day.trades !== 1 ? 's' : ''}` : 'No trades'}</span>
+      <span className="text-[8px] text-neutral-600">{hasTrades ? `${day.trades} trade${day.trades !== 1 ? 's' : ''}` : 'No trades'}</span>
 
       {isBest && (
-        <div className="w-full mt-1 pt-1.5 border-t border-emerald-300/20 flex flex-col gap-0.5">
-          <span className="text-[9px] text-emerald-300/70 uppercase tracking-wide">Win rate</span>
-          <span className="text-[11px] font-semibold text-emerald-200">{day.winRate}%</span>
+        <div className="w-full mt-0.5 pt-1 border-t border-neutral-800">
+          <span className="text-[8px] text-neutral-500 uppercase tracking-wide">{day.winRate}% win</span>
         </div>
       )}
     </div>
   );
 }
 
-const WeeklyRecapCard = forwardRef(function WeeklyRecapCard({ recap, mode, appName = 'Edgewise', backgroundUrl, backgroundDim = 0.55 }, ref) {
+const WeeklyRecapCard = forwardRef(function WeeklyRecapCard(
+  { recap, mode, appName = 'Edgewise', backgroundUrl, backgroundDim = 0.6 },
+  ref
+) {
   const total = mode === 'r' ? recap.totalR : recap.totalPnl;
   const isPositive = total >= 0;
   const suffix = mode === 'r' ? 'R' : '';
@@ -56,106 +50,74 @@ const WeeklyRecapCard = forwardRef(function WeeklyRecapCard({ recap, mode, appNa
   return (
     <div
       ref={ref}
-      className="relative w-full max-w-[520px] mx-auto overflow-hidden rounded-[28px] p-7 sm:p-8"
+      className="relative w-full max-w-[540px] mx-auto overflow-hidden rounded-2xl border border-neutral-800 p-6 sm:p-7"
       style={
         backgroundUrl
           ? { backgroundImage: `url(${backgroundUrl})`, backgroundSize: 'cover', backgroundPosition: 'center', fontFamily: 'inherit' }
-          : { background: 'linear-gradient(155deg, #0a0d1c 0%, #0f1129 45%, #150f28 100%)', fontFamily: 'inherit' }
+          : { backgroundColor: '#0a0a0a', fontFamily: 'inherit' }
       }
     >
-      {backgroundUrl ? (
-        <div
-          className="pointer-events-none absolute inset-0"
-          style={{ background: `linear-gradient(155deg, rgba(10,13,28,${backgroundDim + 0.25}) 0%, rgba(10,13,28,${backgroundDim}) 100%)` }}
-        />
-      ) : (
-        <>
-          {/* decorative glow */}
-          <div className="pointer-events-none absolute -top-24 -right-16 w-64 h-64 rounded-full bg-indigo-500/20 blur-[80px]" />
-          <div className="pointer-events-none absolute -bottom-28 -left-16 w-72 h-72 rounded-full bg-violet-500/15 blur-[90px]" />
-          <div
-            className="pointer-events-none absolute inset-0 opacity-[0.04]"
-            style={{
-              backgroundImage:
-                'linear-gradient(#fff 1px, transparent 1px), linear-gradient(90deg, #fff 1px, transparent 1px)',
-              backgroundSize: '28px 28px',
-            }}
-          />
-        </>
+      {backgroundUrl && (
+        <div className="pointer-events-none absolute inset-0" style={{ backgroundColor: `rgba(10,10,10,${backgroundDim})` }} />
       )}
 
       <div className="relative">
         {/* header */}
-        <div className="flex items-center justify-between mb-7">
+        <div className="flex items-center justify-between mb-6">
           <div className="flex items-center gap-2">
-            <div className="w-7 h-7 rounded-lg bg-gradient-to-br from-indigo-500 to-violet-500 flex items-center justify-center text-white font-bold text-xs">
+            <div className="w-6 h-6 rounded-md bg-neutral-800 border border-neutral-700 flex items-center justify-center text-neutral-200 font-bold text-[10px]">
               {appName.charAt(0)}
             </div>
-            <span className="text-white font-semibold text-[15px] tracking-tight">{appName}</span>
+            <span className="text-neutral-100 font-medium text-sm tracking-tight">{appName}</span>
           </div>
-          <span className="text-[10px] font-semibold tracking-wider uppercase text-slate-200 bg-white/10 border border-white/10 rounded-full px-3 py-1.5 backdrop-blur">
+          <span className="text-[10px] font-medium tracking-wide uppercase text-neutral-400 bg-neutral-900 border border-neutral-800 rounded-md px-2.5 py-1">
             Weekly recap
           </span>
         </div>
 
         {/* date + trade count */}
-        <div className="text-[11px] font-medium tracking-wide uppercase text-slate-400 mb-2">
+        <div className="text-[11px] text-neutral-500 mb-1.5">
           {format(recap.weekStart, 'MMM d')} – {format(recap.weekEnd, 'MMM d, yyyy')} · {recap.totalTrades} trade
           {recap.totalTrades !== 1 ? 's' : ''}
         </div>
 
         {/* headline number */}
-        <div
-          className={`text-[42px] sm:text-[48px] font-extrabold tracking-tight mb-3 leading-none ${
-            isPositive ? 'text-transparent bg-clip-text bg-gradient-to-r from-emerald-300 to-teal-200' : 'text-rose-400'
-          }`}
-        >
+        <div className={`text-4xl sm:text-5xl font-bold tracking-tight mb-4 leading-none ${isPositive ? 'text-emerald-400' : 'text-rose-400'}`}>
           {isPositive ? '+' : ''}
           {mode === 'r' ? `${total.toFixed(2)}${suffix}` : formatMoney(total)}
         </div>
 
-        {/* badges */}
-        <div className="flex items-center gap-2 mb-6">
-          <span className="text-[11px] font-semibold text-slate-200 bg-white/[0.08] backdrop-blur-md border border-white/10 rounded-full px-3 py-1 transition-colors duration-300 hover:bg-white/[0.14]">
-            {recap.winRate}% win rate
-          </span>
-          <span className="text-[11px] font-semibold text-slate-200 bg-white/[0.08] backdrop-blur-md border border-white/10 rounded-full px-3 py-1 flex items-center gap-1.5 transition-colors duration-300 hover:bg-white/[0.14]">
-            <span className={`w-1.5 h-1.5 rounded-full ${recap.avgR >= 0 ? 'bg-emerald-400' : 'bg-rose-400'}`} />
-            {recap.avgR >= 0 ? '+' : ''}
-            {recap.avgR.toFixed(2)}R avg
-          </span>
-        </div>
-
         {/* day grid */}
-        <div className="grid grid-cols-5 gap-2 mb-6">
+        <div className="grid grid-cols-5 gap-2 mb-5">
           {recap.days.map((day) => (
             <DayCell key={day.dateLabel} day={day} mode={mode} isBest={recap.bestDay && recap.bestDay.dateLabel === day.dateLabel} />
           ))}
         </div>
 
-        {/* footer stats */}
-        <div className="grid grid-cols-4 gap-2 bg-white/[0.05] backdrop-blur-md border border-white/[0.08] rounded-2xl px-4 py-4 mb-5">
+        {/* footer stat row */}
+        <div className="grid grid-cols-4 gap-2 mb-5">
           {[
             { label: 'Trades', value: recap.totalTrades },
             { label: 'Win rate', value: `${recap.winRate}%` },
             { label: 'Avg R', value: `${recap.avgR >= 0 ? '+' : ''}${recap.avgR.toFixed(2)}R` },
             { label: 'Best day', value: recap.bestDay ? recap.bestDay.label : '—' },
           ].map((stat) => (
-            <div key={stat.label} className="text-center rounded-xl transition-transform duration-300 hover:scale-[1.06]">
-              <div className="text-[9px] font-semibold uppercase tracking-wider text-slate-500 mb-1">{stat.label}</div>
-              <div className="text-[13px] font-bold text-white">{stat.value}</div>
+            <div
+              key={stat.label}
+              className="border border-neutral-800 bg-neutral-900/60 rounded-lg p-3 text-center transition-all duration-200 hover:border-neutral-700 hover:-translate-y-0.5"
+            >
+              <div className="text-[9px] uppercase tracking-wide text-neutral-500 mb-1">{stat.label}</div>
+              <div className="text-[13px] font-semibold text-neutral-100">{stat.value}</div>
             </div>
           ))}
         </div>
 
         {/* watermark */}
-        <div className="flex items-center justify-between text-[9px] text-slate-500">
-          <span className="flex items-center gap-1">
-            <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
-              <path d="M20 6L9 17l-5-5" />
-            </svg>
-            Tracked and reviewed in {appName}
-          </span>
+        <div className="flex items-center gap-1.5 text-[9px] text-neutral-600">
+          <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+            <path d="M20 6L9 17l-5-5" />
+          </svg>
+          Tracked and reviewed in {appName}
         </div>
       </div>
     </div>
