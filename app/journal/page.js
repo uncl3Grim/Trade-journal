@@ -236,7 +236,7 @@ export default function JournalPage() {
         </div>
 
         {showRecap && (
-          <WeeklyRecap trades={allTrades} defaultRiskAmount={defaultRiskAmount} onClose={() => setShowRecap(false)} />
+          <WeeklyRecap trades={allTrades} defaultRiskAmount={defaultRiskAmount} onClose={() => setShowRecap(false)} userId={user?.id} />
         )}
 
         <div className="flex items-center justify-between mb-6 flex-wrap gap-3">
