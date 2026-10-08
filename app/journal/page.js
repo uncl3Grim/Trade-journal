@@ -115,7 +115,7 @@ export default function JournalPage() {
     supabase
       .from('broker_connections')
       .select(
-        'id, broker_server, broker_type, mt5_login, starting_balance, daily_loss_limit_pct, max_loss_limit_pct, profit_target_pct, status, last_synced_at'
+        'id, broker_server, broker_type, mt5_login, starting_balance, is_prop_firm, daily_loss_limit_pct, max_loss_limit_pct, profit_target_pct, consistency_limit_pct, status, last_synced_at'
       )
       .order('created_at', { ascending: true })
       .then(({ data }) => {
@@ -231,7 +231,6 @@ export default function JournalPage() {
             >
               Weekly recap
             </button>
-            <span className="text-sm text-gray-400">{user?.email}</span>
           </div>
         </div>
 
@@ -271,6 +270,26 @@ export default function JournalPage() {
             >
               Notes
             </button>
+            <button
+              onClick={() => setTab('overview')}
+              className={`px-4 py-1.5 rounded-xl text-sm font-medium ${
+                tab === 'overview'
+                  ? 'bg-indigo-600 text-white'
+                  : 'bg-white dark:bg-[#15151b] border border-gray-200 dark:border-gray-800 text-gray-500 hover:text-gray-800 dark:hover:text-gray-200'
+              }`}
+            >
+              Overview
+            </button>
+            <button
+              onClick={() => setTab('propfirm')}
+              className={`px-4 py-1.5 rounded-xl text-sm font-medium ${
+                tab === 'propfirm'
+                  ? 'bg-indigo-600 text-white'
+                  : 'bg-white dark:bg-[#15151b] border border-gray-200 dark:border-gray-800 text-gray-500 hover:text-gray-800 dark:hover:text-gray-200'
+              }`}
+            >
+              Prop Firm
+            </button>
           </div>
 
           <div className="flex items-center gap-3">
@@ -288,11 +307,107 @@ export default function JournalPage() {
         </div>
 
         {tab === 'calendar' && (
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            <div className="lg:col-span-2">
+              <div className="flex items-center justify-end mb-3">
+                <div className="flex gap-1 bg-gray-100 rounded-lg p-0.5">
+                  <button
+                    onClick={() => setCalendarView('month')}
+                    className={`px-3 py-1 rounded-md text-xs font-medium ${calendarView === 'month' ? 'bg-white shadow-sm text-gray-900' : 'text-gray-500'}`}
+                  >
+                    Month
+                  </button>
+                  <button
+                    onClick={() => setCalendarView('year')}
+                    className={`px-3 py-1 rounded-md text-xs font-medium ${calendarView === 'year' ? 'bg-white shadow-sm text-gray-900' : 'text-gray-500'}`}
+                  >
+                    Year
+                  </button>
+                </div>
+              </div>
+
+              {calendarView === 'month' ? (
+                <>
+                  <div className="flex items-center justify-between mb-4 flex-wrap gap-2">
+                    <button
+                      onClick={() => setMonth(subMonths(month, 1))}
+                      className="px-3 py-1 rounded-xl bg-white dark:bg-[#15151b] border border-gray-200 dark:border-gray-800 hover:bg-gray-50 dark:hover:bg-gray-800 text-sm text-gray-700 dark:text-gray-200"
+                    >
+                      ← Prev
+                    </button>
+
+                    <div className="relative flex items-center gap-2 cursor-pointer">
+                      <input
+                        type="month"
+                        value={format(month, 'yyyy-MM')}
+                        onChange={(e) => {
+                          if (e.target.value) setMonth(new Date(`${e.target.value}-01T00:00:00`));
+                        }}
+                        className="absolute inset-0 opacity-0 cursor-pointer w-full h-full"
+                        aria-label="Jump to month"
+                      />
+                      <h2 className="font-medium text-gray-900 dark:text-gray-100 whitespace-nowrap pointer-events-none">
+                        {format(month, 'MMMM yyyy')}
+                      </h2>
+                      {monthClosedTrades.length > 0 && (
+                        <span
+                          className={`text-xs font-medium whitespace-nowrap pointer-events-none ${
+                            monthPnl >= 0 ? 'text-green-600' : 'text-red-500'
+                          }`}
+                        >
+                          {monthPnl >= 0 ? '+' : ''}
+                          {formatMoney(monthPnl)} · {monthR >= 0 ? '+' : ''}
+                          {monthR.toFixed(2)}R
+                        </span>
+                      )}
+                    </div>
+
+                    <button
+                      onClick={() => setMonth(addMonths(month, 1))}
+                      className="px-3 py-1 rounded-xl bg-white dark:bg-[#15151b] border border-gray-200 dark:border-gray-800 hover:bg-gray-50 dark:hover:bg-gray-800 text-sm text-gray-700 dark:text-gray-200"
+                    >
+                      Next →
+                    </button>
+                  </div>
+                  {loading ? (
+                    <p className="text-gray-400 text-sm">Loading trades...</p>
+                  ) : (
+                    <Calendar
+                      month={month}
+                      dailyStats={dailyStats}
+                      onDayClick={(day) => router.push(`/journal/day/${format(day, 'yyyy-MM-dd')}`)}
+                      selectedDate={null}
+                      mode={mode}
+                      accountBalance={startingBalance}
+                    />
+                  )}
+                </>
+              ) : (
+                <YearCalendar
+                  year={month.getFullYear()}
+                  dailyStats={yearDailyStats}
+                  onMonthClick={(d) => {
+                    setMonth(d);
+                    setCalendarView('month');
+                  }}
+                  onDayClick={(day) => router.push(`/journal/day/${format(day, 'yyyy-MM-dd')}`)}
+                  onPrevYear={() => setMonth(subYears(month, 1))}
+                  onNextYear={() => setMonth(addYears(month, 1))}
+                />
+              )}
+            </div>
+
+            <div>
+              <WeeklyTotals month={month} dailyStats={dailyStats} mode={mode} />
+            </div>
+          </div>
+        )}
+
+        {tab === 'overview' && (
           <>
             {activeAccountObj && (
               <SyncStatusWidget account={activeAccountObj} onSynced={() => { loadTrades(); loadAllTrades(); }} />
             )}
-            {activeAccountObj && <PropFirmTracker trades={allTrades} account={activeAccountObj} ddMode={ddMode} />}
             <AnimatedOverview trades={allTrades} account={activeAccountObj} startingBalance={startingBalance} ddMode={ddMode} />
             <EquityCurveChart trades={allTrades} startingBalance={startingBalance} />
             <DrawdownStats
@@ -312,101 +427,20 @@ export default function JournalPage() {
               accountBalance={startingBalance}
             />
             <StatsBar trades={monthClosedTrades} mode={mode} defaultRiskAmount={defaultRiskAmount} accountBalance={startingBalance} />
+          </>
+        )}
 
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mt-6">
-              <div className="lg:col-span-2">
-                <div className="flex items-center justify-end mb-3">
-                  <div className="flex gap-1 bg-gray-100 rounded-lg p-0.5">
-                    <button
-                      onClick={() => setCalendarView('month')}
-                      className={`px-3 py-1 rounded-md text-xs font-medium ${calendarView === 'month' ? 'bg-white shadow-sm text-gray-900' : 'text-gray-500'}`}
-                    >
-                      Month
-                    </button>
-                    <button
-                      onClick={() => setCalendarView('year')}
-                      className={`px-3 py-1 rounded-md text-xs font-medium ${calendarView === 'year' ? 'bg-white shadow-sm text-gray-900' : 'text-gray-500'}`}
-                    >
-                      Year
-                    </button>
-                  </div>
-                </div>
-
-                {calendarView === 'month' ? (
-                  <>
-                    <div className="flex items-center justify-between mb-4 flex-wrap gap-2">
-                      <button
-                        onClick={() => setMonth(subMonths(month, 1))}
-                        className="px-3 py-1 rounded-xl bg-white dark:bg-[#15151b] border border-gray-200 dark:border-gray-800 hover:bg-gray-50 dark:hover:bg-gray-800 text-sm text-gray-700 dark:text-gray-200"
-                      >
-                        ← Prev
-                      </button>
-
-                      <div className="relative flex items-center gap-2 cursor-pointer">
-                        <input
-                          type="month"
-                          value={format(month, 'yyyy-MM')}
-                          onChange={(e) => {
-                            if (e.target.value) setMonth(new Date(`${e.target.value}-01T00:00:00`));
-                          }}
-                          className="absolute inset-0 opacity-0 cursor-pointer w-full h-full"
-                          aria-label="Jump to month"
-                        />
-                        <h2 className="font-medium text-gray-900 dark:text-gray-100 whitespace-nowrap pointer-events-none">
-                          {format(month, 'MMMM yyyy')}
-                        </h2>
-                        {monthClosedTrades.length > 0 && (
-                          <span
-                            className={`text-xs font-medium whitespace-nowrap pointer-events-none ${
-                              monthPnl >= 0 ? 'text-green-600' : 'text-red-500'
-                            }`}
-                          >
-                            {monthPnl >= 0 ? '+' : ''}
-                            {formatMoney(monthPnl)} · {monthR >= 0 ? '+' : ''}
-                            {monthR.toFixed(2)}R
-                          </span>
-                        )}
-                      </div>
-
-                      <button
-                        onClick={() => setMonth(addMonths(month, 1))}
-                        className="px-3 py-1 rounded-xl bg-white dark:bg-[#15151b] border border-gray-200 dark:border-gray-800 hover:bg-gray-50 dark:hover:bg-gray-800 text-sm text-gray-700 dark:text-gray-200"
-                      >
-                        Next →
-                      </button>
-                    </div>
-                    {loading ? (
-                      <p className="text-gray-400 text-sm">Loading trades...</p>
-                    ) : (
-                      <Calendar
-                        month={month}
-                        dailyStats={dailyStats}
-                        onDayClick={(day) => router.push(`/journal/day/${format(day, 'yyyy-MM-dd')}`)}
-                        selectedDate={null}
-                        mode={mode}
-                        accountBalance={startingBalance}
-                      />
-                    )}
-                  </>
-                ) : (
-                  <YearCalendar
-                    year={month.getFullYear()}
-                    dailyStats={yearDailyStats}
-                    onMonthClick={(d) => {
-                      setMonth(d);
-                      setCalendarView('month');
-                    }}
-                    onDayClick={(day) => router.push(`/journal/day/${format(day, 'yyyy-MM-dd')}`)}
-                    onPrevYear={() => setMonth(subYears(month, 1))}
-                    onNextYear={() => setMonth(addYears(month, 1))}
-                  />
-                )}
+        {tab === 'propfirm' && (
+          <>
+            {activeAccountObj?.is_prop_firm ? (
+              <PropFirmTracker trades={allTrades} account={activeAccountObj} ddMode={ddMode} />
+            ) : (
+              <div className="bg-white dark:bg-[#15151b] border border-gray-200 dark:border-gray-800 rounded-2xl shadow-sm p-6 text-center text-sm text-gray-400">
+                {activeAccountObj
+                  ? 'This account isn\'t marked as a prop firm account. Toggle it on the Broker page to see rules here.'
+                  : 'Select a single prop firm account above to see its rules here.'}
               </div>
-
-              <div>
-                <WeeklyTotals month={month} dailyStats={dailyStats} mode={mode} />
-              </div>
-            </div>
+            )}
           </>
         )}
 
