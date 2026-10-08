@@ -310,16 +310,16 @@ export default function JournalPage() {
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
             <div className="lg:col-span-2">
               <div className="flex items-center justify-end mb-3">
-                <div className="flex gap-1 bg-gray-100 rounded-lg p-0.5">
+                <div className="flex gap-1 bg-neutral-900 border border-neutral-800 rounded-lg p-0.5">
                   <button
                     onClick={() => setCalendarView('month')}
-                    className={`px-3 py-1 rounded-md text-xs font-medium ${calendarView === 'month' ? 'bg-white shadow-sm text-gray-900' : 'text-gray-500'}`}
+                    className={`px-3 py-1 rounded-md text-xs font-medium transition-colors ${calendarView === 'month' ? 'bg-neutral-800 text-neutral-100' : 'text-neutral-500'}`}
                   >
                     Month
                   </button>
                   <button
                     onClick={() => setCalendarView('year')}
-                    className={`px-3 py-1 rounded-md text-xs font-medium ${calendarView === 'year' ? 'bg-white shadow-sm text-gray-900' : 'text-gray-500'}`}
+                    className={`px-3 py-1 rounded-md text-xs font-medium transition-colors ${calendarView === 'year' ? 'bg-neutral-800 text-neutral-100' : 'text-neutral-500'}`}
                   >
                     Year
                   </button>
@@ -331,7 +331,7 @@ export default function JournalPage() {
                   <div className="flex items-center justify-between mb-4 flex-wrap gap-2">
                     <button
                       onClick={() => setMonth(subMonths(month, 1))}
-                      className="px-3 py-1 rounded-xl bg-white dark:bg-[#15151b] border border-gray-200 dark:border-gray-800 hover:bg-gray-50 dark:hover:bg-gray-800 text-sm text-gray-700 dark:text-gray-200"
+                      className="px-3 py-1 rounded-xl bg-neutral-900 border border-neutral-800 hover:border-neutral-700 hover:bg-neutral-800 text-sm text-neutral-300 transition-colors"
                     >
                       ← Prev
                     </button>
@@ -346,13 +346,13 @@ export default function JournalPage() {
                         className="absolute inset-0 opacity-0 cursor-pointer w-full h-full"
                         aria-label="Jump to month"
                       />
-                      <h2 className="font-medium text-gray-900 dark:text-gray-100 whitespace-nowrap pointer-events-none">
+                      <h2 className="font-medium text-neutral-100 whitespace-nowrap pointer-events-none">
                         {format(month, 'MMMM yyyy')}
                       </h2>
                       {monthClosedTrades.length > 0 && (
                         <span
                           className={`text-xs font-medium whitespace-nowrap pointer-events-none ${
-                            monthPnl >= 0 ? 'text-green-600' : 'text-red-500'
+                            monthPnl >= 0 ? 'text-emerald-400' : 'text-rose-400'
                           }`}
                         >
                           {monthPnl >= 0 ? '+' : ''}
@@ -364,7 +364,7 @@ export default function JournalPage() {
 
                     <button
                       onClick={() => setMonth(addMonths(month, 1))}
-                      className="px-3 py-1 rounded-xl bg-white dark:bg-[#15151b] border border-gray-200 dark:border-gray-800 hover:bg-gray-50 dark:hover:bg-gray-800 text-sm text-gray-700 dark:text-gray-200"
+                      className="px-3 py-1 rounded-xl bg-neutral-900 border border-neutral-800 hover:border-neutral-700 hover:bg-neutral-800 text-sm text-neutral-300 transition-colors"
                     >
                       Next →
                     </button>
