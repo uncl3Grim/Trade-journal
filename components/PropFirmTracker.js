@@ -18,6 +18,7 @@ function Bar({ value, limit, dangerAt = 90 }) {
 
 export default function PropFirmTracker({ trades, account, ddMode = 'trailing' }) {
   if (!account?.starting_balance) return null;
+  if (!account?.is_prop_firm) return null;
 
   const hasAnyRule = account.daily_loss_limit_pct || account.max_loss_limit_pct || account.profit_target_pct;
   if (!hasAnyRule) return null;
