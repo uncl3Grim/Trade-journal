@@ -16,7 +16,7 @@ export default function MobileNav() {
   const pathname = usePathname();
 
   return (
-    <div className="md:hidden fixed bottom-0 left-0 right-0 bg-gray-950 flex items-center justify-around py-2 z-40 border-t border-gray-800 overflow-x-auto">
+    <div className="md:hidden fixed bottom-0 left-0 right-0 bg-black/40 backdrop-blur-xl flex items-center justify-around py-2 z-40 border-t border-neutral-800/60 overflow-x-auto">
       {NAV_ITEMS.map((item) => {
         const Icon = item.icon;
         const isActive = pathname?.startsWith(item.path);
@@ -25,12 +25,10 @@ export default function MobileNav() {
             key={item.key}
             onClick={() => router.push(item.path)}
             className={`relative flex flex-col items-center gap-0.5 px-2.5 py-1 flex-shrink-0 transition-all duration-200 ${
-              isActive ? 'text-indigo-400' : 'text-gray-500'
+              isActive ? 'text-neutral-100' : 'text-neutral-500'
             }`}
           >
-            {isActive && (
-              <span className="absolute -top-2 w-1 h-1 rounded-full bg-gradient-to-r from-indigo-400 to-violet-500 animate-scale-in" />
-            )}
+            {isActive && <span className="absolute -top-2 w-1 h-1 rounded-full bg-white/70 animate-scale-in" />}
             <Icon
               size={20}
               className={`transition-transform duration-200 ${isActive ? 'scale-110 -translate-y-0.5' : ''}`}
