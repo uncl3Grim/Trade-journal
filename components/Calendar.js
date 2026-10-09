@@ -43,7 +43,7 @@ export default function Calendar({ month, dailyStats, onDayClick, selectedDate, 
   const weekdayLabels = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
 
   return (
-    <div className={`bg-[#0a0a0a] border border-neutral-800 rounded-2xl p-3 sm:p-4 ${bricolage.className}`}>
+    <div className={`bg-black/35 backdrop-blur-xl border border-neutral-800/60 rounded-2xl p-3 sm:p-4 ${bricolage.className}`}>
       <div className="grid grid-cols-7 gap-1.5 sm:gap-2 mb-2">
         {weekdayLabels.map((d) => (
           <div key={d} className="text-center text-[10px] sm:text-xs text-neutral-500 font-medium uppercase tracking-wide">
@@ -59,7 +59,7 @@ export default function Calendar({ month, dailyStats, onDayClick, selectedDate, 
           const isSelected = selectedDate && isSameDay(day, selectedDate);
           const sign = signOf(stat, mode);
 
-          let bg = 'bg-neutral-900/50';
+          let bg = 'bg-white/[0.03]';
           let border = 'border-neutral-800';
           if (stat) {
             if (sign > 0) {
@@ -69,7 +69,7 @@ export default function Calendar({ month, dailyStats, onDayClick, selectedDate, 
               bg = 'bg-rose-400/[0.07]';
               border = 'border-rose-900/50';
             } else {
-              bg = 'bg-neutral-900/70';
+              bg = 'bg-white/[0.04]';
               border = 'border-neutral-800';
             }
           }
