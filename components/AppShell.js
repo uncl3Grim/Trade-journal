@@ -6,7 +6,7 @@ import BackgroundManager from './BackgroundManager';
 
 export default function AppShell({ children }) {
   return (
-    <div className="relative flex bg-[#f7f7fb] dark:bg-[#0b0b0f] min-h-screen">
+    <div className="relative flex bg-[#0a0a0a] min-h-screen">
       <BackgroundManager />
       <div className="relative z-10 flex flex-1">
         <Sidebar />
