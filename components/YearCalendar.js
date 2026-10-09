@@ -30,7 +30,7 @@ function MiniMonth({ year, monthIndex, dailyStats, onMonthClick, onDayClick }) {
   const totals = monthTotals(dailyStats, year, monthIndex);
 
   return (
-    <div className="bg-neutral-900/50 border border-neutral-800 rounded-xl p-2 transition-all duration-200 hover:border-neutral-700">
+    <div className="bg-white/[0.03] border border-neutral-800 rounded-xl p-2 transition-all duration-200 hover:border-neutral-700">
       <button onClick={() => onMonthClick(monthDate)} className="w-full text-left mb-1.5">
         <div className="text-xs font-semibold text-neutral-100">{format(monthDate, 'MMMM')}</div>
         {totals.count > 0 && (
@@ -80,11 +80,11 @@ export default function YearCalendar({ year, dailyStats, onMonthClick, onDayClic
   }
 
   return (
-    <div className={`bg-[#0a0a0a] border border-neutral-800 rounded-2xl p-3 sm:p-4 ${bricolage.className}`}>
+    <div className={`bg-black/35 backdrop-blur-xl border border-neutral-800/60 rounded-2xl p-3 sm:p-4 ${bricolage.className}`}>
       <div className="flex items-center justify-between mb-4">
         <button
           onClick={onPrevYear}
-          className="px-3 py-1 rounded-xl bg-neutral-900 border border-neutral-800 hover:border-neutral-700 hover:bg-neutral-800 text-sm text-neutral-300 transition-colors"
+          className="px-3 py-1 rounded-xl bg-white/[0.04] backdrop-blur-md border border-neutral-800/60 hover:border-neutral-700 hover:bg-white/[0.08] text-sm text-neutral-300 transition-colors"
         >
           ← Prev
         </button>
@@ -97,7 +97,7 @@ export default function YearCalendar({ year, dailyStats, onMonthClick, onDayClic
         </div>
         <button
           onClick={onNextYear}
-          className="px-3 py-1 rounded-xl bg-neutral-900 border border-neutral-800 hover:border-neutral-700 hover:bg-neutral-800 text-sm text-neutral-300 transition-colors"
+          className="px-3 py-1 rounded-xl bg-white/[0.04] backdrop-blur-md border border-neutral-800/60 hover:border-neutral-700 hover:bg-white/[0.08] text-sm text-neutral-300 transition-colors"
         >
           Next →
         </button>
