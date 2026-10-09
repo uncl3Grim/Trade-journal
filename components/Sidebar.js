@@ -36,12 +36,12 @@ export default function Sidebar() {
 
   return (
     <div
-      className={`hidden md:flex flex-col bg-gray-950 min-h-screen py-6 items-center gap-2 flex-shrink-0 transition-all duration-200 ${
+      className={`hidden md:flex flex-col bg-black/30 backdrop-blur-xl border-r border-neutral-800/60 min-h-screen py-6 items-center gap-2 flex-shrink-0 transition-all duration-200 ${
         collapsed ? 'w-16' : 'w-20'
       }`}
     >
       <div className="mb-6">
-        <div className="w-10 h-10 rounded-xl bg-indigo-600 flex items-center justify-center text-white font-bold text-sm">
+        <div className="w-10 h-10 rounded-xl bg-white/10 border border-white/10 backdrop-blur-md flex items-center justify-center text-neutral-100 font-bold text-sm">
           E
         </div>
       </div>
@@ -55,7 +55,7 @@ export default function Sidebar() {
             title={item.label}
             className={`group flex flex-col items-center gap-1 py-3 rounded-xl transition-all duration-200 ${
               collapsed ? 'w-12' : 'w-16'
-            } ${isActive ? 'bg-indigo-600/20 text-indigo-400' : 'text-gray-500 hover:text-indigo-300 hover:bg-white/5'}`}
+            } ${isActive ? 'bg-white/10 text-neutral-100' : 'text-neutral-500 hover:text-neutral-200 hover:bg-white/5'}`}
           >
             <Icon
               size={20}
@@ -68,7 +68,7 @@ export default function Sidebar() {
 
       <button
         onClick={toggle}
-        className="mt-auto w-8 h-8 rounded-lg bg-white/5 hover:bg-white/10 text-gray-500 hover:text-gray-300 flex items-center justify-center transition-colors"
+        className="mt-auto w-8 h-8 rounded-lg bg-white/5 hover:bg-white/10 text-neutral-500 hover:text-neutral-300 flex items-center justify-center transition-colors"
         title={collapsed ? 'Expand' : 'Collapse'}
       >
         <span className={`inline-block transition-transform duration-200 ${collapsed ? 'rotate-180' : ''}`}>◀</span>
