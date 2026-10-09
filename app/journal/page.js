@@ -310,16 +310,16 @@ export default function JournalPage() {
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
             <div className="lg:col-span-2">
               <div className="flex items-center justify-end mb-3">
-                <div className="flex gap-1 bg-neutral-900 border border-neutral-800 rounded-lg p-0.5">
+                <div className="flex gap-1 bg-black/25 backdrop-blur-md border border-neutral-800/60 rounded-lg p-0.5">
                   <button
                     onClick={() => setCalendarView('month')}
-                    className={`px-3 py-1 rounded-md text-xs font-medium transition-colors ${calendarView === 'month' ? 'bg-neutral-800 text-neutral-100' : 'text-neutral-500'}`}
+                    className={`px-3 py-1 rounded-md text-xs font-medium transition-colors ${calendarView === 'month' ? 'bg-white/10 text-neutral-100' : 'text-neutral-500'}`}
                   >
                     Month
                   </button>
                   <button
                     onClick={() => setCalendarView('year')}
-                    className={`px-3 py-1 rounded-md text-xs font-medium transition-colors ${calendarView === 'year' ? 'bg-neutral-800 text-neutral-100' : 'text-neutral-500'}`}
+                    className={`px-3 py-1 rounded-md text-xs font-medium transition-colors ${calendarView === 'year' ? 'bg-white/10 text-neutral-100' : 'text-neutral-500'}`}
                   >
                     Year
                   </button>
@@ -331,7 +331,7 @@ export default function JournalPage() {
                   <div className="flex items-center justify-between mb-4 flex-wrap gap-2">
                     <button
                       onClick={() => setMonth(subMonths(month, 1))}
-                      className="px-3 py-1 rounded-xl bg-neutral-900 border border-neutral-800 hover:border-neutral-700 hover:bg-neutral-800 text-sm text-neutral-300 transition-colors"
+                      className="px-3 py-1 rounded-xl bg-white/[0.04] backdrop-blur-md border border-neutral-800/60 hover:border-neutral-700 hover:bg-white/[0.08] text-sm text-neutral-300 transition-colors"
                     >
                       ← Prev
                     </button>
@@ -364,7 +364,7 @@ export default function JournalPage() {
 
                     <button
                       onClick={() => setMonth(addMonths(month, 1))}
-                      className="px-3 py-1 rounded-xl bg-neutral-900 border border-neutral-800 hover:border-neutral-700 hover:bg-neutral-800 text-sm text-neutral-300 transition-colors"
+                      className="px-3 py-1 rounded-xl bg-white/[0.04] backdrop-blur-md border border-neutral-800/60 hover:border-neutral-700 hover:bg-white/[0.08] text-sm text-neutral-300 transition-colors"
                     >
                       Next →
                     </button>
