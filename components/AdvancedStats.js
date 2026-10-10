@@ -17,26 +17,26 @@ export default function AdvancedStats({ trades }) {
   }
 
   return (
-    <div className="bg-white border border-gray-200 rounded-2xl shadow-sm p-5 mb-4">
-      <h3 className="font-semibold text-gray-900 mb-1 text-sm">Advanced Stats</h3>
-      <p className="text-xs text-gray-400 mb-4">
+    <div className="bg-white/[0.04] backdrop-blur-md border border-neutral-800/60 rounded-2xl p-5 mb-4">
+      <h3 className="font-semibold text-neutral-100 mb-1 text-sm">Advanced Stats</h3>
+      <p className="text-xs text-neutral-500 mb-4">
         Based on {tradeCount} closed trade{tradeCount !== 1 ? 's' : ''}.
       </p>
       <div className="grid grid-cols-3 gap-3">
         <div>
-          <div className="text-xs text-gray-400 mb-1">Profit Factor</div>
-          <div className="text-lg font-semibold text-gray-900">{fmtRatio(profitFactor)}</div>
-          <div className="text-[10px] text-gray-400">Gross profit ÷ gross loss</div>
+          <div className="text-xs text-neutral-500 mb-1">Profit Factor</div>
+          <div className="text-lg font-semibold text-neutral-100">{fmtRatio(profitFactor)}</div>
+          <div className="text-[10px] text-neutral-500">Gross profit ÷ gross loss</div>
         </div>
         <div>
-          <div className="text-xs text-gray-400 mb-1">Sharpe Ratio</div>
-          <div className="text-lg font-semibold text-gray-900">{fmtRatio(sharpe)}</div>
-          <div className="text-[10px] text-gray-400">Per-trade, not annualized</div>
+          <div className="text-xs text-neutral-500 mb-1">Sharpe Ratio</div>
+          <div className="text-lg font-semibold text-neutral-100">{fmtRatio(sharpe)}</div>
+          <div className="text-[10px] text-neutral-500">Per-trade, not annualized</div>
         </div>
         <div>
-          <div className="text-xs text-gray-400 mb-1">Drawdown/Profit</div>
-          <div className="text-lg font-semibold text-gray-900">{fmtRatio(ddToProfit)}</div>
-          <div className="text-[10px] text-gray-400">Lower is better</div>
+          <div className="text-xs text-neutral-500 mb-1">Drawdown/Profit</div>
+          <div className="text-lg font-semibold text-neutral-100">{fmtRatio(ddToProfit)}</div>
+          <div className="text-[10px] text-neutral-500">Lower is better</div>
         </div>
       </div>
     </div>
