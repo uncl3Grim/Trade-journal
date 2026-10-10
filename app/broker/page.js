@@ -6,6 +6,7 @@ import { format } from 'date-fns';
 import { supabase } from '../../lib/supabaseClient';
 import BrokerConnect from '../../components/BrokerConnect';
 import ImportCSV from '../../components/ImportCSV';
+import ManualAccountCreate from '../../components/ManualAccountCreate';
 import ShareReport from '../../components/ShareReport';
 import AppShell from '../../components/AppShell';
 import DrawdownLimitSelect from '../../components/DrawdownLimitSelect';
@@ -119,6 +120,9 @@ function NameEditor({ connection, onSaved }) {
         {connection.broker_type === 'csv' && (
           <span className="text-[10px] px-2 py-0.5 rounded-full bg-gray-100 text-gray-500">CSV</span>
         )}
+        {connection.broker_type === 'manual' && (
+          <span className="text-[10px] px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-600">Manual</span>
+        )}
         <button onClick={() => setEditing(true)} className="text-[10px] text-indigo-500 hover:text-indigo-400">
           Rename
         </button>
@@ -203,6 +207,7 @@ export default function BrokerPage() {
           </button>
         </div>
 
+        <ManualAccountCreate userId={user?.id} onCreated={loadConnections} />
         <BrokerConnect onConnected={loadConnections} />
         <ImportCSV userId={user?.id} onImported={() => { setSyncMessage('CSV import complete — check your Calendar tab.'); loadConnections(); }} />
 
@@ -215,7 +220,7 @@ export default function BrokerPage() {
               <div className="flex items-center justify-between gap-3 flex-wrap">
                 <NameEditor connection={c} onSaved={loadConnections} />
                 <div className="flex items-center gap-2 flex-shrink-0">
-                  {c.broker_type !== 'csv' && (
+                  {c.broker_type !== 'csv' && c.broker_type !== 'manual' && (
                     <button
                       onClick={() => handleSync(c.id)}
                       disabled={syncingId === c.id}
@@ -234,7 +239,7 @@ export default function BrokerPage() {
                 </div>
               </div>
               <div className="text-xs text-gray-400 mt-1">
-                {c.broker_type !== 'csv' && `Login ${c.mt5_login} · `}
+                {c.broker_type !== 'csv' && c.broker_type !== 'manual' && `Login ${c.mt5_login} · `}
                 {c.status}
                 {c.last_synced_at && ` · Last synced ${format(new Date(c.last_synced_at), 'MMM d, h:mm a')}`}
               </div>
