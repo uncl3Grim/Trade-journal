@@ -8,7 +8,7 @@ export default function SyncStatusWidget({ account, onSynced }) {
   const [syncing, setSyncing] = useState(false);
   const [message, setMessage] = useState('');
 
-  if (!account || account.broker_type === 'csv') return null;
+  if (!account || account.broker_type === 'csv' || account.broker_type === 'manual') return null;
 
   async function handleSync() {
     setSyncing(true);
