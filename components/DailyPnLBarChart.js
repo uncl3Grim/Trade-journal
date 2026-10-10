@@ -16,25 +16,25 @@ export default function DailyPnLBarChart({ trades }) {
 
   if (data.length === 0) {
     return (
-      <div className="bg-white border border-gray-200 rounded-2xl shadow-sm p-5 mb-4 text-sm text-gray-400">
+      <div className="bg-white/[0.04] backdrop-blur-md border border-neutral-800/60 rounded-2xl p-5 mb-4 text-sm text-neutral-500">
         No closed trades yet to chart.
       </div>
     );
   }
 
   return (
-    <div className="bg-white border border-gray-200 rounded-2xl shadow-sm p-5 mb-4">
-      <h3 className="font-semibold text-gray-900 mb-4 text-sm">Net Daily P&L</h3>
+    <div className="bg-white/[0.04] backdrop-blur-md border border-neutral-800/60 rounded-2xl p-5 mb-4">
+      <h3 className="font-semibold text-neutral-100 mb-4 text-sm">Net Daily P&L</h3>
       <div className="h-56">
         <ResponsiveContainer width="100%" height="100%">
           <BarChart data={data} margin={{ top: 5, right: 10, left: 0, bottom: 0 }}>
-            <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
-            <XAxis dataKey="date" stroke="#9ca3af" fontSize={10} interval="preserveStartEnd" />
-            <YAxis stroke="#9ca3af" fontSize={10} />
-            <Tooltip contentStyle={{ background: '#fff', border: '1px solid #e5e7eb', borderRadius: 8 }} />
+            <CartesianGrid strokeDasharray="3 3" stroke="#262626" />
+            <XAxis dataKey="date" stroke="#737373" fontSize={10} interval="preserveStartEnd" />
+            <YAxis stroke="#737373" fontSize={10} />
+            <Tooltip contentStyle={{ background: '#15151b', border: '1px solid #2e2e38', borderRadius: 8, color: '#e5e5e5' }} />
             <Bar dataKey="pnl" radius={[3, 3, 0, 0]}>
               {data.map((d, i) => (
-                <Cell key={i} fill={d.pnl >= 0 ? '#4ade80' : '#f87171'} />
+                <Cell key={i} fill={d.pnl >= 0 ? '#34d399' : '#fb7185'} />
               ))}
             </Bar>
           </BarChart>
