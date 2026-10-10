@@ -31,10 +31,10 @@ export default function AnimatedOverview({ trades, account, startingBalance, ddM
 
   return (
     <div className="grid grid-cols-2 gap-4 mb-6">
-      <div className="bg-white border border-gray-200 rounded-2xl shadow-sm p-5 flex items-center justify-center">
+      <div className="bg-white/[0.04] backdrop-blur-md border border-neutral-800/60 rounded-2xl p-5 flex items-center justify-center">
         <AnimatedDrawdownTank percent={ddPercent} label={tankLabel} />
       </div>
-      <div className="bg-white border border-gray-200 rounded-2xl shadow-sm p-5 flex items-center justify-center">
+      <div className="bg-white/[0.04] backdrop-blur-md border border-neutral-800/60 rounded-2xl p-5 flex items-center justify-center">
         <AnimatedWinRateRing percent={winRate} />
       </div>
     </div>
