@@ -299,9 +299,9 @@ export default function TradesPage() {
                           {t.direction}
                         </span>
                       </td>
-                      <td className="px-4 py-3 text-gray-600">{t.entry_price}</td>
+                      <td className="px-4 py-3 text-gray-600">{t.entry_price ? t.entry_price : '—'}</td>
                       <td className="px-4 py-3 text-gray-600">{t.exit_price ?? '—'}</td>
-                      <td className="px-4 py-3 text-gray-600">{t.size}</td>
+                      <td className="px-4 py-3 text-gray-600">{t.size ? t.size : '—'}</td>
                       <td className={`px-4 py-3 font-medium ${Number(t.pnl) >= 0 ? 'text-green-600' : 'text-red-500'}`}>
                         {formatMoney(Number(t.pnl))}
                       </td>
