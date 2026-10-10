@@ -38,7 +38,16 @@ const emptyForm = {
   rule_adherence: '',
   setup_type: '',
   strategy_id: '',
+  outcome: 'win',
+  r_multiple: '',
 };
+
+// Quick-entry mode trades carry no real entry price and no exit price —
+// recognized on edit by that combination (plus an explicit risk_amount,
+// which is what lets the R and $ round-trip exactly).
+function isQuickEntryTrade(trade) {
+  return (!trade.entry_price || Number(trade.entry_price) === 0) && trade.exit_price == null && !!trade.risk_amount;
+}
 
 function Field({ label, children }) {
   return (
@@ -65,6 +74,7 @@ export default function DayPanel({
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
   const [viewingTrade, setViewingTrade] = useState(null);
+  const [quickMode, setQuickMode] = useState(false);
 
   const [dailyNote, setDailyNote] = useState('');
   const [dailyNoteId, setDailyNoteId] = useState(null);
@@ -148,6 +158,18 @@ export default function DayPanel({
 
   function startEdit(trade) {
     setEditingId(trade.id);
+    const quick = isQuickEntryTrade(trade);
+    setQuickMode(quick);
+
+    let outcome = 'win';
+    let rMultipleVal = '';
+    if (quick) {
+      const risk = Number(trade.risk_amount);
+      const pnlNum = Number(trade.pnl);
+      outcome = pnlNum > 0 ? 'win' : pnlNum < 0 ? 'loss' : 'breakeven';
+      rMultipleVal = risk ? (Math.abs(pnlNum / risk)).toFixed(2) : '';
+    }
+
     setForm({
       symbol: trade.symbol,
       direction: trade.direction,
@@ -167,6 +189,8 @@ export default function DayPanel({
       rule_adherence: trade.rule_adherence ?? '',
       setup_type: trade.setup_type ?? '',
       strategy_id: trade.strategy_id ?? '',
+      outcome,
+      r_multiple: rMultipleVal,
     });
   }
 
@@ -178,26 +202,55 @@ export default function DayPanel({
   async function handleSubmit(e) {
     e.preventDefault();
     setError('');
-    setSaving(true);
 
     const tagsArray = form.tags
       .split(',')
       .map((t) => t.trim())
       .filter(Boolean);
 
+    let entryPrice, exitPrice, size, pnl, riskAmount, stopLoss, takeProfit;
+
+    if (quickMode) {
+      const riskUsed = form.risk_amount !== '' ? parseFloat(form.risk_amount) : defaultRiskAmount;
+      if (form.outcome !== 'breakeven' && (!riskUsed || isNaN(riskUsed))) {
+        setError('Enter a risk amount (or set a default in Risk Settings) so P&L can be calculated.');
+        return;
+      }
+      const rVal = form.outcome === 'breakeven' ? 0 : parseFloat(form.r_multiple) || 0;
+      const sign = form.outcome === 'win' ? 1 : form.outcome === 'loss' ? -1 : 0;
+
+      entryPrice = 0; // not tracked in quick mode — pnl is driven by R × risk, not price
+      exitPrice = null;
+      size = form.size === '' ? 0 : parseFloat(form.size);
+      stopLoss = null;
+      takeProfit = null;
+      riskAmount = riskUsed || null;
+      pnl = sign * rVal * (riskUsed || 0);
+    } else {
+      entryPrice = parseFloat(form.entry_price);
+      exitPrice = form.exit_price === '' ? null : parseFloat(form.exit_price);
+      size = parseFloat(form.size);
+      stopLoss = form.stop_loss === '' ? null : parseFloat(form.stop_loss);
+      takeProfit = form.take_profit === '' ? null : parseFloat(form.take_profit);
+      riskAmount = form.risk_amount === '' ? null : parseFloat(form.risk_amount);
+      pnl = form.pnl === '' ? 0 : parseFloat(form.pnl);
+    }
+
+    setSaving(true);
+
     const payload = {
       user_id: userId,
       symbol: form.symbol.toUpperCase(),
       direction: form.direction,
-      entry_price: parseFloat(form.entry_price),
-      exit_price: form.exit_price === '' ? null : parseFloat(form.exit_price),
-      size: parseFloat(form.size),
+      entry_price: entryPrice,
+      exit_price: exitPrice,
+      size,
       entry_time: form.entry_time ? new Date(form.entry_time).toISOString() : null,
       exit_time: form.exit_time ? new Date(form.exit_time).toISOString() : null,
-      pnl: form.pnl === '' ? 0 : parseFloat(form.pnl),
-      stop_loss: form.stop_loss === '' ? null : parseFloat(form.stop_loss),
-      take_profit: form.take_profit === '' ? null : parseFloat(form.take_profit),
-      risk_amount: form.risk_amount === '' ? null : parseFloat(form.risk_amount),
+      pnl,
+      stop_loss: stopLoss,
+      take_profit: takeProfit,
+      risk_amount: riskAmount,
       tags: tagsArray.length ? tagsArray : null,
       emotion: form.emotion || null,
       notes: form.notes,
@@ -205,6 +258,10 @@ export default function DayPanel({
       rule_adherence: form.rule_adherence || null,
       setup_type: form.setup_type || null,
       strategy_id: form.strategy_id || null,
+      // Only stamp/overwrite `source` for quick-entry saves — leave it alone
+      // otherwise so editing a CSV-imported trade via the exact-price form
+      // doesn't clobber its existing 'csv_import' tag.
+      ...(quickMode ? { source: 'quick_entry' } : {}),
     };
 
     let res;
@@ -370,6 +427,19 @@ export default function DayPanel({
           </Field>
         )}
 
+        <div className="flex items-center justify-between -mb-1">
+          <span className="text-[11px] text-gray-400">
+            {quickMode ? 'Logging by result — no prices needed' : 'Logging with exact entry/exit prices'}
+          </span>
+          <button
+            type="button"
+            onClick={() => setQuickMode(!quickMode)}
+            className="text-xs text-indigo-600 hover:text-indigo-500 font-medium"
+          >
+            {quickMode ? 'Switch to exact prices' : 'Quick entry (Win/Loss + R)'}
+          </button>
+        </div>
+
         <div className="grid grid-cols-2 gap-3">
           <Field label="Symbol">
             <input
@@ -392,81 +462,144 @@ export default function DayPanel({
           </Field>
         </div>
 
-        <div className="grid grid-cols-2 gap-3">
-          <Field label="Entry price">
-            <input
-              type="number"
-              step="any"
-              value={form.entry_price}
-              onChange={(e) => setForm({ ...form, entry_price: e.target.value })}
-              required
-              className="w-full bg-white border border-gray-300 rounded-xl px-3 py-2 text-sm text-gray-900"
-            />
-          </Field>
-          <Field label="Exit price">
-            <input
-              type="number"
-              step="any"
-              value={form.exit_price}
-              onChange={(e) => setForm({ ...form, exit_price: e.target.value })}
-              className="w-full bg-white border border-gray-300 rounded-xl px-3 py-2 text-sm text-gray-900"
-            />
-          </Field>
-        </div>
+        {quickMode ? (
+          <>
+            <div className="grid grid-cols-2 gap-3">
+              <Field label="Outcome">
+                <select
+                  value={form.outcome}
+                  onChange={(e) => setForm({ ...form, outcome: e.target.value })}
+                  className="w-full bg-white border border-gray-300 rounded-xl px-3 py-2 text-sm text-gray-900"
+                >
+                  <option value="win">Win — hit take profit</option>
+                  <option value="loss">Loss — hit stop loss</option>
+                  <option value="breakeven">Breakeven</option>
+                </select>
+              </Field>
+              <Field label="R multiple">
+                <input
+                  type="number"
+                  step="any"
+                  min="0"
+                  placeholder="e.g. 2.5"
+                  value={form.r_multiple}
+                  onChange={(e) => setForm({ ...form, r_multiple: e.target.value })}
+                  disabled={form.outcome === 'breakeven'}
+                  required={form.outcome !== 'breakeven'}
+                  className="w-full bg-white border border-gray-300 rounded-xl px-3 py-2 text-sm text-gray-900 disabled:bg-gray-50 disabled:text-gray-400"
+                />
+              </Field>
+            </div>
+
+            <Field label={`Risk amount ($)${defaultRiskAmount ? ` — leave blank to use default ($${defaultRiskAmount})` : ' — required to calculate P&L'}`}>
+              <input
+                type="number"
+                step="any"
+                placeholder={defaultRiskAmount ? String(defaultRiskAmount) : 'e.g. 20'}
+                value={form.risk_amount}
+                onChange={(e) => setForm({ ...form, risk_amount: e.target.value })}
+                className="w-full bg-white border border-gray-300 rounded-xl px-3 py-2 text-sm text-gray-900"
+              />
+            </Field>
+
+            {(() => {
+              const riskUsed = form.risk_amount !== '' ? parseFloat(form.risk_amount) : defaultRiskAmount;
+              const rVal = form.outcome === 'breakeven' ? 0 : parseFloat(form.r_multiple) || 0;
+              const sign = form.outcome === 'win' ? 1 : form.outcome === 'loss' ? -1 : 0;
+              const preview = riskUsed ? sign * rVal * riskUsed : null;
+              return (
+                <p className="text-xs text-gray-400">
+                  P&L preview:{' '}
+                  <span className={`font-medium ${preview > 0 ? 'text-green-600' : preview < 0 ? 'text-red-500' : 'text-gray-600'}`}>
+                    {preview !== null ? formatMoney(preview) : '— enter a risk amount —'}
+                  </span>
+                </p>
+              );
+            })()}
+          </>
+        ) : (
+          <>
+            <div className="grid grid-cols-2 gap-3">
+              <Field label="Entry price">
+                <input
+                  type="number"
+                  step="any"
+                  value={form.entry_price}
+                  onChange={(e) => setForm({ ...form, entry_price: e.target.value })}
+                  required
+                  className="w-full bg-white border border-gray-300 rounded-xl px-3 py-2 text-sm text-gray-900"
+                />
+              </Field>
+              <Field label="Exit price">
+                <input
+                  type="number"
+                  step="any"
+                  value={form.exit_price}
+                  onChange={(e) => setForm({ ...form, exit_price: e.target.value })}
+                  className="w-full bg-white border border-gray-300 rounded-xl px-3 py-2 text-sm text-gray-900"
+                />
+              </Field>
+            </div>
+
+            <div className="grid grid-cols-2 gap-3">
+              <Field label="Stop loss">
+                <input
+                  type="number"
+                  step="any"
+                  value={form.stop_loss}
+                  onChange={(e) => setForm({ ...form, stop_loss: e.target.value })}
+                  className="w-full bg-white border border-gray-300 rounded-xl px-3 py-2 text-sm text-gray-900"
+                />
+              </Field>
+              <Field label="Take profit">
+                <input
+                  type="number"
+                  step="any"
+                  value={form.take_profit}
+                  onChange={(e) => setForm({ ...form, take_profit: e.target.value })}
+                  className="w-full bg-white border border-gray-300 rounded-xl px-3 py-2 text-sm text-gray-900"
+                />
+              </Field>
+            </div>
+          </>
+        )}
 
         <div className="grid grid-cols-2 gap-3">
-          <Field label="Stop loss">
-            <input
-              type="number"
-              step="any"
-              value={form.stop_loss}
-              onChange={(e) => setForm({ ...form, stop_loss: e.target.value })}
-              className="w-full bg-white border border-gray-300 rounded-xl px-3 py-2 text-sm text-gray-900"
-            />
-          </Field>
-          <Field label="Take profit">
-            <input
-              type="number"
-              step="any"
-              value={form.take_profit}
-              onChange={(e) => setForm({ ...form, take_profit: e.target.value })}
-              className="w-full bg-white border border-gray-300 rounded-xl px-3 py-2 text-sm text-gray-900"
-            />
-          </Field>
-        </div>
-
-        <div className="grid grid-cols-2 gap-3">
-          <Field label="Size / lots">
+          <Field label={quickMode ? 'Size / lots (optional)' : 'Size / lots'}>
             <input
               type="number"
               step="any"
               value={form.size}
               onChange={(e) => setForm({ ...form, size: e.target.value })}
-              required
+              required={!quickMode}
               className="w-full bg-white border border-gray-300 rounded-xl px-3 py-2 text-sm text-gray-900"
             />
           </Field>
-          <Field label="P&L">
+          {!quickMode && (
+            <Field label="P&L">
+              <input
+                type="number"
+                step="any"
+                value={form.pnl}
+                onChange={(e) => setForm({ ...form, pnl: e.target.value })}
+                className="w-full bg-white border border-gray-300 rounded-xl px-3 py-2 text-sm text-gray-900"
+              />
+            </Field>
+          )}
+        </div>
+
+        {!quickMode && (
+          <Field label={`Risk amount ($) — optional, overrides default${defaultRiskAmount ? ` ($${defaultRiskAmount})` : ''} and price-based calc`}>
             <input
               type="number"
               step="any"
-              value={form.pnl}
-              onChange={(e) => setForm({ ...form, pnl: e.target.value })}
+              placeholder={defaultRiskAmount ? `Using default: ${defaultRiskAmount}` : 'e.g. 20'}
+              value={form.risk_amount}
+              onChange={(e) => setForm({ ...form, risk_amount: e.target.value })}
               className="w-full bg-white border border-gray-300 rounded-xl px-3 py-2 text-sm text-gray-900"
             />
           </Field>
-        </div>
-
-        <Field label={`Risk amount ($) — optional, overrides default${defaultRiskAmount ? ` ($${defaultRiskAmount})` : ''} and price-based calc`}>
-          <input
-            type="number"
-            step="any"
-            placeholder={defaultRiskAmount ? `Using default: ${defaultRiskAmount}` : 'e.g. 20'}
-            value={form.risk_amount}
-            onChange={(e) => setForm({ ...form, risk_amount: e.target.value })}
-            className="w-full bg-white border border-gray-300 rounded-xl px-3 py-2 text-sm text-gray-900"
-          />
-        </Field>
+        )}
 
         <div className="grid grid-cols-2 gap-3">
           <Field label="Entry time">
