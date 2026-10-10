@@ -17,12 +17,12 @@ export default function AnimatedWinRateRing({ percent }) {
   return (
     <div className="flex flex-col items-center">
       <svg width="96" height="96" viewBox="0 0 96 96">
-        <circle cx="48" cy="48" r={radius} className="stroke-gray-200 dark:stroke-gray-700" strokeWidth="8" fill="none" />
+        <circle cx="48" cy="48" r={radius} className="stroke-neutral-800" strokeWidth="8" fill="none" />
         <circle
           cx="48"
           cy="48"
           r={radius}
-          stroke="#6366f1"
+          stroke="#818cf8"
           strokeWidth="8"
           fill="none"
           strokeLinecap="round"
@@ -37,12 +37,12 @@ export default function AnimatedWinRateRing({ percent }) {
           textAnchor="middle"
           fontSize="18"
           fontWeight="700"
-          className="fill-gray-900 dark:fill-gray-100"
+          className="fill-neutral-100"
         >
           {percent.toFixed(0)}%
         </text>
       </svg>
-      <div className="text-[10px] text-gray-400 mt-1">Win rate</div>
+      <div className="text-[10px] text-neutral-500 mt-1">Win rate</div>
     </div>
   );
 }
