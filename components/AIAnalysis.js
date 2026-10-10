@@ -34,9 +34,9 @@ export default function AIAnalysis({ defaultRiskAmount }) {
   }
 
   return (
-    <div className="bg-white border border-gray-200 rounded-2xl shadow-sm p-5 mb-6">
+    <div className="bg-white/[0.04] backdrop-blur-md border border-neutral-800/60 rounded-2xl p-5 mb-6">
       <div className="flex items-center justify-between mb-3">
-        <h3 className="font-semibold text-gray-900">AI Trade Analysis</h3>
+        <h3 className="font-semibold text-neutral-100">AI Trade Analysis</h3>
         <button
           onClick={runAnalysis}
           disabled={loading}
@@ -45,10 +45,10 @@ export default function AIAnalysis({ defaultRiskAmount }) {
           {loading ? 'Analyzing...' : 'Analyze My Trading'}
         </button>
       </div>
-      {error && <p className="text-sm text-red-500">{error}</p>}
-      {analysis && <div className="text-sm text-gray-700 whitespace-pre-wrap leading-relaxed">{analysis}</div>}
+      {error && <p className="text-sm text-rose-400">{error}</p>}
+      {analysis && <div className="text-sm text-neutral-300 whitespace-pre-wrap leading-relaxed">{analysis}</div>}
       {!analysis && !loading && !error && (
-        <p className="text-xs text-gray-400">Get AI-powered coaching based on your full trade history, patterns, and stats.</p>
+        <p className="text-xs text-neutral-500">Get AI-powered coaching based on your full trade history, patterns, and stats.</p>
       )}
     </div>
   );
