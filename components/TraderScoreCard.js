@@ -15,32 +15,32 @@ export default function TraderScoreCard({ trades }) {
     { metric: 'Consistency', value: metrics.consistency },
   ];
 
-  const color = overall >= 70 ? '#16a34a' : overall >= 40 ? '#eab308' : '#ef4444';
+  const color = overall >= 70 ? '#34d399' : overall >= 40 ? '#fbbf24' : '#fb7185';
 
   return (
-    <div className="bg-white dark:bg-[#15151b] border border-gray-200 dark:border-gray-800 rounded-2xl shadow-sm p-5 mb-4">
-      <h3 className="font-semibold text-gray-900 dark:text-gray-100 mb-1 text-sm">Trader Score</h3>
-      <p className="text-xs text-gray-400 mb-3">
+    <div className="bg-white/[0.04] backdrop-blur-md border border-neutral-800/60 rounded-2xl p-5 mb-4">
+      <h3 className="font-semibold text-neutral-100 mb-1 text-sm">Trader Score</h3>
+      <p className="text-xs text-neutral-500 mb-3">
         Our own composite score across six dimensions of trading quality — not an official industry
         metric, just a way to see your overall balance at a glance.
       </p>
       <div className="h-56">
         <ResponsiveContainer width="100%" height="100%">
           <RadarChart data={data} outerRadius="70%">
-            <PolarGrid className="stroke-gray-200 dark:stroke-gray-700" />
-            <PolarAngleAxis dataKey="metric" tick={{ fontSize: 10, fill: '#6b7280' }} />
+            <PolarGrid stroke="#2e2e38" />
+            <PolarAngleAxis dataKey="metric" tick={{ fontSize: 10, fill: '#9ca3af' }} />
             <PolarRadiusAxis angle={30} domain={[0, 100]} tick={false} axisLine={false} />
-            <Radar dataKey="value" stroke="#6366f1" fill="#6366f1" fillOpacity={0.35} />
+            <Radar dataKey="value" stroke="#818cf8" fill="#818cf8" fillOpacity={0.35} />
           </RadarChart>
         </ResponsiveContainer>
       </div>
       <div className="mt-2">
-        <div className="text-xs text-gray-400 mb-1">Overall score</div>
+        <div className="text-xs text-neutral-500 mb-1">Overall score</div>
         <div className="flex items-center gap-3">
           <div className="text-2xl font-bold" style={{ color }}>
             {overall.toFixed(1)}
           </div>
-          <div className="flex-1 h-2 bg-gray-100 dark:bg-gray-800 rounded-full overflow-hidden">
+          <div className="flex-1 h-2 bg-neutral-800 rounded-full overflow-hidden">
             <div className="h-full rounded-full" style={{ width: `${overall}%`, backgroundColor: color }} />
           </div>
         </div>
