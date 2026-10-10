@@ -10,6 +10,7 @@ import { supabase } from '../lib/supabaseClient';
 // (AccountSwitcher, DayPanel's account select, the Trades page, etc).
 export default function ManualAccountCreate({ userId, onCreated }) {
   const [name, setName] = useState('');
+  const [startingBalance, setStartingBalance] = useState('');
   const [creating, setCreating] = useState(false);
   const [error, setError] = useState('');
 
@@ -25,6 +26,7 @@ export default function ManualAccountCreate({ userId, onCreated }) {
       broker_server: trimmed,
       mt5_login: 'Manual',
       status: 'manual',
+      starting_balance: startingBalance === '' ? null : parseFloat(startingBalance),
     });
     setCreating(false);
     if (error) {
@@ -32,6 +34,7 @@ export default function ManualAccountCreate({ userId, onCreated }) {
       return;
     }
     setName('');
+    setStartingBalance('');
     onCreated?.();
   }
 
@@ -49,12 +52,20 @@ export default function ManualAccountCreate({ userId, onCreated }) {
         No CSV import, no broker sync — just a named account you log trades into yourself from the
         Journal (Win/Loss + R-multiple instead of exact prices).
       </p>
-      <form onSubmit={handleCreate} className="flex gap-2">
+      <form onSubmit={handleCreate} className="flex flex-col sm:flex-row gap-2">
         <input
           placeholder="e.g. Personal Live Account"
           value={name}
           onChange={(e) => setName(e.target.value)}
           className="flex-1 bg-white dark:bg-[#101019] border border-gray-300 dark:border-gray-700 rounded-xl px-3 py-2.5 text-sm text-gray-900 dark:text-gray-100 placeholder:text-gray-400 dark:placeholder:text-gray-500 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 outline-none transition-colors"
+        />
+        <input
+          type="number"
+          step="any"
+          placeholder="Starting balance ($)"
+          value={startingBalance}
+          onChange={(e) => setStartingBalance(e.target.value)}
+          className="sm:w-44 bg-white dark:bg-[#101019] border border-gray-300 dark:border-gray-700 rounded-xl px-3 py-2.5 text-sm text-gray-900 dark:text-gray-100 placeholder:text-gray-400 dark:placeholder:text-gray-500 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 outline-none transition-colors"
         />
         <button
           type="submit"
@@ -64,6 +75,9 @@ export default function ManualAccountCreate({ userId, onCreated }) {
           {creating ? 'Creating...' : 'Create account'}
         </button>
       </form>
+      <p className="text-[11px] text-gray-400 dark:text-gray-500 mt-2 ml-10">
+        Optional — leave blank if you don't want balance/drawdown tracking for this account. You can also set or edit it later from the account's row below.
+      </p>
       {error && <p className="text-xs text-red-500 mt-2">{error}</p>}
     </div>
   );
