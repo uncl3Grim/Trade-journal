@@ -12,14 +12,14 @@ export default function AnimatedDrawdownTank({ percent, label = 'of max drawdown
 
   return (
     <div className="flex flex-col items-center">
-      <div className="relative w-10 h-20 border-2 border-gray-300 rounded-full overflow-hidden bg-gray-50">
+      <div className="relative w-10 h-20 border-2 border-neutral-700 rounded-full overflow-hidden bg-white/[0.03]">
         <div
-          className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-red-600 to-red-400 transition-all duration-[1200ms] ease-out"
+          className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-rose-600 to-rose-400 transition-all duration-[1200ms] ease-out"
           style={{ height: `${Math.min(100, display)}%` }}
         />
       </div>
-      <div className="text-lg font-bold text-red-500 mt-2">{percent.toFixed(0)}%</div>
-      <div className="text-[10px] text-gray-400">{label}</div>
+      <div className="text-lg font-bold text-rose-400 mt-2">{percent.toFixed(0)}%</div>
+      <div className="text-[10px] text-neutral-500">{label}</div>
     </div>
   );
 }
