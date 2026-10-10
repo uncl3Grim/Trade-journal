@@ -46,7 +46,11 @@ const emptyForm = {
 // recognized on edit by that combination (plus an explicit risk_amount,
 // which is what lets the R and $ round-trip exactly).
 function isQuickEntryTrade(trade) {
-  return (!trade.entry_price || Number(trade.entry_price) === 0) && trade.exit_price == null && !!trade.risk_amount;
+  return (
+    (!trade.entry_price || Number(trade.entry_price) === 0) &&
+    (trade.exit_price === null || trade.exit_price === undefined || Number(trade.exit_price) === 0) &&
+    !!trade.risk_amount
+  );
 }
 
 function Field({ label, children }) {
@@ -220,7 +224,11 @@ export default function DayPanel({
       const sign = form.outcome === 'win' ? 1 : form.outcome === 'loss' ? -1 : 0;
 
       entryPrice = 0; // not tracked in quick mode — pnl is driven by R × risk, not price
-      exitPrice = null;
+      // 0, not null — the rest of the app (calendar totals, Overview tab,
+      // drawdown, psychology/rule/setup stats, etc.) all treat exit_price
+      // !== null as the signal that a trade is "closed". null here would
+      // silently exclude every quick-entry trade from all of that.
+      exitPrice = 0;
       size = form.size === '' ? 0 : parseFloat(form.size);
       stopLoss = null;
       takeProfit = null;
