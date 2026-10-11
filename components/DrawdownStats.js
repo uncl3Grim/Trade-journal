@@ -39,19 +39,19 @@ export default function DrawdownStats({ trades, defaultRiskAmount, startingBalan
   const ddHeading = mode === 'trailing' ? 'Max Trailing DD' : 'Max Static DD';
 
   return (
-    <div className="bg-white border border-gray-200 rounded-2xl shadow-sm p-4 mb-6">
+    <div className="bg-white/[0.04] backdrop-blur-md border border-neutral-800/60 rounded-2xl p-4 mb-6">
       <div className="flex items-center justify-between mb-3">
-        <h3 className="font-semibold text-gray-900 text-sm">Account Overview</h3>
-        <div className="flex gap-1 bg-gray-100 rounded-lg p-0.5">
+        <h3 className="font-semibold text-neutral-100 text-sm">Account Overview</h3>
+        <div className="flex gap-1 bg-white/[0.06] rounded-lg p-0.5">
           <button
             onClick={() => onModeChange('static')}
-            className={`px-2.5 py-1 rounded-md text-xs font-medium ${mode === 'static' ? 'bg-white shadow-sm text-gray-900' : 'text-gray-500'}`}
+            className={`px-2.5 py-1 rounded-md text-xs font-medium ${mode === 'static' ? 'bg-white/15 shadow-sm text-neutral-100' : 'text-neutral-400'}`}
           >
             Static
           </button>
           <button
             onClick={() => onModeChange('trailing')}
-            className={`px-2.5 py-1 rounded-md text-xs font-medium ${mode === 'trailing' ? 'bg-white shadow-sm text-gray-900' : 'text-gray-500'}`}
+            className={`px-2.5 py-1 rounded-md text-xs font-medium ${mode === 'trailing' ? 'bg-white/15 shadow-sm text-neutral-100' : 'text-neutral-400'}`}
           >
             Trailing
           </button>
@@ -60,28 +60,28 @@ export default function DrawdownStats({ trades, defaultRiskAmount, startingBalan
 
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
         {currentBalance !== null && (
-          <div className="bg-gray-50 border border-gray-100 rounded-xl p-3 flex flex-col items-center text-center">
-            <WalletGlyph size={22} className="text-gray-500 mb-1" />
-            <div className="text-xs text-gray-400 mb-1">Account Balance</div>
-            <div className="text-base font-semibold text-gray-900">
+          <div className="bg-white/[0.03] border border-neutral-800/60 rounded-xl p-3 flex flex-col items-center text-center">
+            <WalletGlyph size={22} className="text-neutral-400 mb-1" />
+            <div className="text-xs text-neutral-500 mb-1">Account Balance</div>
+            <div className="text-base font-semibold text-neutral-100">
               ${currentBalance.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
             </div>
           </div>
         )}
 
-        <div className="bg-gray-50 border border-gray-100 rounded-xl p-3 flex flex-col items-center text-center">
-          <TargetGlyph size={22} className="text-indigo-500 mb-1" />
-          <div className="text-xs text-gray-400 mb-1">Total R</div>
-          <div className={`text-base font-semibold ${totalR >= 0 ? 'text-green-600' : 'text-red-500'}`}>
+        <div className="bg-white/[0.03] border border-neutral-800/60 rounded-xl p-3 flex flex-col items-center text-center">
+          <TargetGlyph size={22} className="text-indigo-400 mb-1" />
+          <div className="text-xs text-neutral-500 mb-1">Total R</div>
+          <div className={`text-base font-semibold ${totalR >= 0 ? 'text-emerald-400' : 'text-rose-400'}`}>
             {totalR >= 0 ? '+' : ''}
             {totalR.toFixed(2)}R
           </div>
         </div>
 
-        <div className="bg-gray-50 border border-gray-100 rounded-xl p-3 flex flex-col items-center text-center">
-          <div className="text-xs text-gray-400 mb-1">{ddHeading}</div>
+        <div className="bg-white/[0.03] border border-neutral-800/60 rounded-xl p-3 flex flex-col items-center text-center">
+          <div className="text-xs text-neutral-500 mb-1">{ddHeading}</div>
           <BatteryCellIcon percent={maxDrawdownOfLimitPct} size={40} color="indigo" />
-          <div className="text-[10px] text-gray-400 mt-1">
+          <div className="text-[10px] text-neutral-500 mt-1">
             {formatMoney(dd.maxDrawdown).replace(/^\+/, '')}
             {maxLossLimitPct && maxDrawdownPctOfBalance !== null && (
               <span className="block">
@@ -91,28 +91,28 @@ export default function DrawdownStats({ trades, defaultRiskAmount, startingBalan
           </div>
         </div>
 
-        <div className="bg-gray-50 border border-gray-100 rounded-xl p-3 flex flex-col items-center text-center">
-          <StreakCalendarGlyph size={22} className="text-teal-600 mb-1" />
-          <div className="text-xs text-gray-400 mb-1">Trading Days</div>
-          <div className="text-base font-semibold text-gray-900">{tradingDaysCount}</div>
+        <div className="bg-white/[0.03] border border-neutral-800/60 rounded-xl p-3 flex flex-col items-center text-center">
+          <StreakCalendarGlyph size={22} className="text-teal-400 mb-1" />
+          <div className="text-xs text-neutral-500 mb-1">Trading Days</div>
+          <div className="text-base font-semibold text-neutral-100">{tradingDaysCount}</div>
         </div>
 
-        <div className="bg-gray-50 border border-gray-100 rounded-xl p-3 flex flex-col items-center text-center">
-          <StackedTradesGlyph size={22} className="text-amber-600 mb-1" />
-          <div className="text-xs text-gray-400 mb-1">Total Trades</div>
-          <div className="text-base font-semibold text-gray-900">{totalTradesCount}</div>
+        <div className="bg-white/[0.03] border border-neutral-800/60 rounded-xl p-3 flex flex-col items-center text-center">
+          <StackedTradesGlyph size={22} className="text-amber-400 mb-1" />
+          <div className="text-xs text-neutral-500 mb-1">Total Trades</div>
+          <div className="text-base font-semibold text-neutral-100">{totalTradesCount}</div>
         </div>
       </div>
 
       {!balanceApplicable && (
-        <p className="text-[10px] text-gray-400 mt-2">
+        <p className="text-[10px] text-neutral-500 mt-2">
           Select a single account above to see its balance — combining accounts with different starting balances/currencies isn't meaningful.
         </p>
       )}
       {balanceApplicable && currentBalance === null && (
-        <p className="text-[10px] text-gray-400 mt-2">Set this account's starting balance on the Broker page to see its balance here.</p>
+        <p className="text-[10px] text-neutral-500 mt-2">Set this account's starting balance on the Broker page to see its balance here.</p>
       )}
-      <p className="text-[10px] text-gray-400 mt-2">
+      <p className="text-[10px] text-neutral-500 mt-2">
         {mode === 'trailing'
           ? 'Trailing: measured from your highest-ever account balance (matches most prop firm rules).'
           : 'Static: measured from your starting balance only.'}{' '}
