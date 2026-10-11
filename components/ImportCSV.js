@@ -4,6 +4,7 @@ import { useState, useEffect, useCallback } from 'react';
 import Papa from 'papaparse';
 import { supabase } from '../lib/supabaseClient';
 import { Alert } from './Notice';
+import { MethodIntro, fieldClass, labelClass, primaryBtn, ghostBtn } from './broker/ui';
 import {
   detectFormat,
   convertOrderLevelRows,
@@ -29,9 +30,6 @@ function toISO(dateStr) {
 // Formats where entry_time/exit_time are already full ISO strings produced
 // by the converter itself (so they should NOT be re-parsed with toISO).
 const RAW_DATE_FORMATS = ['order_level', 'myfxbook_statement', 'r_multiple_model'];
-
-const inputClass =
-  'w-full bg-white dark:bg-[#101019] border border-gray-300 dark:border-gray-700 rounded-xl px-3 py-2.5 text-sm text-gray-900 dark:text-gray-100 placeholder:text-gray-400 dark:placeholder:text-gray-500 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 outline-none transition-colors';
 
 export default function ImportCSV({ userId, onImported }) {
   const [status, setStatus] = useState(null); // { type: 'info' | 'success' | 'error', text }
@@ -303,57 +301,47 @@ export default function ImportCSV({ userId, onImported }) {
   }
 
   return (
-    <div className="bg-white/[0.03] border border-neutral-800/60 rounded-2xl p-5">
-      <div className="flex items-center gap-2 mb-1">
-        <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-indigo-500 to-violet-500 flex items-center justify-center text-white flex-shrink-0">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="w-4 h-4">
-            <path strokeLinecap="round" strokeLinejoin="round" d="M12 16V4m0 12l-4-4m4 4l4-4M4 20h16" />
-          </svg>
-        </div>
-        <h2 className="font-semibold text-gray-900 dark:text-gray-100">Import trades</h2>
-      </div>
-      <p className="text-xs text-gray-500 dark:text-gray-400 mb-4 ml-10">
-        Upload our CSV template, or a raw TradingView/Alchemy Markets or MyFXBook Statement export —
-        all are auto-detected and converted. Re-importing the same file is safe.
-      </p>
+    <div className="space-y-4">
+      <MethodIntro
+        title="Import a CSV"
+        what="Upload a trade history file and we convert it for you. Importing the same file twice is safe: existing trades are updated, never duplicated."
+        need="A CSV from our template, TradingView, Alchemy Markets, or a MyFXBook statement. The format is detected automatically."
+      />
 
-      <div className="mb-3">
-        <label className="block text-xs font-medium text-gray-500 dark:text-gray-400 mb-1.5">Import into account</label>
+      <div>
+        <label className={labelClass} htmlFor="csv-account">Import into</label>
         {!creatingNew ? (
           <select
+            id="csv-account"
             value={selectedAccountId}
             onChange={(e) => {
-              if (e.target.value === '__new__') {
-                setCreatingNew(true);
-              } else {
-                setSelectedAccountId(e.target.value);
-              }
+              if (e.target.value === '__new__') setCreatingNew(true);
+              else setSelectedAccountId(e.target.value);
             }}
-            className={inputClass}
+            className={fieldClass}
           >
             <option value="">No account (unassigned)</option>
             {csvAccounts.map((a) => (
-              <option key={a.id} value={a.id}>
-                {a.broker_server}
-              </option>
+              <option key={a.id} value={a.id}>{a.broker_server}</option>
             ))}
-            <option value="__new__">+ Create new account...</option>
+            <option value="__new__">+ New CSV account…</option>
           </select>
         ) : (
-          <div className="flex gap-2">
+          <div className="flex gap-2 bk-swap">
             <input
               autoFocus
-              placeholder="e.g. Prop Firm Challenge 1"
+              aria-label="New account name"
+              placeholder="e.g. Prop firm challenge 1"
               value={newAccountName}
               onChange={(e) => setNewAccountName(e.target.value)}
-              className={`flex-1 ${inputClass}`}
+              className={`flex-1 ${fieldClass}`}
             />
             <button
               onClick={() => {
                 setCreatingNew(false);
                 setNewAccountName('');
               }}
-              className="px-3 rounded-xl border border-gray-300 dark:border-gray-700 text-sm text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800"
+              className={ghostBtn}
             >
               Cancel
             </button>
@@ -362,8 +350,13 @@ export default function ImportCSV({ userId, onImported }) {
       </div>
 
       <div className="flex flex-wrap items-center gap-3">
-        <label className="cursor-pointer bg-gray-100 dark:bg-[#101019] hover:bg-gray-200 dark:hover:bg-[#1a1a24] border border-gray-300 dark:border-gray-700 rounded-xl px-3 py-2 text-sm text-gray-700 dark:text-gray-200 font-medium transition-colors">
-          Choose CSV file
+        <label
+          className={`cursor-pointer inline-flex items-center gap-2 ${primaryBtn} ${busy ? 'opacity-40 pointer-events-none' : ''}`}
+        >
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="w-4 h-4">
+            <path strokeLinecap="round" strokeLinejoin="round" d="M12 16V4m0 0L8 8m4-4l4 4M4 20h16" />
+          </svg>
+          {busy ? 'Working…' : 'Choose CSV file'}
           <input
             type="file"
             accept=".csv,text/csv,text/comma-separated-values,application/vnd.ms-excel,text/plain"
@@ -372,31 +365,31 @@ export default function ImportCSV({ userId, onImported }) {
             className="hidden"
           />
         </label>
-        <button onClick={downloadTemplate} className="text-sm text-indigo-600 dark:text-indigo-400 hover:text-indigo-500 font-medium">
-          Download template
+        <button onClick={downloadTemplate} className="text-sm text-indigo-400 hover:text-indigo-300 font-medium">
+          Download the template
         </button>
       </div>
 
       {pendingRMultiple && (
-        <div className="mt-3 bg-indigo-50 dark:bg-indigo-950/30 border border-indigo-200 dark:border-indigo-900 rounded-xl p-3">
-          <label className="block text-xs text-indigo-700 dark:text-indigo-300 mb-1">
-            Dollar value per 1R (used to convert every trade's R-multiple into a dollar P&L)
+        <div className="bk-swap bg-indigo-500/10 border border-indigo-500/30 rounded-xl p-4">
+          <label className="block text-sm text-indigo-200 font-medium mb-1" htmlFor="csv-r">
+            What is 1R worth in dollars?
           </label>
+          <p className="text-xs text-indigo-300/70 mb-3">
+            This file only has R-multiples. We multiply each trade's R by this amount to get its dollar P&L.
+          </p>
           <div className="flex gap-2">
             <input
+              id="csv-r"
               type="number"
               step="any"
               autoFocus
               placeholder="e.g. 200"
               value={dollarPerR}
               onChange={(e) => setDollarPerR(e.target.value)}
-              className="flex-1 bg-white dark:bg-[#101019] border border-indigo-300 dark:border-indigo-800 rounded-lg px-3 py-2 text-sm text-gray-900 dark:text-gray-100 outline-none"
+              className={`flex-1 ${fieldClass}`}
             />
-            <button
-              onClick={confirmRMultipleImport}
-              disabled={!dollarPerR || busy}
-              className="bg-indigo-600 hover:bg-indigo-500 disabled:opacity-50 text-white rounded-lg px-4 py-2 text-sm font-medium"
-            >
+            <button onClick={confirmRMultipleImport} disabled={!dollarPerR || busy} className={primaryBtn}>
               {busy ? 'Importing…' : 'Import'}
             </button>
             <button
@@ -405,7 +398,7 @@ export default function ImportCSV({ userId, onImported }) {
                 setDollarPerR('');
                 setStatus(null);
               }}
-              className="px-3 rounded-lg border border-gray-300 dark:border-gray-700 text-sm text-gray-600 dark:text-gray-300"
+              className={ghostBtn}
             >
               Cancel
             </button>
@@ -413,11 +406,7 @@ export default function ImportCSV({ userId, onImported }) {
         </div>
       )}
 
-      {status && (
-        <div className="mt-3">
-          <Alert type={status.type}>{status.text}</Alert>
-        </div>
-      )}
+      {status && <Alert type={status.type}>{status.text}</Alert>}
     </div>
   );
 }
