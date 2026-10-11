@@ -33,6 +33,7 @@ const RULE_OPTIONS = [
   { value: 'oversized', label: 'Oversized' },
   { value: 'other', label: 'Other deviation' },
 ];
+const BULK_BATCH_SIZE = 100;
 const BULK_FIELDS = [
   { value: 'rule_adherence', label: 'Rule adherence' },
   { value: 'emotion', label: 'Emotion' },
@@ -54,6 +55,7 @@ export default function TradesPage() {
   const [bulkField, setBulkField] = useState('rule_adherence');
   const [bulkValue, setBulkValue] = useState('');
   const [applying, setApplying] = useState(false);
+  const [bulkStatus, setBulkStatus] = useState(null); // { type: 'success' | 'error', text }
   const [search, setSearch] = useState('');
   const [sideFilter, setSideFilter] = useState('all');
   const [resultFilter, setResultFilter] = useState('all');
@@ -147,23 +149,52 @@ export default function TradesPage() {
     setSelectedIds((prev) => (prev.length === filtered.length ? [] : filtered.map((t) => t.id)));
   }
 
+  // Each id travels in the request URL, so tagging hundreds of trades in one
+  // call produces a URL long enough for the server to reject. Send the ids in
+  // small batches, and only report success for rows the database confirms it
+  // actually changed (.select('id') returns exactly the updated rows).
   async function applyBulkTag() {
     if (!bulkValue || selectedIds.length === 0) return;
     setApplying(true);
-    const { error } = await supabase
-      .from('trades')
-      .update({ [bulkField]: bulkValue })
-      .in('id', selectedIds);
-    setApplying(false);
-    if (error) {
-      alert(`Failed to apply tag: ${error.message}`);
-      return;
+    setBulkStatus(null);
+
+    const ids = [...selectedIds];
+    const updatedIds = new Set();
+    let failure = null;
+
+    for (let i = 0; i < ids.length; i += BULK_BATCH_SIZE) {
+      const batch = ids.slice(i, i + BULK_BATCH_SIZE);
+      const { data, error } = await supabase
+        .from('trades')
+        .update({ [bulkField]: bulkValue })
+        .in('id', batch)
+        .select('id');
+      if (error) {
+        failure = error.message || 'The request was rejected.';
+        break;
+      }
+      for (const row of data || []) updatedIds.add(row.id);
     }
-    setTrades((prev) =>
-      prev.map((t) => (selectedIds.includes(t.id) ? { ...t, [bulkField]: bulkValue } : t))
-    );
-    setSelectedIds([]);
-    setBulkValue('');
+
+    setApplying(false);
+
+    const label = BULK_FIELDS.find((f) => f.value === bulkField)?.label || 'Tag';
+    if (updatedIds.size === ids.length) {
+      setBulkStatus({ type: 'success', text: `${label} applied to ${ids.length} trade${ids.length !== 1 ? 's' : ''}.` });
+    } else {
+      setBulkStatus({
+        type: 'error',
+        text: `${label} was applied to ${updatedIds.size} of ${ids.length} trades. ${
+          failure ? `Error: ${failure}` : 'The database skipped the rest. Check that you own those trades.'
+        }`,
+      });
+    }
+    setTimeout(() => setBulkStatus(null), 8000);
+
+    if (updatedIds.size > 0) {
+      setTrades((prev) => prev.map((t) => (updatedIds.has(t.id) ? { ...t, [bulkField]: bulkValue } : t)));
+      setBulkValue('');
+    }
   }
 
   function accountName(id) {
@@ -336,6 +367,19 @@ export default function TradesPage() {
             <button onClick={() => setSelectedIds([])} className="text-sm text-neutral-400 hover:text-neutral-100 ml-auto">
               Clear selection
             </button>
+          </div>
+        )}
+
+        {bulkStatus && (
+          <div
+            role="status"
+            className={`mb-4 rounded-xl border px-4 py-3 text-sm animate-fade-in-up ${
+              bulkStatus.type === 'success'
+                ? 'bg-emerald-500/10 border-emerald-500/30 text-emerald-300'
+                : 'bg-red-500/10 border-red-500/30 text-red-300'
+            }`}
+          >
+            {bulkStatus.text}
           </div>
         )}
 
