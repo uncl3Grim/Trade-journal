@@ -2,12 +2,13 @@
 
 import { useState } from 'react';
 import { supabase } from '../lib/supabaseClient';
+import { Alert } from './Notice';
+import { MethodIntro, fieldClass, labelClass, primaryBtn } from './broker/ui';
 
 // Creates a plain `broker_connections` row with no CSV/broker sync behind
-// it — just a named bucket the user logs trades into by hand (see the
+// it: just a named bucket the user logs trades into by hand (see the
 // "Quick entry" mode in DayPanel.js). Reuses the same table as CSV/MT5
-// accounts so it shows up for free everywhere accounts are already listed
-// (AccountSwitcher, DayPanel's account select, the Trades page, etc).
+// accounts so it shows up everywhere accounts are already listed.
 export default function ManualAccountCreate({ userId, onCreated }) {
   const [name, setName] = useState('');
   const [startingBalance, setStartingBalance] = useState('');
@@ -39,46 +40,26 @@ export default function ManualAccountCreate({ userId, onCreated }) {
   }
 
   return (
-    <div className="bg-white/[0.03] border border-neutral-800/60 rounded-2xl p-5">
-      <div className="flex items-center gap-2 mb-1">
-        <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-emerald-500 to-teal-500 flex items-center justify-center text-white flex-shrink-0">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="w-4 h-4">
-            <path strokeLinecap="round" strokeLinejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
-          </svg>
+    <form onSubmit={handleCreate} className="space-y-3">
+      <MethodIntro
+        title="Create a manual account"
+        what="A named account you log trades into yourself from the Journal, using win/loss and R-multiple instead of exact prices. Nothing syncs or imports."
+        need="A name. A starting balance is optional: add one to track balance and drawdown, or set it later under Your accounts."
+      />
+      <div className="grid sm:grid-cols-[1fr_12rem] gap-3">
+        <div>
+          <label className={labelClass} htmlFor="man-name">Account name</label>
+          <input id="man-name" placeholder="e.g. Personal live account" value={name} onChange={(e) => setName(e.target.value)} className={fieldClass} />
         </div>
-        <h2 className="font-semibold text-gray-900 dark:text-gray-100">Manual account</h2>
+        <div>
+          <label className={labelClass} htmlFor="man-bal">Starting balance ($)</label>
+          <input id="man-bal" type="number" step="any" placeholder="Optional" value={startingBalance} onChange={(e) => setStartingBalance(e.target.value)} className={fieldClass} />
+        </div>
       </div>
-      <p className="text-xs text-gray-500 dark:text-gray-400 mb-4 ml-10">
-        No CSV import, no broker sync — just a named account you log trades into yourself from the
-        Journal (Win/Loss + R-multiple instead of exact prices).
-      </p>
-      <form onSubmit={handleCreate} className="flex flex-col sm:flex-row gap-2">
-        <input
-          placeholder="e.g. Personal Live Account"
-          value={name}
-          onChange={(e) => setName(e.target.value)}
-          className="flex-1 bg-white dark:bg-[#101019] border border-gray-300 dark:border-gray-700 rounded-xl px-3 py-2.5 text-sm text-gray-900 dark:text-gray-100 placeholder:text-gray-400 dark:placeholder:text-gray-500 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 outline-none transition-colors"
-        />
-        <input
-          type="number"
-          step="any"
-          placeholder="Starting balance ($)"
-          value={startingBalance}
-          onChange={(e) => setStartingBalance(e.target.value)}
-          className="sm:w-44 bg-white dark:bg-[#101019] border border-gray-300 dark:border-gray-700 rounded-xl px-3 py-2.5 text-sm text-gray-900 dark:text-gray-100 placeholder:text-gray-400 dark:placeholder:text-gray-500 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 outline-none transition-colors"
-        />
-        <button
-          type="submit"
-          disabled={creating || !name.trim()}
-          className="bg-indigo-600 hover:bg-indigo-500 disabled:opacity-50 text-white rounded-xl px-4 py-2 text-sm font-medium whitespace-nowrap"
-        >
-          {creating ? 'Creating...' : 'Create account'}
-        </button>
-      </form>
-      <p className="text-[11px] text-gray-400 dark:text-gray-500 mt-2 ml-10">
-        Optional — leave blank if you don't want balance/drawdown tracking for this account. You can also set or edit it later from the account's row below.
-      </p>
-      {error && <p className="text-xs text-red-500 mt-2">{error}</p>}
-    </div>
+      <Alert type="error">{error}</Alert>
+      <button type="submit" disabled={creating || !name.trim()} className={`w-full ${primaryBtn}`}>
+        {creating ? 'Creating…' : 'Create account'}
+      </button>
+    </form>
   );
 }
