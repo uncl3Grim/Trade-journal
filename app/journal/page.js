@@ -26,6 +26,7 @@ import YearCalendar from '../../components/YearCalendar';
 import { applyAccountFilter, computeActiveAccountId } from '../../lib/accountFilter';
 import { rMultiple } from '../../lib/tradeMath';
 import { formatMoney } from '../../lib/format';
+import { fetchAllRows } from '../../lib/fetchAll';
 
 const DEFAULT_ACCOUNT_FILTER = { allSelected: true, selectedIds: [], includeManual: false };
 
@@ -170,17 +171,19 @@ export default function JournalPage() {
 
   const loadAllTrades = useCallback(async () => {
     if (!user) return;
-    // Supabase/PostgREST caps any unpaginated query at 1000 rows by default.
-    // With large CSV imports (backtests especially) that cap silently
-    // truncates the result — .range() here explicitly asks for far more
-    // than any realistic trade count, overriding that default.
-    let query = supabase
-      .from('trades')
-      .select('*')
-      .order('entry_time', { ascending: true })
-      .range(0, 49999);
-    query = applyAccountFilter(query, accountFilter);
-    const { data, error } = await query;
+    // Supabase/PostgREST caps every response at 1000 rows by default, and
+    // .range(0, 49999) does NOT lift that cap. Page through the results so
+    // large imports (backtests especially) are never silently truncated.
+    const { data, error } = await fetchAllRows(() =>
+      applyAccountFilter(
+        supabase
+          .from('trades')
+          .select('*')
+          .order('entry_time', { ascending: true })
+          .order('id', { ascending: true }),
+        accountFilter
+      )
+    );
     if (!error) setAllTrades(data || []);
   }, [user, accountFilter]);
 
