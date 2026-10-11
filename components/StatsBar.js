@@ -47,13 +47,13 @@ export default function StatsBar({ trades, mode = 'dollar', defaultRiskAmount, a
   ];
 
   return (
-    <div className="grid grid-cols-2 sm:grid-cols-7 gap-3 mb-2">
+    <div className="grid grid-cols-2 sm:grid-cols-4 xl:grid-cols-7 gap-3 mb-2">
       <StreakIndicator trades={trades} />
       <ProcessStreakIndicator trades={trades} />
       {stats.map((s) => (
-        <div key={s.label} className="bg-white/[0.04] backdrop-blur-md border border-neutral-800/60 rounded-2xl p-3 hover-lift">
+        <div key={s.label} className="bg-white/[0.04] backdrop-blur-md border border-neutral-800/60 rounded-2xl p-3 hover-lift min-w-0 overflow-hidden">
           <div className="text-xs text-neutral-500 mb-1">{s.label}</div>
-          <div className={`text-lg font-semibold ${s.color}`}>{s.value}</div>
+          <div title={String(s.value)} className={`text-base xl:text-lg font-semibold truncate ${s.color}`}>{s.value}</div>
         </div>
       ))}
       {mode === 'percent' && !accountBalance && (
