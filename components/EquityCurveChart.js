@@ -31,22 +31,22 @@ export default function EquityCurveChart({ trades, startingBalance }) {
 
   if (data.length <= 1) {
     return (
-      <div className="bg-white border border-gray-200 rounded-2xl shadow-sm p-6 mb-6 text-center text-sm text-gray-400">
+      <div className="bg-white/[0.04] backdrop-blur-md border border-neutral-800/60 rounded-2xl p-6 mb-6 text-center text-sm text-neutral-500">
         Not enough closed trades yet to plot an equity curve.
       </div>
     );
   }
 
   return (
-    <div className="bg-white border border-gray-200 rounded-2xl shadow-sm p-4 mb-6">
-      <h3 className="font-semibold text-gray-900 text-sm mb-3">Equity Curve</h3>
+    <div className="bg-white/[0.04] backdrop-blur-md border border-neutral-800/60 rounded-2xl p-4 mb-6">
+      <h3 className="font-semibold text-neutral-100 text-sm mb-3">Equity Curve</h3>
 
       <div style={{ width: '100%', height: 200 }}>
         <ResponsiveContainer>
           <LineChart data={data} margin={{ top: 5, right: 10, left: 0, bottom: 0 }}>
-            <XAxis dataKey="label" tick={{ fontSize: 10, fill: '#9ca3af' }} interval="preserveStartEnd" />
+            <XAxis dataKey="label" tick={{ fontSize: 10, fill: '#737373' }} interval="preserveStartEnd" />
             <YAxis
-              tick={{ fontSize: 10, fill: '#9ca3af' }}
+              tick={{ fontSize: 10, fill: '#737373' }}
               width={54}
               tickFormatter={(v) => `$${(v / 1000).toFixed(1)}k`}
               domain={['auto', 'auto']}
@@ -54,16 +54,16 @@ export default function EquityCurveChart({ trades, startingBalance }) {
             <Tooltip
               formatter={(value, name) => [formatMoney(value), name === 'equity' ? 'Balance' : 'High-water mark']}
               labelFormatter={(l) => l}
-              contentStyle={{ fontSize: 12, borderRadius: 8 }}
+              contentStyle={{ fontSize: 12, borderRadius: 8, background: '#15151b', border: '1px solid #2e2e38', color: '#e5e5e5' }}
             />
-            <ReferenceLine y={startingBalance} stroke="#d1d5db" strokeDasharray="3 3" />
-            <Line type="monotone" dataKey="peak" stroke="#c7d2fe" strokeWidth={1.5} dot={false} strokeDasharray="4 3" />
-            <Line type="monotone" dataKey="equity" stroke="#4f46e5" strokeWidth={2} dot={false} />
+            <ReferenceLine y={startingBalance} stroke="rgba(255,255,255,0.2)" strokeDasharray="3 3" />
+            <Line type="monotone" dataKey="peak" stroke="#a3a3a3" strokeOpacity={0.6} strokeWidth={1.5} dot={false} strokeDasharray="4 3" />
+            <Line type="monotone" dataKey="equity" stroke="#818cf8" strokeWidth={2} dot={false} />
           </LineChart>
         </ResponsiveContainer>
       </div>
 
-      <p className="text-[10px] text-gray-400 mt-2 mb-2">
+      <p className="text-[10px] text-neutral-500 mt-2 mb-2">
         Solid line: account balance over time. Dashed line: your high-water mark (peak balance reached).
       </p>
 
@@ -72,17 +72,17 @@ export default function EquityCurveChart({ trades, startingBalance }) {
           <AreaChart data={data} margin={{ top: 0, right: 10, left: 0, bottom: 0 }}>
             <XAxis dataKey="label" hide />
             <YAxis
-              tick={{ fontSize: 9, fill: '#9ca3af' }}
+              tick={{ fontSize: 9, fill: '#737373' }}
               width={54}
               tickFormatter={(v) => `$${Math.abs(v).toFixed(0)}`}
               domain={['auto', 0]}
             />
-            <Tooltip formatter={(value) => [formatMoney(value), 'Below peak']} contentStyle={{ fontSize: 12, borderRadius: 8 }} />
-            <Area type="monotone" dataKey="underwater" stroke="#ef4444" fill="#fee2e2" strokeWidth={1.5} />
+            <Tooltip formatter={(value) => [formatMoney(value), 'Below peak']} contentStyle={{ fontSize: 12, borderRadius: 8, background: '#15151b', border: '1px solid #2e2e38', color: '#e5e5e5' }} />
+            <Area type="monotone" dataKey="underwater" stroke="#fb7185" fill="#fb7185" fillOpacity={0.25} strokeWidth={1.5} />
           </AreaChart>
         </ResponsiveContainer>
       </div>
-      <p className="text-[10px] text-gray-400 mt-1">Underwater chart — how far below your peak balance you are at each point.</p>
+      <p className="text-[10px] text-neutral-500 mt-1">Underwater chart — how far below your peak balance you are at each point.</p>
     </div>
   );
 }
