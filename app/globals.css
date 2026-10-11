@@ -174,3 +174,43 @@ textarea:focus {
 .dark .hover-lift:hover {
   box-shadow: 0 8px 24px -8px rgba(0, 0, 0, 0.5);
 }
+/* Track-record page motion — paste at the END of app/globals.css */
+@keyframes trOrbA { 0%,100% { transform: translate(0,0) scale(1); } 50% { transform: translate(60px,40px) scale(1.12); } }
+@keyframes trOrbB { 0%,100% { transform: translate(0,0) scale(1); } 50% { transform: translate(-70px,50px) scale(1.1); } }
+@keyframes trOrbC { 0%,100% { transform: translate(0,0) scale(1); } 50% { transform: translate(50px,-60px) scale(1.15); } }
+.tr-orb-a { animation: trOrbA 22s ease-in-out infinite; }
+.tr-orb-b { animation: trOrbB 28s ease-in-out infinite; }
+.tr-orb-c { animation: trOrbC 32s ease-in-out infinite; }
+
+@keyframes trPing { 75%, 100% { transform: scale(2.4); opacity: 0; } }
+.tr-ping { animation: trPing 1.8s cubic-bezier(0, 0, 0.2, 1) infinite; }
+
+@keyframes trSweep { 0% { transform: translateX(-120%); } 60%, 100% { transform: translateX(220%); } }
+.tr-shimmer-badge::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  width: 40%;
+  background: linear-gradient(100deg, transparent, rgba(255, 255, 255, 0.28), transparent);
+  animation: trSweep 3.4s ease-in-out infinite;
+}
+
+@keyframes trDraw { from { stroke-dashoffset: 1; } to { stroke-dashoffset: 0; } }
+.tr-draw { stroke-dasharray: 1; animation: trDraw 0.7s ease-out 0.4s both; }
+
+@keyframes trPopCell {
+  0% { opacity: 0; transform: scale(0.6); }
+  70% { opacity: 1; transform: scale(1.08); }
+  100% { opacity: 1; transform: scale(1); }
+}
+.tr-pop-cell { animation: trPopCell 0.5s cubic-bezier(0.34, 1.56, 0.64, 1) both; }
+.tr-cell:hover { transform: scale(1.12); position: relative; z-index: 2; }
+
+@media (prefers-reduced-motion: reduce) {
+  .tr-orb, .tr-ping, .tr-shimmer-badge::after, .tr-draw, .tr-pop-cell { animation: none !important; }
+  .tr-reveal, .tr-reveal * { transition: none !important; }
+  .tr-draw { stroke-dashoffset: 0; }
+}
+@media print {
+  .tr-reveal { opacity: 1 !important; transform: none !important; }
+}
