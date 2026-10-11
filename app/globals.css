@@ -279,46 +279,121 @@ textarea:focus {
   .bk-swap, .bk-flash, .bk-spin { animation: none !important; }
   .bk-launcher:hover { transform: none; }
 }
-'use client';
 
-import { useEffect, useState } from 'react';
-import { supabase } from '../lib/supabaseClient';
+/* ================================================================
+   Profile page
+   ================================================================ */
+:root { --pf-ease: cubic-bezier(0.2, 0.8, 0.2, 1); --pf-spring: cubic-bezier(0.34, 1.56, 0.64, 1); }
 
-export default function BackgroundManager() {
-  const [bgUrl, setBgUrl] = useState(null);
-  const [opacity, setOpacity] = useState(0.15);
+/* Category panel swap (direction aware) */
+@keyframes pfInFwd { from { opacity: 0; transform: translateX(28px); filter: blur(6px); } to { opacity: 1; transform: none; filter: blur(0); } }
+@keyframes pfInBack { from { opacity: 0; transform: translateX(-28px); filter: blur(6px); } to { opacity: 1; transform: none; filter: blur(0); } }
+.pf-in-fwd  { animation: pfInFwd 420ms var(--pf-ease) both; }
+.pf-in-back { animation: pfInBack 420ms var(--pf-ease) both; }
+.pf-out-fwd  { opacity: 0; transform: translateX(-18px); filter: blur(4px); transition: opacity 170ms ease, transform 170ms ease, filter 170ms ease; }
+.pf-out-back { opacity: 0; transform: translateX(18px);  filter: blur(4px); transition: opacity 170ms ease, transform 170ms ease, filter 170ms ease; }
 
-  useEffect(() => {
-    supabase.auth.getSession().then(async ({ data: { session } }) => {
-      if (!session) return;
-      const { data } = await supabase
-        .from('user_settings')
-        .select('background_image_url, background_opacity')
-        .eq('user_id', session.user.id)
-        .maybeSingle();
-      if (data?.background_image_url) setBgUrl(data.background_image_url);
-      if (data?.background_opacity !== null && data?.background_opacity !== undefined) {
-        setOpacity(data.background_opacity);
-      }
-    });
+/* Cards rise in one after another */
+@keyframes pfRise { from { opacity: 0; transform: translateY(14px) scale(0.985); } to { opacity: 1; transform: none; } }
+.pf-stagger > * { animation: pfRise 520ms var(--pf-ease) both; }
+.pf-stagger > *:nth-child(1) { animation-delay: 60ms; }
+.pf-stagger > *:nth-child(2) { animation-delay: 130ms; }
+.pf-stagger > *:nth-child(3) { animation-delay: 200ms; }
+.pf-stagger > *:nth-child(4) { animation-delay: 270ms; }
 
-    function onChange(e) {
-      const { url, opacity: op } = e.detail || {};
-      if (url !== undefined) setBgUrl(url);
-      if (op !== undefined) setOpacity(op);
-    }
-    window.addEventListener('tj:background', onChange);
-    return () => window.removeEventListener('tj:background', onChange);
-  }, []);
+@keyframes pfSwap { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
+.pf-swap { animation: pfSwap 340ms var(--pf-ease) both; }
+@keyframes pfFade { from { opacity: 0; transform: translateY(3px); } to { opacity: 1; transform: none; } }
+.pf-fade { animation: pfFade 220ms ease both; }
+@keyframes pfPop { 0% { transform: scale(0.3); opacity: 0; } 70% { transform: scale(1.2); opacity: 1; } 100% { transform: scale(1); } }
+.pf-pop { animation: pfPop 360ms var(--pf-spring) both; }
+@keyframes pfIconPop { 0% { transform: scale(0.4) rotate(-18deg); opacity: 0; } 100% { transform: none; opacity: 1; } }
+.pf-icon-pop { animation: pfIconPop 420ms var(--pf-spring) both; }
 
-  return (
-    <div
-      className="fixed inset-0 z-0 pointer-events-none bg-cover bg-center"
-      style={{
-        backgroundImage: bgUrl ? `url(${bgUrl})` : 'none',
-        opacity: bgUrl ? opacity : 0,
-        transition: 'opacity 600ms ease',
-      }}
-    />
-  );
+/* Nav */
+.pf-pill-bg { transition: left 380ms var(--pf-spring), top 380ms var(--pf-spring), width 380ms var(--pf-spring), height 380ms var(--pf-spring); }
+.pf-navitem { transition: color 200ms ease; }
+.pf-navicon { transition: transform 380ms var(--pf-spring); }
+.pf-navicon.is-on { transform: scale(1.18) rotate(-6deg); }
+.pf-navitem:hover .pf-navicon { transform: translateY(-1px) scale(1.1); }
+
+/* Hero */
+@keyframes pfFloat { 0%,100% { transform: translate(0,0); } 50% { transform: translate(24px,18px); } }
+.pf-glow { animation: pfFloat 14s ease-in-out infinite; transition: background 600ms ease; }
+.pf-glow-b { animation-duration: 18s; animation-direction: reverse; }
+.pf-hero { animation: pfRise 600ms var(--pf-ease) both; }
+.pf-pill { font-size: 11px; padding: 3px 10px; border-radius: 999px; border: 1px solid rgba(255,255,255,.1); background: rgba(255,255,255,.05); color: #a3a3a3; }
+
+/* Avatar ring */
+@keyframes pfSpin { to { transform: rotate(360deg); } }
+.pf-ring { position: relative; border-radius: 32%; padding: 3px; flex-shrink: 0; }
+.pf-ring::before {
+  content: ''; position: absolute; inset: 0; border-radius: inherit;
+  background: conic-gradient(from 0deg, var(--g1), var(--g2), var(--g1));
+  animation: pfSpin 6s linear infinite; opacity: .9;
+}
+.pf-ring-gap { position: relative; width: 100%; height: 100%; border-radius: 29%; background: #0a0a0a; padding: 3px; }
+.pf-avatar-inner { transition: background 400ms ease, box-shadow 400ms ease; }
+
+/* Pickers */
+.pf-icon-tile { transition: transform 260ms var(--pf-spring), background-color 200ms ease, border-color 200ms ease, color 200ms ease, box-shadow 300ms ease; }
+.pf-icon-tile:hover { transform: translateY(-3px) scale(1.06); }
+.pf-icon-tile.is-active { transform: scale(1.1); box-shadow: 0 8px 24px -8px rgba(99,102,241,.7); }
+.pf-swatch { transition: transform 260ms var(--pf-spring), box-shadow 260ms ease; }
+.pf-swatch:hover { transform: scale(1.12); }
+.pf-swatch.is-active { transform: scale(1.12); box-shadow: 0 0 0 2px #0a0a0a, 0 0 0 4px rgba(255,255,255,.85); }
+.pf-chip { transition: all 220ms var(--pf-ease); }
+.pf-chip.is-active { transform: translateY(-1px); }
+.pf-dice { transition: transform 500ms var(--pf-spring); }
+button:hover > .pf-dice { transform: rotate(180deg); }
+
+.pf-tile { transition: transform 260ms var(--pf-spring), border-color 220ms ease, box-shadow 300ms ease; }
+.pf-tile:hover { transform: translateY(-2px); }
+.pf-tile.is-active { box-shadow: 0 0 0 1px rgba(129,140,248,.3), 0 14px 36px -14px rgba(99,102,241,.55); }
+.pf-drop { transition: background-color 200ms ease, border-color 200ms ease, transform 260ms var(--pf-spring); }
+.pf-drop.is-drag { transform: scale(1.02); }
+
+/* Buttons */
+.pf-btn-primary { background: linear-gradient(135deg, #6366f1, #8b5cf6); box-shadow: 0 8px 24px -10px rgba(99,102,241,.8); transition: box-shadow 250ms ease, transform 120ms var(--pf-spring), opacity 150ms; }
+.pf-btn-primary:not(:disabled):hover { box-shadow: 0 12px 30px -10px rgba(139,92,246,.9); }
+.pf-btn-primary::after { content: ''; position: absolute; inset: 0; width: 40%; background: linear-gradient(100deg, transparent, rgba(255,255,255,.25), transparent); transform: translateX(-120%); }
+.pf-btn-primary:not(:disabled):hover::after { transform: translateX(260%); transition: transform 700ms ease; }
+
+/* Switch */
+.pf-switch { position: relative; flex-shrink: 0; width: 40px; height: 22px; border-radius: 999px; background: rgba(255,255,255,.12); transition: background-color 220ms ease; }
+.pf-switch.is-on { background: #6366f1; }
+.pf-switch-knob { position: absolute; top: 3px; left: 3px; width: 16px; height: 16px; border-radius: 50%; background: #fff; transition: transform 300ms var(--pf-spring); }
+.pf-switch.is-on .pf-switch-knob { transform: translateX(18px); }
+
+.pf-seg-thumb { transition: transform 360ms var(--pf-spring); }
+
+/* Range */
+.pf-range { -webkit-appearance: none; appearance: none; height: 6px; border-radius: 999px; background: linear-gradient(90deg, #818cf8 var(--pct), rgba(255,255,255,.1) var(--pct)); outline: none; box-shadow: none !important; }
+.pf-range::-webkit-slider-thumb { -webkit-appearance: none; width: 18px; height: 18px; border-radius: 50%; background: #fff; box-shadow: 0 2px 8px rgba(0,0,0,.5); transition: transform 200ms var(--pf-spring); cursor: pointer; }
+.pf-range:active::-webkit-slider-thumb { transform: scale(1.25); }
+.pf-range::-moz-range-thumb { width: 18px; height: 18px; border: 0; border-radius: 50%; background: #fff; cursor: pointer; }
+
+/* Smooth open/close for controls that appear after upload */
+.pf-reveal { display: grid; grid-template-rows: 0fr; opacity: 0; transition: grid-template-rows 380ms var(--pf-ease), opacity 260ms ease; }
+.pf-reveal.is-open { grid-template-rows: 1fr; opacity: 1; }
+.pf-reveal-inner { overflow: hidden; min-height: 0; }
+
+/* Sticky unsaved-changes bar */
+.pf-savebar { position: sticky; bottom: 5rem; z-index: 30; margin-top: 1rem; opacity: 0; transform: translateY(24px) scale(.98); pointer-events: none; transition: opacity 260ms ease, transform 420ms var(--pf-spring); }
+.pf-savebar.is-visible { opacity: 1; transform: none; pointer-events: auto; }
+@media (min-width: 768px) { .pf-savebar { bottom: 1.5rem; } }
+
+/* Toast + spinner */
+@keyframes pfToast { from { opacity: 0; transform: translate(-50%, 16px) scale(.95); } to { opacity: 1; transform: translate(-50%, 0) scale(1); } }
+.pf-toast { animation: pfToast 360ms var(--pf-spring) both; }
+.pf-spinner { width: 16px; height: 16px; border-radius: 50%; border: 2px solid rgba(255,255,255,.15); border-top-color: #a5b4fc; animation: pfSpin .7s linear infinite; }
+
+.pf-card { transition: border-color 250ms ease, background-color 250ms ease; }
+.pf-card:hover { border-color: rgba(255,255,255,.16); }
+
+@media (prefers-reduced-motion: reduce) {
+  .pf-in-fwd, .pf-in-back, .pf-stagger > *, .pf-swap, .pf-fade, .pf-pop, .pf-icon-pop, .pf-glow, .pf-hero, .pf-toast { animation: none !important; }
+  .pf-out-fwd, .pf-out-back { transition: none !important; }
+  .pf-ring::before { animation: none !important; }
+  .pf-pill-bg, .pf-navicon, .pf-icon-tile, .pf-swatch, .pf-tile, .pf-reveal, .pf-savebar, .pf-seg-thumb, .pf-switch-knob { transition: none !important; }
 }
