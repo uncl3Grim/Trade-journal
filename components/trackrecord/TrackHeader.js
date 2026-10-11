@@ -1,4 +1,4 @@
-'use client';
+d'use client';
 
 import { format } from 'date-fns';
 import { Reveal } from './ui';
