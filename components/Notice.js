@@ -4,7 +4,7 @@ import { useCallback, useState } from 'react';
 
 const STYLES = {
   success: {
-    wrap: 'bg-emerald-50 border-emerald-200 text-emerald-700 dark:bg-emerald-950/40 dark:border-emerald-900 dark:text-emerald-300',
+    wrap: 'bg-emerald-500/10 border-emerald-500/30 text-emerald-300',
     icon: (
       <svg viewBox="0 0 20 20" fill="currentColor" className="w-4 h-4 flex-shrink-0 mt-0.5">
         <path
@@ -16,7 +16,7 @@ const STYLES = {
     ),
   },
   error: {
-    wrap: 'bg-red-50 border-red-200 text-red-700 dark:bg-red-950/40 dark:border-red-900 dark:text-red-300',
+    wrap: 'bg-red-500/10 border-red-500/30 text-red-300',
     icon: (
       <svg viewBox="0 0 20 20" fill="currentColor" className="w-4 h-4 flex-shrink-0 mt-0.5">
         <path
@@ -28,7 +28,7 @@ const STYLES = {
     ),
   },
   info: {
-    wrap: 'bg-indigo-50 border-indigo-200 text-indigo-700 dark:bg-indigo-950/40 dark:border-indigo-900 dark:text-indigo-300',
+    wrap: 'bg-indigo-500/10 border-indigo-500/30 text-indigo-300',
     icon: (
       <svg viewBox="0 0 20 20" fill="currentColor" className="w-4 h-4 flex-shrink-0 mt-0.5">
         <path
@@ -47,7 +47,7 @@ export function Alert({ type = 'info', children }) {
   if (!children) return null;
   const s = STYLES[type] || STYLES.info;
   return (
-    <div className={`flex items-start gap-2 rounded-xl border px-3 py-2.5 text-sm ${s.wrap}`}>
+    <div role="status" className={`flex items-start gap-2 rounded-xl border px-3 py-2.5 text-sm bk-swap ${s.wrap}`}>
       {s.icon}
       <span className="leading-snug">{children}</span>
     </div>
