@@ -4,10 +4,13 @@ import { useEffect, useState, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import { supabase } from '../../lib/supabaseClient';
 import { formatMoney } from '../../lib/format';
+import { fetchAllRows } from '../../lib/fetchAll';
 import AppShell from '../../components/AppShell';
 
 function StrategyCard({ strategy, trades, onDelete, onRename }) {
-  const linked = trades.filter((t) => t.strategy_id === strategy.id && t.exit_price !== null && t.exit_price !== undefined);
+  const tagged = trades.filter((t) => t.strategy_id === strategy.id);
+  const linked = tagged.filter((t) => t.exit_price !== null && t.exit_price !== undefined);
+  const openCount = tagged.length - linked.length;
   const wins = linked.filter((t) => Number(t.pnl) > 0);
   const winRate = linked.length ? (wins.length / linked.length) * 100 : 0;
   const totalPnl = linked.reduce((s, t) => s + Number(t.pnl || 0), 0);
@@ -48,7 +51,10 @@ function StrategyCard({ strategy, trades, onDelete, onRename }) {
       <div className="grid grid-cols-3 gap-3">
         <div>
           <div className="text-xs text-gray-400 mb-1">Trades</div>
-          <div className="text-base font-semibold text-gray-900">{linked.length}</div>
+          <div className="text-base font-semibold text-gray-900">
+            {tagged.length}
+            {openCount > 0 && <span className="text-xs font-normal text-gray-400"> ({openCount} open)</span>}
+          </div>
         </div>
         <div>
           <div className="text-xs text-gray-400 mb-1">Win Rate</div>
@@ -84,7 +90,15 @@ export default function StrategiesPage() {
     if (!user) return;
     const [{ data: s }, { data: t }] = await Promise.all([
       supabase.from('strategies').select('*').order('created_at', { ascending: true }),
-      supabase.from('trades').select('id, pnl, exit_price, strategy_id').range(0, 49999),
+      // Only trades that have a strategy, fetched page by page so the
+      // 1000-row server cap can never hide tagged trades.
+      fetchAllRows(() =>
+        supabase
+          .from('trades')
+          .select('id, pnl, exit_price, strategy_id')
+          .not('strategy_id', 'is', null)
+          .order('id', { ascending: true })
+      ),
     ]);
     setStrategies(s || []);
     setTrades(t || []);
