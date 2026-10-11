@@ -50,25 +50,25 @@ export default function PeriodStatsHeader({ trades, month, mode, defaultRiskAmou
 
   return (
     <div className="grid grid-cols-2 gap-3 mb-4">
-      <div className="bg-white border border-gray-200 rounded-2xl shadow-sm p-3">
-        <div className="text-xs text-gray-400 mb-1">{format(safeMonth, 'MMMM yyyy')}</div>
-        <div className={`text-lg font-semibold ${monthValue >= 0 ? 'text-green-600' : 'text-red-500'}`}>
+      <div className="bg-white/[0.04] backdrop-blur-md border border-neutral-800/60 rounded-2xl p-3">
+        <div className="text-xs text-neutral-500 mb-1">{format(safeMonth, 'MMMM yyyy')}</div>
+        <div className={`text-lg font-semibold ${monthValue >= 0 ? 'text-emerald-400' : 'text-rose-400'}`}>
           {fmt(monthValue, mode, accountBalance)}
         </div>
-        <div className="text-[10px] text-gray-400">
+        <div className="text-[10px] text-neutral-500">
           {monthly.tradeCount} trades · {monthly.winRate.toFixed(0)}% win rate
         </div>
       </div>
-      <div className="bg-white border border-gray-200 rounded-2xl shadow-sm p-3">
-        <div className="text-xs text-gray-400 mb-1">Best Day</div>
+      <div className="bg-white/[0.04] backdrop-blur-md border border-neutral-800/60 rounded-2xl p-3">
+        <div className="text-xs text-neutral-500 mb-1">Best Day</div>
         <div
           className={`text-lg font-semibold ${
-            bestDay ? (bestDay.value >= 0 ? 'text-green-600' : 'text-red-500') : 'text-gray-400'
+            bestDay ? (bestDay.value >= 0 ? 'text-emerald-400' : 'text-rose-400') : 'text-neutral-500'
           }`}
         >
           {bestDay ? fmt(bestDay.value, mode, accountBalance) : '—'}
         </div>
-        <div className="text-[10px] text-gray-400">
+        <div className="text-[10px] text-neutral-500">
           {bestDay
             ? `${format(bestDay.date, 'MMM d')} · ${bestDay.tradeCount} trade${bestDay.tradeCount !== 1 ? 's' : ''}`
             : 'No trades this month'}
