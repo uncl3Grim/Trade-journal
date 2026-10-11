@@ -2,12 +2,13 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '../lib/supabaseClient';
+import { fieldClass, primaryBtn } from './broker/ui';
 
 export default function ShareReport({ connection }) {
   const [reports, setReports] = useState([]);
   const [creating, setCreating] = useState(false);
   const [label, setLabel] = useState('');
-  const [open, setOpen] = useState(false);
+  const [copiedId, setCopiedId] = useState(null);
 
   const load = useCallback(async () => {
     const { data } = await supabase
@@ -19,14 +20,12 @@ export default function ShareReport({ connection }) {
   }, [connection.id]);
 
   useEffect(() => {
-    if (open) load();
-  }, [open, load]);
+    load();
+  }, [load]);
 
   async function createReport() {
     setCreating(true);
-    const {
-      data: { session },
-    } = await supabase.auth.getSession();
+    const { data: { session } } = await supabase.auth.getSession();
     await supabase.from('public_reports').insert({
       user_id: session.user.id,
       broker_connection_id: connection.id,
@@ -42,58 +41,48 @@ export default function ShareReport({ connection }) {
     load();
   }
 
-  function copyLink(token) {
-    const url = `${window.location.origin}/verify/${token}`;
-    navigator.clipboard.writeText(url);
-    alert('Link copied!');
-  }
-
-  if (!open) {
-    return (
-      <button onClick={() => setOpen(true)} className="text-xs text-indigo-500 hover:text-indigo-400 mt-2 block">
-        Share verified track record
-      </button>
-    );
+  async function copyLink(r) {
+    try {
+      await navigator.clipboard.writeText(`${window.location.origin}/verify/${r.token}`);
+      setCopiedId(r.id);
+      setTimeout(() => setCopiedId(null), 1800);
+    } catch {}
   }
 
   const active = reports.filter((r) => !r.revoked);
 
   return (
-    <div className="mt-2 bg-gray-50 rounded-xl p-3">
-      <div className="text-xs font-medium text-gray-700 mb-2">
-        Public share links for {connection.broker_server}
-      </div>
-      <div className="flex gap-2 mb-3">
+    <div>
+      <div className="flex gap-2">
         <input
-          placeholder="Label (optional)"
+          aria-label="Link name"
+          placeholder="Link name (optional)"
           value={label}
           onChange={(e) => setLabel(e.target.value)}
-          className="flex-1 bg-white border border-gray-300 rounded-lg px-2 py-1 text-xs text-gray-900"
+          className={`flex-1 ${fieldClass}`}
         />
-        <button
-          onClick={createReport}
-          disabled={creating}
-          className="bg-indigo-600 hover:bg-indigo-500 disabled:opacity-50 text-white rounded-lg px-3 py-1 text-xs font-medium"
-        >
-          {creating ? '...' : '+ New link'}
+        <button onClick={createReport} disabled={creating} className={primaryBtn}>
+          {creating ? 'Creating…' : 'Create link'}
         </button>
       </div>
-      {active.length === 0 && <p className="text-[10px] text-gray-400">No active share links yet.</p>}
-      <div className="space-y-1">
-        {active.map((r) => (
-          <div key={r.id} className="flex items-center justify-between bg-white rounded-lg px-2 py-1.5 text-xs">
-            <span className="text-gray-600">{r.label || 'Untitled'}</span>
-            <div className="flex gap-2">
-              <button onClick={() => copyLink(r.token)} className="text-indigo-500 hover:text-indigo-400">
-                Copy link
-              </button>
-              <button onClick={() => revoke(r.id)} className="text-red-500 hover:text-red-400">
-                Revoke
-              </button>
-            </div>
-          </div>
-        ))}
-      </div>
+
+      {active.length === 0 ? (
+        <p className="text-xs text-neutral-500 mt-3">No active links. Create one to share a read-only view of this account's results.</p>
+      ) : (
+        <ul className="mt-3 space-y-2">
+          {active.map((r) => (
+            <li key={r.id} className="bk-swap flex items-center justify-between gap-3 bg-white/[0.03] border border-neutral-800/60 rounded-xl px-3 py-2">
+              <span className="text-sm text-neutral-200 truncate">{r.label || 'Untitled link'}</span>
+              <span className="flex gap-3 flex-shrink-0 text-xs font-medium">
+                <button onClick={() => copyLink(r)} className={copiedId === r.id ? 'text-emerald-400' : 'text-indigo-400 hover:text-indigo-300'}>
+                  {copiedId === r.id ? 'Copied' : 'Copy link'}
+                </button>
+                <button onClick={() => revoke(r.id)} className="text-red-400 hover:text-red-300">Revoke</button>
+              </span>
+            </li>
+          ))}
+        </ul>
+      )}
     </div>
   );
 }
