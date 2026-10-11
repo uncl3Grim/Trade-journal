@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState, useCallback } from 'react';
+import { useEffect, useState, useCallback, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import { format } from 'date-fns';
 import { supabase } from '../../lib/supabaseClient';
@@ -10,6 +10,16 @@ import { formatMoney } from '../../lib/format';
 import { tradesToCsv, downloadCsv } from '../../lib/exportCsv';
 import TradeSummaryCard from '../../components/TradeSummaryCard';
 import AppShell from '../../components/AppShell';
+
+const PAGE_SIZE = 100;
+const GLASS = 'bg-white/[0.04] backdrop-blur-md border border-neutral-800/60';
+const FIELD =
+  'bg-white/[0.04] border border-neutral-800/60 text-neutral-100 placeholder-neutral-600 rounded-xl focus:outline-none focus:border-indigo-500/60';
+
+function safeDate(v) {
+  const d = v ? new Date(v) : null;
+  return d && !isNaN(d.getTime()) ? d : null;
+}
 
 const DEFAULT_ACCOUNT_FILTER = { allSelected: true, selectedIds: [], includeManual: false };
 
@@ -44,6 +54,10 @@ export default function TradesPage() {
   const [bulkField, setBulkField] = useState('rule_adherence');
   const [bulkValue, setBulkValue] = useState('');
   const [applying, setApplying] = useState(false);
+  const [search, setSearch] = useState('');
+  const [sideFilter, setSideFilter] = useState('all');
+  const [resultFilter, setResultFilter] = useState('all');
+  const [visible, setVisible] = useState(PAGE_SIZE);
 
   useEffect(() => {
     try {
@@ -103,8 +117,34 @@ export default function TradesPage() {
     setSelectedIds((prev) => (prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]));
   }
 
+  const filtered = useMemo(() => {
+    const q = search.trim().toLowerCase();
+    return trades.filter((t) => {
+      if (q && !String(t.symbol || '').toLowerCase().includes(q)) return false;
+      if (sideFilter !== 'all' && t.direction !== sideFilter) return false;
+      const pnl = Number(t.pnl || 0);
+      if (resultFilter === 'win' && !(pnl > 0)) return false;
+      if (resultFilter === 'loss' && !(pnl < 0)) return false;
+      return true;
+    });
+  }, [trades, search, sideFilter, resultFilter]);
+
+  // Filters change which rows are on screen, so drop any selection and paging.
+  useEffect(() => {
+    setSelectedIds([]);
+    setVisible(PAGE_SIZE);
+  }, [search, sideFilter, resultFilter]);
+
+  const summary = useMemo(() => {
+    const pnls = filtered.map((t) => Number(t.pnl || 0));
+    const net = pnls.reduce((a, b) => a + b, 0);
+    const wins = pnls.filter((v) => v > 0).length;
+    const decided = pnls.filter((v) => v !== 0).length;
+    return { count: filtered.length, net, winRate: decided ? (wins / decided) * 100 : null };
+  }, [filtered]);
+
   function toggleAll() {
-    setSelectedIds((prev) => (prev.length === trades.length ? [] : trades.map((t) => t.id)));
+    setSelectedIds((prev) => (prev.length === filtered.length ? [] : filtered.map((t) => t.id)));
   }
 
   async function applyBulkTag() {
@@ -132,35 +172,109 @@ export default function TradesPage() {
     return a ? a.broker_server : '—';
   }
 
+  const rows = filtered.slice(0, visible);
+  const selectCls = 'text-sm px-2.5 py-1.5 ' + FIELD;
+
+  function Seg({ value, onChange, options }) {
+    return (
+      <div className={`inline-flex rounded-xl p-0.5 ${GLASS}`}>
+        {options.map((o) => (
+          <button
+            key={o.value}
+            onClick={() => onChange(o.value)}
+            className={`px-3 py-1.5 text-xs font-medium rounded-[10px] transition ${
+              value === o.value ? 'bg-indigo-500/90 text-white shadow' : 'text-neutral-400 hover:text-neutral-100'
+            }`}
+          >
+            {o.label}
+          </button>
+        ))}
+      </div>
+    );
+  }
+
   return (
     <AppShell>
       <div className="max-w-6xl mx-auto px-4 py-6">
-        <div className="flex items-center justify-between mb-6">
-          <h1 className="text-xl font-semibold text-gray-900">Trade History</h1>
-          <div className="flex items-center gap-3">
+        <div className="flex items-end justify-between mb-5 flex-wrap gap-3">
+          <div>
+            <h1 className="text-xl font-semibold text-neutral-100">Trade History</h1>
+            <p className="text-xs text-neutral-500 mt-0.5">Every trade for the selected accounts. Tap a row for its card.</p>
+          </div>
+          <div className="flex items-center gap-2">
             <button
               onClick={() => downloadCsv(tradesToCsv(trades), `trades-export-${format(new Date(), 'yyyy-MM-dd')}.csv`)}
-              className="text-sm text-indigo-600 hover:text-indigo-500"
+              className={`text-sm text-indigo-300 hover:text-indigo-200 px-3 py-1.5 rounded-xl ${GLASS}`}
             >
               Export CSV
             </button>
-            <button onClick={() => router.push('/journal')} className="text-sm text-gray-500 hover:text-gray-800">
+            <button
+              onClick={() => router.push('/journal')}
+              className={`text-sm text-neutral-400 hover:text-neutral-100 px-3 py-1.5 rounded-xl ${GLASS}`}
+            >
               Back to Journal
             </button>
           </div>
         </div>
 
+        <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 mb-4">
+          <div className={`${GLASS} rounded-2xl p-3 min-w-0`}>
+            <div className="text-xs text-neutral-500 mb-1">Trades</div>
+            <div className="text-lg font-semibold text-neutral-100 truncate">{summary.count}</div>
+          </div>
+          <div className={`${GLASS} rounded-2xl p-3 min-w-0 col-span-2 sm:col-span-1 order-last sm:order-none`}>
+            <div className="text-xs text-neutral-500 mb-1">Net P&L</div>
+            <div className={`text-base sm:text-lg font-semibold truncate ${summary.net >= 0 ? 'text-emerald-400' : 'text-rose-400'}`}>
+              {formatMoney(summary.net)}
+            </div>
+          </div>
+          <div className={`${GLASS} rounded-2xl p-3 min-w-0`}>
+            <div className="text-xs text-neutral-500 mb-1">Win rate</div>
+            <div className="text-lg font-semibold text-neutral-100 truncate">
+              {summary.winRate === null ? '—' : `${summary.winRate.toFixed(1)}%`}
+            </div>
+          </div>
+        </div>
+
+        <div className="flex flex-wrap items-center gap-2 mb-4">
+          <input
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            placeholder="Search symbol…"
+            className={`text-sm px-3 py-1.5 w-full sm:w-52 ${FIELD}`}
+          />
+          <Seg
+            value={sideFilter}
+            onChange={setSideFilter}
+            options={[
+              { value: 'all', label: 'All' },
+              { value: 'long', label: 'Long' },
+              { value: 'short', label: 'Short' },
+            ]}
+          />
+          <Seg
+            value={resultFilter}
+            onChange={setResultFilter}
+            options={[
+              { value: 'all', label: 'Any result' },
+              { value: 'win', label: 'Wins' },
+              { value: 'loss', label: 'Losses' },
+            ]}
+          />
+        </div>
+
         {selectedIds.length > 0 && (
-          <div className="sticky top-2 z-10 bg-indigo-600 text-white rounded-2xl shadow-lg px-4 py-3 mb-4 flex flex-wrap items-center gap-3">
+          <div className="sticky top-2 z-10 bg-indigo-500/20 backdrop-blur-md border border-indigo-400/30 text-neutral-100 rounded-2xl shadow-lg px-4 py-3 mb-4 flex flex-wrap items-center gap-3">
             <span className="text-sm font-medium">{selectedIds.length} selected</span>
 
             <select
               value={bulkField}
+              style={{ colorScheme: 'dark' }}
               onChange={(e) => {
                 setBulkField(e.target.value);
                 setBulkValue('');
               }}
-              className="text-sm rounded-lg px-2 py-1 text-gray-900"
+              className={selectCls}
             >
               {BULK_FIELDS.map((f) => (
                 <option key={f.value} value={f.value}>
@@ -170,11 +284,7 @@ export default function TradesPage() {
             </select>
 
             {bulkField === 'rule_adherence' && (
-              <select
-                value={bulkValue}
-                onChange={(e) => setBulkValue(e.target.value)}
-                className="text-sm rounded-lg px-2 py-1 text-gray-900"
-              >
+              <select value={bulkValue} style={{ colorScheme: 'dark' }} onChange={(e) => setBulkValue(e.target.value)} className={selectCls}>
                 <option value="">Choose a value…</option>
                 {RULE_OPTIONS.map((o) => (
                   <option key={o.value} value={o.value}>
@@ -185,11 +295,7 @@ export default function TradesPage() {
             )}
 
             {bulkField === 'emotion' && (
-              <select
-                value={bulkValue}
-                onChange={(e) => setBulkValue(e.target.value)}
-                className="text-sm rounded-lg px-2 py-1 text-gray-900"
-              >
+              <select value={bulkValue} style={{ colorScheme: 'dark' }} onChange={(e) => setBulkValue(e.target.value)} className={selectCls}>
                 <option value="">Choose a value…</option>
                 {EMOTIONS.map((em) => (
                   <option key={em} value={em}>
@@ -204,16 +310,12 @@ export default function TradesPage() {
                 placeholder="e.g. breakout, reversal, liquidity sweep"
                 value={bulkValue}
                 onChange={(e) => setBulkValue(e.target.value)}
-                className="text-sm rounded-lg px-2 py-1 text-gray-900"
+                className={`text-sm px-2.5 py-1.5 ${FIELD}`}
               />
             )}
 
             {bulkField === 'strategy_id' && (
-              <select
-                value={bulkValue}
-                onChange={(e) => setBulkValue(e.target.value)}
-                className="text-sm rounded-lg px-2 py-1 text-gray-900"
-              >
+              <select value={bulkValue} style={{ colorScheme: 'dark' }} onChange={(e) => setBulkValue(e.target.value)} className={selectCls}>
                 <option value="">Choose a strategy…</option>
                 {strategies.map((s) => (
                   <option key={s.id} value={s.id}>
@@ -226,92 +328,108 @@ export default function TradesPage() {
             <button
               onClick={applyBulkTag}
               disabled={!bulkValue || applying}
-              className="text-sm bg-white text-indigo-600 font-medium px-3 py-1 rounded-lg disabled:opacity-50"
+              className="text-sm bg-indigo-500 hover:bg-indigo-400 text-white font-medium px-3 py-1.5 rounded-xl disabled:opacity-40"
             >
               {applying ? 'Applying…' : `Apply to ${selectedIds.length} trade${selectedIds.length !== 1 ? 's' : ''}`}
             </button>
 
-            <button onClick={() => setSelectedIds([])} className="text-sm text-indigo-100 hover:text-white ml-auto">
+            <button onClick={() => setSelectedIds([])} className="text-sm text-neutral-400 hover:text-neutral-100 ml-auto">
               Clear selection
             </button>
           </div>
         )}
 
         {loading ? (
-          <p className="text-gray-400 text-sm">Loading trades...</p>
-        ) : trades.length === 0 ? (
-          <div className="bg-white border border-gray-200 rounded-2xl shadow-sm p-10 text-center text-gray-400 text-sm">
-            No trades found for this account selection.
+          <div className={`${GLASS} rounded-2xl p-10 text-center text-neutral-500 text-sm`}>Loading trades…</div>
+        ) : filtered.length === 0 ? (
+          <div className={`${GLASS} rounded-2xl p-10 text-center text-neutral-500 text-sm`}>
+            {trades.length === 0 ? 'No trades found for this account selection.' : 'No trades match these filters.'}
           </div>
         ) : (
-          <div className="bg-white border border-gray-200 rounded-2xl shadow-sm overflow-x-auto">
-            <table className="w-full text-sm">
-              <thead>
-                <tr className="border-b border-gray-100 text-left text-xs text-gray-400">
-                  <th className="px-4 py-3 font-medium">
-                    <input
-                      type="checkbox"
-                      checked={selectedIds.length === trades.length && trades.length > 0}
-                      onChange={toggleAll}
-                      className="rounded"
-                    />
-                  </th>
-                  <th className="px-4 py-3 font-medium">Date</th>
-                  <th className="px-4 py-3 font-medium">Symbol</th>
-                  <th className="px-4 py-3 font-medium">Side</th>
-                  <th className="px-4 py-3 font-medium">Entry</th>
-                  <th className="px-4 py-3 font-medium">Exit</th>
-                  <th className="px-4 py-3 font-medium">Size</th>
-                  <th className="px-4 py-3 font-medium">P&L</th>
-                  <th className="px-4 py-3 font-medium">R</th>
-                  <th className="px-4 py-3 font-medium">Account</th>
-                </tr>
-              </thead>
-              <tbody>
-                {trades.map((t) => {
-                  const r = rMultiple(t, defaultRiskAmount);
-                  return (
-                    <tr
-                      key={t.id}
-                      onClick={() => setSelectedTrade(t)}
-                      className={`border-b border-gray-50 last:border-0 cursor-pointer hover:bg-gray-50 ${
-                        selectedIds.includes(t.id) ? 'bg-indigo-50/50' : ''
-                      }`}
-                    >
-                      <td className="px-4 py-3" onClick={(e) => e.stopPropagation()}>
-                        <input
-                          type="checkbox"
-                          checked={selectedIds.includes(t.id)}
-                          onChange={() => toggleOne(t.id)}
-                          className="rounded"
-                        />
-                      </td>
-                      <td className="px-4 py-3 whitespace-nowrap text-gray-700">
-                        {format(new Date(t.entry_time), 'MMM d, yyyy')}
-                      </td>
-                      <td className="px-4 py-3 font-medium text-gray-900">{t.symbol}</td>
-                      <td className="px-4 py-3">
-                        <span
-                          className={`text-xs px-2 py-0.5 rounded-full ${
-                            t.direction === 'long' ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'
-                          }`}
-                        >
-                          {t.direction}
-                        </span>
-                      </td>
-                      <td className="px-4 py-3 text-gray-600">{t.entry_price ? t.entry_price : '—'}</td>
-                      <td className="px-4 py-3 text-gray-600">{t.exit_price ? t.exit_price : '—'}</td>
-                      <td className="px-4 py-3 text-gray-600">{t.size ? t.size : '—'}</td>
-                      <td className={`px-4 py-3 font-medium ${Number(t.pnl) >= 0 ? 'text-green-600' : 'text-red-500'}`}>
-                        {formatMoney(Number(t.pnl))}
-                      </td>
-                      <td className="px-4 py-3 text-gray-500">{r !== null ? `${r >= 0 ? '+' : ''}${r.toFixed(2)}R` : '—'}</td>
-                      <td className="px-4 py-3 text-gray-400 text-xs">{accountName(t.broker_connection_id)}</td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
+          <div className={`${GLASS} rounded-2xl overflow-hidden`}>
+            <div className="overflow-x-auto">
+              <table className="w-full text-sm">
+                <thead>
+                  <tr className="border-b border-neutral-800/60 text-left text-[11px] uppercase tracking-wide text-neutral-500">
+                    <th className="px-4 py-3 font-medium">
+                      <input
+                        type="checkbox"
+                        checked={selectedIds.length === filtered.length && filtered.length > 0}
+                        onChange={toggleAll}
+                        className="rounded accent-indigo-500"
+                      />
+                    </th>
+                    <th className="px-4 py-3 font-medium">Date</th>
+                    <th className="px-4 py-3 font-medium">Symbol</th>
+                    <th className="px-4 py-3 font-medium">Side</th>
+                    <th className="px-4 py-3 font-medium">Entry</th>
+                    <th className="px-4 py-3 font-medium">Exit</th>
+                    <th className="px-4 py-3 font-medium">Size</th>
+                    <th className="px-4 py-3 font-medium text-right">P&L</th>
+                    <th className="px-4 py-3 font-medium text-right">R</th>
+                    <th className="px-4 py-3 font-medium">Account</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {rows.map((t) => {
+                    const r = rMultiple(t, defaultRiskAmount);
+                    const pnl = Number(t.pnl || 0);
+                    const d = safeDate(t.entry_time);
+                    return (
+                      <tr
+                        key={t.id}
+                        onClick={() => setSelectedTrade(t)}
+                        className={`border-b border-neutral-800/40 last:border-0 cursor-pointer transition-colors hover:bg-white/[0.05] ${
+                          selectedIds.includes(t.id) ? 'bg-indigo-500/10' : ''
+                        }`}
+                      >
+                        <td className="px-4 py-3" onClick={(e) => e.stopPropagation()}>
+                          <input
+                            type="checkbox"
+                            checked={selectedIds.includes(t.id)}
+                            onChange={() => toggleOne(t.id)}
+                            className="rounded accent-indigo-500"
+                          />
+                        </td>
+                        <td className="px-4 py-3 whitespace-nowrap text-neutral-400">{d ? format(d, 'MMM d, yyyy') : '—'}</td>
+                        <td className="px-4 py-3 font-medium text-neutral-100">{t.symbol}</td>
+                        <td className="px-4 py-3">
+                          <span
+                            className={`text-[11px] px-2 py-0.5 rounded-full border ${
+                              t.direction === 'long'
+                                ? 'bg-emerald-400/10 text-emerald-300 border-emerald-400/20'
+                                : 'bg-rose-400/10 text-rose-300 border-rose-400/20'
+                            }`}
+                          >
+                            {t.direction}
+                          </span>
+                        </td>
+                        <td className="px-4 py-3 text-neutral-400 tabular-nums">{t.entry_price ? t.entry_price : '—'}</td>
+                        <td className="px-4 py-3 text-neutral-400 tabular-nums">{t.exit_price ? t.exit_price : '—'}</td>
+                        <td className="px-4 py-3 text-neutral-400 tabular-nums">{t.size ? t.size : '—'}</td>
+                        <td className={`px-4 py-3 font-medium text-right tabular-nums whitespace-nowrap ${pnl >= 0 ? 'text-emerald-400' : 'text-rose-400'}`}>
+                          {formatMoney(pnl)}
+                        </td>
+                        <td className="px-4 py-3 text-neutral-500 text-right tabular-nums whitespace-nowrap">
+                          {r !== null ? `${r >= 0 ? '+' : ''}${r.toFixed(2)}R` : '—'}
+                        </td>
+                        <td className="px-4 py-3 text-neutral-500 text-xs whitespace-nowrap">{accountName(t.broker_connection_id)}</td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+            {filtered.length > visible && (
+              <div className="border-t border-neutral-800/60 p-3 text-center">
+                <button
+                  onClick={() => setVisible((v) => v + PAGE_SIZE)}
+                  className="text-sm text-indigo-300 hover:text-indigo-200"
+                >
+                  Show more ({filtered.length - visible} left)
+                </button>
+              </div>
+            )}
           </div>
         )}
         <TradeSummaryCard trade={selectedTrade} defaultRiskAmount={defaultRiskAmount} onClose={() => setSelectedTrade(null)} />
