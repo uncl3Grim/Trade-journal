@@ -241,7 +241,7 @@ export default function BrokerConnect({ onConnected }) {
   const [tab, setTab] = useState('myfxbook');
 
   return (
-    <div className="bg-white dark:bg-[#15151b] border border-gray-200 dark:border-gray-800 rounded-2xl shadow-sm p-5">
+    <div className="bg-white/[0.03] border border-neutral-800/60 rounded-2xl p-5">
       <div className="flex items-center gap-2 mb-4">
         <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-indigo-500 to-violet-500 flex items-center justify-center text-white flex-shrink-0">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="w-4 h-4">
