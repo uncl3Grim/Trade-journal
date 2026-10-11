@@ -31,13 +31,13 @@ export default function SyncStatusWidget({ account, onSynced }) {
   }
 
   return (
-    <div className="bg-white border border-gray-200 rounded-2xl shadow-sm p-4 mb-4 flex items-center justify-between flex-wrap gap-2">
-      <div className="text-xs text-gray-500">
+    <div className="bg-white/[0.04] backdrop-blur-md border border-neutral-800/60 rounded-2xl p-4 mb-4 flex items-center justify-between flex-wrap gap-2">
+      <div className="text-xs text-neutral-400">
         {account.broker_server} · Last synced:{' '}
         {account.last_synced_at ? format(new Date(account.last_synced_at), 'MMM d, h:mm a') : 'Never'}
       </div>
       <div className="flex items-center gap-2">
-        {message && <span className="text-xs text-gray-400">{message}</span>}
+        {message && <span className="text-xs text-neutral-500">{message}</span>}
         <button
           onClick={handleSync}
           disabled={syncing}
