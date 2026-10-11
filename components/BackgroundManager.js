@@ -20,14 +20,24 @@ export default function BackgroundManager() {
         setOpacity(data.background_opacity);
       }
     });
-  }, []);
 
-  if (!bgUrl) return null;
+    function onChange(e) {
+      const { url, opacity: op } = e.detail || {};
+      if (url !== undefined) setBgUrl(url);
+      if (op !== undefined) setOpacity(op);
+    }
+    window.addEventListener('tj:background', onChange);
+    return () => window.removeEventListener('tj:background', onChange);
+  }, []);
 
   return (
     <div
       className="fixed inset-0 z-0 pointer-events-none bg-cover bg-center"
-      style={{ backgroundImage: `url(${bgUrl})`, opacity }}
+      style={{
+        backgroundImage: bgUrl ? `url(${bgUrl})` : 'none',
+        opacity: bgUrl ? opacity : 0,
+        transition: 'opacity 600ms ease',
+      }}
     />
   );
 }
