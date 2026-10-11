@@ -39,11 +39,11 @@ export default function StatsBar({ trades, mode = 'dollar', defaultRiskAmount, a
   const totalLabel = mode === 'r' ? 'Total R' : usePercent ? 'Total %' : 'Total P&L';
 
   const stats = [
-    { label: totalLabel, value: fmt(totalRaw), color: totalRaw >= 0 ? 'text-green-600' : 'text-red-500' },
-    { label: 'Win Rate', value: `${winRate.toFixed(1)}%`, color: 'text-gray-900' },
-    { label: 'Trades', value: closed.length, color: 'text-gray-900' },
-    { label: 'Avg Win', value: fmt(avgWinRaw), color: 'text-green-600' },
-    { label: 'Avg Loss', value: fmt(avgLossRaw), color: 'text-red-500' },
+    { label: totalLabel, value: fmt(totalRaw), color: totalRaw >= 0 ? 'text-emerald-400' : 'text-rose-400' },
+    { label: 'Win Rate', value: `${winRate.toFixed(1)}%`, color: 'text-neutral-100' },
+    { label: 'Trades', value: closed.length, color: 'text-neutral-100' },
+    { label: 'Avg Win', value: fmt(avgWinRaw), color: 'text-emerald-400' },
+    { label: 'Avg Loss', value: fmt(avgLossRaw), color: 'text-rose-400' },
   ];
 
   return (
@@ -51,13 +51,13 @@ export default function StatsBar({ trades, mode = 'dollar', defaultRiskAmount, a
       <StreakIndicator trades={trades} />
       <ProcessStreakIndicator trades={trades} />
       {stats.map((s) => (
-        <div key={s.label} className="bg-white border border-gray-200 rounded-2xl shadow-sm p-3 hover-lift">
-          <div className="text-xs text-gray-400 mb-1">{s.label}</div>
+        <div key={s.label} className="bg-white/[0.04] backdrop-blur-md border border-neutral-800/60 rounded-2xl p-3 hover-lift">
+          <div className="text-xs text-neutral-500 mb-1">{s.label}</div>
           <div className={`text-lg font-semibold ${s.color}`}>{s.value}</div>
         </div>
       ))}
       {mode === 'percent' && !accountBalance && (
-        <div className="col-span-full text-[10px] text-gray-400">
+        <div className="col-span-full text-[10px] text-neutral-500">
           Set your account balance on the Broker page to see percentage values.
         </div>
       )}
