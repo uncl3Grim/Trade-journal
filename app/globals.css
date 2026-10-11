@@ -174,7 +174,7 @@ textarea:focus {
 .dark .hover-lift:hover {
   box-shadow: 0 8px 24px -8px rgba(0, 0, 0, 0.5);
 }
-/* Track-record page motion — paste at the END of app/globals.css */
+/* Track-record page motion */
 @keyframes trOrbA { 0%,100% { transform: translate(0,0) scale(1); } 50% { transform: translate(60px,40px) scale(1.12); } }
 @keyframes trOrbB { 0%,100% { transform: translate(0,0) scale(1); } 50% { transform: translate(-70px,50px) scale(1.1); } }
 @keyframes trOrbC { 0%,100% { transform: translate(0,0) scale(1); } 50% { transform: translate(50px,-60px) scale(1.15); } }
@@ -213,4 +213,69 @@ textarea:focus {
 }
 @media print {
   .tr-reveal { opacity: 1 !important; transform: none !important; }
+}
+
+/* ================================================================
+   Broker page: selection transitions
+   ================================================================ */
+.bk-collapse {
+  display: grid;
+  grid-template-rows: 0fr;
+  opacity: 0;
+  transition: grid-template-rows 380ms cubic-bezier(0.2, 0.8, 0.2, 1), opacity 260ms ease;
+}
+.bk-collapse.is-open {
+  grid-template-rows: 1fr;
+  opacity: 1;
+}
+.bk-collapse-inner { overflow: hidden; min-height: 0; }
+
+.bk-slide { transition: transform 320ms cubic-bezier(0.34, 1.3, 0.64, 1); }
+.bk-switch { transition: background-color 200ms ease, border-color 200ms ease; }
+.bk-switch-knob { transition: transform 260ms cubic-bezier(0.34, 1.56, 0.64, 1); }
+
+.bk-chevron { transition: transform 320ms cubic-bezier(0.34, 1.56, 0.64, 1); }
+.bk-chevron.is-open { transform: rotate(180deg); }
+
+.bk-launcher {
+  transition: border-color 220ms ease, background-color 220ms ease, box-shadow 320ms ease,
+    transform 220ms cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+.bk-launcher:hover { transform: translateY(-2px); }
+.bk-launcher.is-active {
+  border-color: rgba(129, 140, 248, 0.55);
+  background-color: rgba(99, 102, 241, 0.08);
+  box-shadow: 0 0 0 1px rgba(129, 140, 248, 0.25), 0 12px 40px -12px rgba(99, 102, 241, 0.45);
+}
+
+.bk-row {
+  transition: border-color 220ms ease, background-color 220ms ease, box-shadow 320ms ease;
+}
+.bk-row.is-selected {
+  border-color: rgba(129, 140, 248, 0.5);
+  background-color: rgba(99, 102, 241, 0.06);
+  box-shadow: 0 0 0 1px rgba(129, 140, 248, 0.2), 0 10px 32px -14px rgba(99, 102, 241, 0.5);
+}
+.bk-avatar { transition: transform 320ms cubic-bezier(0.34, 1.56, 0.64, 1), box-shadow 320ms ease; }
+.bk-row.is-selected .bk-avatar { transform: scale(1.08) rotate(-4deg); box-shadow: 0 6px 18px -4px rgba(99, 102, 241, 0.6); }
+
+/* New content swapping in (tab change, row opening) */
+@keyframes bkSwap { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: none; } }
+.bk-swap { animation: bkSwap 320ms cubic-bezier(0.2, 0.8, 0.2, 1) both; }
+
+/* A freshly added account flashes once */
+@keyframes bkFlash {
+  0% { box-shadow: 0 0 0 0 rgba(52, 211, 153, 0.55); }
+  100% { box-shadow: 0 0 0 14px rgba(52, 211, 153, 0); }
+}
+.bk-flash { animation: bkFlash 900ms ease-out 1; }
+
+/* Syncing spinner */
+@keyframes bkSpin { to { transform: rotate(360deg); } }
+.bk-spin { animation: bkSpin 0.8s linear infinite; }
+
+@media (prefers-reduced-motion: reduce) {
+  .bk-collapse, .bk-slide, .bk-switch, .bk-switch-knob, .bk-chevron, .bk-launcher, .bk-row, .bk-avatar { transition: none !important; }
+  .bk-swap, .bk-flash, .bk-spin { animation: none !important; }
+  .bk-launcher:hover { transform: none; }
 }
