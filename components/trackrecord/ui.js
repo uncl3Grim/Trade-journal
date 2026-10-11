@@ -1,58 +1,50 @@
 'use client';
 
-import { useMemo } from 'react';
-import { format } from 'date-fns';
-import { computeTrackRecord } from '../../lib/trackRecord';
-import AmbientBackground from './AmbientBackground';
-import TrackHeader from './TrackHeader';
-import HeadlineStrip from './HeadlineStrip';
-import TrackEquityChart from './TrackEquityChart';
-import MonthlyHeatmap from './MonthlyHeatmap';
-import RiskRatios from './RiskRatios';
-import TrackBreakdowns from './TrackBreakdowns';
-import TradeLog from './TradeLog';
-import { Reveal } from './ui';
+import { useInView, useProgress } from '../../lib/useMotion';
 
-export default function TrackRecordView({ report, banner }) {
-  const tr = useMemo(() => computeTrackRecord(report), [report]);
-  const name = report.trader_name || report.label || report.account_name || 'Verified Track Record';
-
+// Fades + lifts its children in the first time they scroll into view.
+export function Reveal({ children, delay = 0, className = '' }) {
+  const [ref, inView] = useInView(0.08);
   return (
-    <div className="relative min-h-screen bg-[#0a0a0a] text-neutral-200">
-      <AmbientBackground />
-      <div className="relative z-10 mx-auto max-w-4xl px-4 py-6 sm:py-10 space-y-4">
-        {banner && (
-          <div className="rounded-xl border border-amber-500/30 bg-amber-500/10 px-4 py-2 text-center text-xs text-amber-300">{banner}</div>
-        )}
-        <TrackHeader name={name} tr={tr} />
-
-        {tr.n === 0 ? (
-          <Reveal>
-            <div className="rounded-2xl border border-neutral-800/60 bg-white/[0.04] p-8 text-center text-sm text-neutral-400">
-              No closed trades on this report yet.
-            </div>
-          </Reveal>
-        ) : (
-          <>
-            <HeadlineStrip tr={tr} />
-            <TrackEquityChart tr={tr} />
-            <MonthlyHeatmap tr={tr} />
-            <RiskRatios tr={tr} />
-            <TrackBreakdowns tr={tr} />
-            <TradeLog trades={tr.trades} />
-          </>
-        )}
-
-        <Reveal>
-          <footer className="pt-2 pb-6 text-center text-[11px] text-neutral-500 space-y-1">
-            <div>
-              {tr.costsIncluded ? 'Costs included' : 'Net P&L as reported by the broker'}
-              {tr.updatedAt && !isNaN(tr.updatedAt) && <> · Updated {format(tr.updatedAt, 'MMM d, yyyy')}</>}
-            </div>
-            <div className="text-neutral-600">Powered by Edgewise — read-only shared report</div>
-          </footer>
-        </Reveal>
-      </div>
+    <div
+      ref={ref}
+      className={`tr-reveal ${className}`}
+      style={{
+        opacity: inView ? 1 : 0,
+        transform: inView ? 'none' : 'translateY(16px)',
+        transition: `opacity 700ms ease ${delay}ms, transform 700ms cubic-bezier(0.2, 0.8, 0.2, 1) ${delay}ms`,
+      }}
+    >
+      {children}
     </div>
   );
+}
+
+// Glass card in the same style as the rest of the app, with a soft top highlight.
+export function GlassCard({ title, subtitle, right, children, className = '', delay = 0 }) {
+  return (
+    <Reveal delay={delay} className={className}>
+      <section className="relative h-full bg-white/[0.04] backdrop-blur-md border border-neutral-800/60 rounded-2xl p-4 sm:p-5 overflow-hidden">
+        <div className="pointer-events-none absolute inset-x-6 top-0 h-px bg-gradient-to-r from-transparent via-white/25 to-transparent" />
+        {(title || right) && (
+          <div className="flex items-start justify-between gap-3 mb-4">
+            <div>
+              <h2 className="font-heading font-semibold text-neutral-100 text-sm sm:text-base">{title}</h2>
+              {subtitle && <p className="text-[11px] text-neutral-500 mt-0.5">{subtitle}</p>}
+            </div>
+            {right}
+          </div>
+        )}
+        {children}
+      </section>
+    </Reveal>
+  );
+}
+
+// Number that counts up from 0 when it scrolls into view.
+export function CountUp({ value, format, duration = 1400, delay = 0 }) {
+  const [ref, inView] = useInView(0.3);
+  const p = useProgress(inView, duration, delay);
+  const finite = value !== null && value !== undefined && isFinite(value);
+  return <span ref={ref}>{finite ? format(value * p) : format(value)}</span>;
 }
