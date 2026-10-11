@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { format } from 'date-fns';
 import { GlassCard } from './ui';
 import { formatMoney } from '../../lib/format';
+import { validDate } from '../../lib/trackRecord';
 
 export default function TradeLog({ trades }) {
   const [all, setAll] = useState(false);
@@ -28,7 +29,7 @@ export default function TradeLog({ trades }) {
           <tbody>
             {shown.map((t, i) => (
               <tr key={t.id || i} className="border-b border-neutral-800/30 last:border-0 hover:bg-white/[0.03]">
-                <td className="px-2 py-2.5 text-neutral-400 whitespace-nowrap">{format(new Date(t.entry_time || t.exit_time), 'MMM d, yyyy')}</td>
+                <td className="px-2 py-2.5 text-neutral-400 whitespace-nowrap">{(() => { const d = validDate(t.entry_time) || validDate(t.exit_time); return d ? format(d, 'MMM d, yyyy') : '—'; })()}</td>
                 <td className="px-2 py-2.5 font-medium text-neutral-100">{t.symbol}</td>
                 <td className="px-2 py-2.5">
                   <span className={`text-[11px] px-2 py-0.5 rounded-full border ${t.direction === 'short' ? 'bg-rose-500/10 text-rose-300 border-rose-500/25' : 'bg-emerald-500/10 text-emerald-300 border-emerald-500/25'}`}>
