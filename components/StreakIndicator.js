@@ -7,9 +7,9 @@ export default function StreakIndicator({ trades }) {
 
   if (count === 0) {
     return (
-      <div className="bg-white border border-gray-200 rounded-2xl shadow-sm p-3 flex flex-col items-center justify-center text-center">
-        <div className="text-xs text-gray-400 mb-1">Current Streak</div>
-        <div className="text-lg font-semibold text-gray-400">—</div>
+      <div className="bg-white/[0.04] backdrop-blur-md border border-neutral-800/60 rounded-2xl p-3 flex flex-col items-center justify-center text-center">
+        <div className="text-xs text-neutral-500 mb-1">Current Streak</div>
+        <div className="text-lg font-semibold text-neutral-500">—</div>
       </div>
     );
   }
@@ -17,12 +17,12 @@ export default function StreakIndicator({ trades }) {
   const isWin = type === 'win';
   return (
     <div
-      className={`rounded-2xl shadow-sm p-3 flex flex-col items-center justify-center text-center border ${
-        isWin ? 'bg-green-50 border-green-200' : 'bg-red-50 border-red-200'
+      className={`rounded-2xl backdrop-blur-md p-3 flex flex-col items-center justify-center text-center border ${
+        isWin ? 'bg-emerald-500/10 border-emerald-500/30' : 'bg-rose-500/10 border-rose-500/30'
       }`}
     >
-      <div className="text-xs text-gray-400 mb-1">Current Streak</div>
-      <div className={`text-lg font-bold ${isWin ? 'text-green-600' : 'text-red-500'}`}>
+      <div className="text-xs text-neutral-500 mb-1">Current Streak</div>
+      <div className={`text-lg font-bold ${isWin ? 'text-emerald-400' : 'text-rose-400'}`}>
         {isWin ? '🔥' : '❄️'} {count} {isWin ? 'Win' : 'Loss'}{count !== 1 ? 's' : ''}
       </div>
     </div>
