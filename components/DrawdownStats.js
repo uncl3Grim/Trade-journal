@@ -58,7 +58,16 @@ export default function DrawdownStats({ trades, defaultRiskAmount, startingBalan
         </div>
       </div>
 
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">
+        {currentBalance !== null && (
+          <div className="bg-white/[0.03] border border-neutral-800/60 rounded-xl p-3 flex flex-col items-center text-center">
+            <WalletGlyph size={22} className="text-neutral-400 mb-1" />
+            <div className="text-xs text-neutral-500 mb-1">Starting Balance</div>
+            <div className="text-base font-semibold text-neutral-100">
+              ${startingBalance.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+            </div>
+          </div>
+        )}
         {currentBalance !== null && (
           <div className="bg-white/[0.03] border border-neutral-800/60 rounded-xl p-3 flex flex-col items-center text-center">
             <WalletGlyph size={22} className="text-neutral-400 mb-1" />
