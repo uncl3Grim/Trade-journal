@@ -21,6 +21,7 @@ import WeeklyInsights from '../../components/WeeklyInsights';
 import WeeklyRecap from '../../components/WeeklyRecap';
 import SyncStatusWidget from '../../components/SyncStatusWidget';
 import AppShell from '../../components/AppShell';
+import WelcomeHeader from '../../components/WelcomeHeader';
 import { computeDailyStats } from '../../lib/dailyStats';
 import YearCalendar from '../../components/YearCalendar';
 import { applyAccountFilter, computeActiveAccountId } from '../../lib/accountFilter';
@@ -226,7 +227,7 @@ export default function JournalPage() {
         <WeeklyInsights trades={allTrades} />
 
         <div className="flex items-center justify-between mb-6">
-          <h1 className="text-xl font-semibold text-gray-900 dark:text-gray-100">Trade Journal</h1>
+          <WelcomeHeader />
           <div className="flex items-center gap-3">
             <button
               onClick={() => setShowRecap(true)}
