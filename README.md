@@ -88,3 +88,5 @@ If you want to preview changes before they go live:
 - Screenshot/chart attachments per trade
 - Tags/strategies, equity curve chart, weekly/monthly summary reports
 - Custom domain + branding polish
+
+single period 
