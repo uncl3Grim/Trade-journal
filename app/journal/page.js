@@ -31,6 +31,14 @@ import { fetchAllRows } from '../../lib/fetchAll';
 
 const DEFAULT_ACCOUNT_FILTER = { allSelected: true, selectedIds: [], includeManual: false };
 
+const TABS = [
+  { key: 'calendar', label: 'Calendar' },
+  { key: 'review', label: 'Review' },
+  { key: 'notes', label: 'Notes' },
+  { key: 'overview', label: 'Overview' },
+  { key: 'propfirm', label: 'Prop Firm' },
+];
+
 export default function JournalPage() {
   const router = useRouter();
   const [user, setUser] = useState(null);
@@ -244,56 +252,19 @@ export default function JournalPage() {
 
         <div className="flex items-center justify-between mb-6 flex-wrap gap-3">
           <div className="flex gap-2 overflow-x-auto -mx-1 px-1 pb-1" style={{ WebkitOverflowScrolling: 'touch' }}>
-            <button
-              onClick={() => setTab('calendar')}
-              className={`flex-shrink-0 whitespace-nowrap px-4 py-1.5 rounded-xl text-sm font-medium transition-colors duration-200 ${
-                tab === 'calendar'
-                  ? 'bg-indigo-600 text-white'
-                  : 'bg-white dark:bg-[#15151b] border border-gray-200 dark:border-gray-800 text-gray-500 hover:text-gray-800 dark:hover:text-gray-200'
-              }`}
-            >
-              Calendar
-            </button>
-            <button
-              onClick={() => setTab('review')}
-              className={`flex-shrink-0 whitespace-nowrap px-4 py-1.5 rounded-xl text-sm font-medium transition-colors duration-200 ${
-                tab === 'review'
-                  ? 'bg-indigo-600 text-white'
-                  : 'bg-white dark:bg-[#15151b] border border-gray-200 dark:border-gray-800 text-gray-500 hover:text-gray-800 dark:hover:text-gray-200'
-              }`}
-            >
-              Review
-            </button>
-            <button
-              onClick={() => setTab('notes')}
-              className={`flex-shrink-0 whitespace-nowrap px-4 py-1.5 rounded-xl text-sm font-medium transition-colors duration-200 ${
-                tab === 'notes'
-                  ? 'bg-indigo-600 text-white'
-                  : 'bg-white dark:bg-[#15151b] border border-gray-200 dark:border-gray-800 text-gray-500 hover:text-gray-800 dark:hover:text-gray-200'
-              }`}
-            >
-              Notes
-            </button>
-            <button
-              onClick={() => setTab('overview')}
-              className={`flex-shrink-0 whitespace-nowrap px-4 py-1.5 rounded-xl text-sm font-medium transition-colors duration-200 ${
-                tab === 'overview'
-                  ? 'bg-indigo-600 text-white'
-                  : 'bg-white dark:bg-[#15151b] border border-gray-200 dark:border-gray-800 text-gray-500 hover:text-gray-800 dark:hover:text-gray-200'
-              }`}
-            >
-              Overview
-            </button>
-            <button
-              onClick={() => setTab('propfirm')}
-              className={`flex-shrink-0 whitespace-nowrap px-4 py-1.5 rounded-xl text-sm font-medium transition-colors duration-200 ${
-                tab === 'propfirm'
-                  ? 'bg-indigo-600 text-white'
-                  : 'bg-white dark:bg-[#15151b] border border-gray-200 dark:border-gray-800 text-gray-500 hover:text-gray-800 dark:hover:text-gray-200'
-              }`}
-            >
-              Prop Firm
-            </button>
+            {TABS.map((t) => (
+              <button
+                key={t.key}
+                onClick={() => setTab(t.key)}
+                className={`flex-shrink-0 whitespace-nowrap px-4 py-1.5 rounded-xl text-sm font-medium border transition-all duration-300 ease-bouncy ${
+                  tab === t.key
+                    ? 'bg-gradient-to-br from-indigo-600 to-violet-600 border-transparent text-white shadow-lg shadow-indigo-600/25 scale-[1.03]'
+                    : 'bg-white/[0.04] backdrop-blur-md border-neutral-800/60 text-neutral-400 hover:text-neutral-100 hover:border-neutral-700'
+                }`}
+              >
+                {t.label}
+              </button>
+            ))}
           </div>
 
           <div className="flex items-center gap-3">
@@ -373,7 +344,7 @@ export default function JournalPage() {
                     </button>
                   </div>
                   {loading ? (
-                    <p className="text-gray-400 text-sm">Loading trades...</p>
+                    <p className="text-neutral-500 text-sm">Loading trades…</p>
                   ) : (
                     <Calendar
                       month={month}
@@ -438,7 +409,7 @@ export default function JournalPage() {
             {activeAccountObj?.is_prop_firm ? (
               <PropFirmTracker trades={allTrades} account={activeAccountObj} ddMode={ddMode} />
             ) : (
-              <div className="bg-white dark:bg-[#15151b] border border-gray-200 dark:border-gray-800 rounded-2xl shadow-sm p-6 text-center text-sm text-gray-400">
+              <div className="bg-white/[0.04] backdrop-blur-md border border-neutral-800/60 rounded-2xl p-6 text-center text-sm text-neutral-400">
                 {activeAccountObj
                   ? 'This account isn\'t marked as a prop firm account. Toggle it on the Broker page to see rules here.'
                   : 'Select a single prop firm account above to see its rules here.'}
