@@ -1,16 +1,22 @@
 'use client';
 
+import { useEffect } from 'react';
 import Sidebar from './Sidebar';
 import MobileNav from './MobileNav';
 import BackgroundManager from './BackgroundManager';
 
 export default function AppShell({ children }) {
+  useEffect(() => {
+    document.documentElement.classList.add('tj-app');
+    return () => document.documentElement.classList.remove('tj-app');
+  }, []);
+
   return (
-    <div className="relative flex bg-[#0a0a0a] min-h-screen">
+    <div className="relative flex w-full max-w-full overflow-x-hidden bg-[#0a0a0a] min-h-screen">
       <BackgroundManager />
-      <div className="relative z-10 flex flex-1">
+      <div className="relative z-10 flex flex-1 min-w-0">
         <Sidebar />
-        <div className="flex-1 pb-20 md:pb-6">{children}</div>
+        <div className="flex-1 min-w-0 pb-20 md:pb-6">{children}</div>
       </div>
       <MobileNav />
     </div>
