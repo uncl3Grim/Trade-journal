@@ -92,27 +92,43 @@ function computeInsights(trades) {
   return insights.slice(0, 3);
 }
 
+const TONES = {
+  warn: {
+    chip: 'bg-amber-500/10 border-amber-500/25 text-amber-200',
+    dot: 'bg-amber-400',
+  },
+  good: {
+    chip: 'bg-emerald-500/10 border-emerald-500/25 text-emerald-200',
+    dot: 'bg-emerald-400',
+  },
+};
+
 export default function WeeklyInsights({ trades }) {
   const insights = useMemo(() => computeInsights(trades), [trades]);
 
   if (insights.length === 0) return null;
 
   return (
-    <div className="bg-white border border-gray-200 rounded-2xl shadow-sm p-4 mb-6">
-      <h3 className="font-semibold text-gray-900 text-sm mb-3">This Week's Patterns</h3>
+    <div className="bg-white/[0.04] backdrop-blur-md border border-neutral-800/60 rounded-2xl p-4 mb-6 animate-fade-in-up">
+      <div className="flex items-center gap-2 mb-3">
+        <span className="h-1.5 w-1.5 rounded-full bg-indigo-400" />
+        <h3 className="font-semibold text-neutral-100 text-sm">This week's patterns</h3>
+        <span className="ml-auto text-[11px] text-neutral-500">Last 7 days</span>
+      </div>
       <div className="space-y-2">
-        {insights.map((insight, i) => (
-          <div
-            key={i}
-            className={`text-xs rounded-xl px-3 py-2 border ${
-              insight.tone === 'warn'
-                ? 'bg-orange-50 border-orange-100 text-orange-700'
-                : 'bg-green-50 border-green-100 text-green-700'
-            }`}
-          >
-            {insight.text}
-          </div>
-        ))}
+        {insights.map((insight, i) => {
+          const tone = TONES[insight.tone] || TONES.good;
+          return (
+            <div
+              key={i}
+              className={`flex items-start gap-2.5 text-[13px] leading-snug rounded-xl px-3 py-2.5 border animate-fade-in-up ${tone.chip}`}
+              style={{ animationDelay: `${80 + i * 70}ms` }}
+            >
+              <span className={`mt-1.5 h-1.5 w-1.5 rounded-full flex-shrink-0 ${tone.dot}`} />
+              <span>{insight.text}</span>
+            </div>
+          );
+        })}
       </div>
     </div>
   );
