@@ -74,13 +74,20 @@ export default function ProfilePage() {
     const el = btnRefs.current[shown];
     if (!el) return;
     setPill({ left: el.offsetLeft, top: el.offsetTop, width: el.offsetWidth, height: el.offsetHeight });
-    el.scrollIntoView?.({ block: 'nearest', inline: 'center', behavior: 'smooth' });
   }, [shown]);
   useLayoutEffect(measure, [measure]);
   useEffect(() => {
     window.addEventListener('resize', measure);
     return () => window.removeEventListener('resize', measure);
   }, [measure]);
+
+  // Centre the active tab inside the horizontal menu (mobile) without ever scrolling the page itself.
+  useEffect(() => {
+    const nav = navRef.current;
+    const el = btnRefs.current[shown];
+    if (!nav || !el || nav.scrollWidth <= nav.clientWidth) return;
+    nav.scrollTo({ left: el.offsetLeft - (nav.clientWidth - el.offsetWidth) / 2, behavior: 'smooth' });
+  }, [shown]);
 
   const { draft } = profileState;
   const g = gradientFor(draft.avatar_gradient);
