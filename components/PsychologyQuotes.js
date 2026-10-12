@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import { format } from 'date-fns';
 
 const QUOTES = [
   { text: 'Amateurs focus on being right. Professionals focus on managing risk.', author: 'Trading wisdom' },
@@ -53,6 +54,43 @@ const QUOTES = [
 
 const FAVORITE_WEIGHT = 3;
 
+// Remembered between pages and reloads, so a minimized/dismissed popup
+// stays that way instead of coming back every time the Journal mounts.
+const KEY_COLLAPSED = 'tj_quote_collapsed'; // '1' while minimized
+const KEY_DISMISSED_ON = 'tj_quote_dismissed_on'; // yyyy-MM-dd of the day it was closed
+
+function todayKey() {
+  return format(new Date(), 'yyyy-MM-dd');
+}
+
+function readUiState() {
+  try {
+    let collapsed = localStorage.getItem(KEY_COLLAPSED) === '1';
+    let hidden = false;
+    const dismissedOn = localStorage.getItem(KEY_DISMISSED_ON);
+    if (dismissedOn) {
+      if (dismissedOn === todayKey()) {
+        hidden = true; // closed today: stay gone for the rest of the day
+      } else {
+        // New day: bring it back, but only as the small bubble.
+        localStorage.removeItem(KEY_DISMISSED_ON);
+        localStorage.setItem(KEY_COLLAPSED, '1');
+        collapsed = true;
+      }
+    }
+    return { collapsed, hidden };
+  } catch {
+    return { collapsed: false, hidden: false };
+  }
+}
+
+function writeStorage(key, value) {
+  try {
+    if (value === null) localStorage.removeItem(key);
+    else localStorage.setItem(key, value);
+  } catch {}
+}
+
 function loadFavorites() {
   try {
     const saved = localStorage.getItem('tj_quote_favorites');
@@ -82,17 +120,22 @@ function pickWeightedIndex(favorites, excludeIndex = null) {
 
 export default function PsychologyQuotes() {
   const [favorites, setFavorites] = useState(new Set());
-  const [index, setIndex] = useState(() => Math.floor(Math.random() * QUOTES.length));
-  const [dismissed, setDismissed] = useState(false);
+  const [index, setIndex] = useState(0);
+  const [ready, setReady] = useState(false); // don't draw anything until we know what the user chose last time
   const [collapsed, setCollapsed] = useState(false);
+  const [hidden, setHidden] = useState(false);
 
   useEffect(() => {
     const saved = loadFavorites();
     setFavorites(saved);
     setIndex(pickWeightedIndex(saved));
+    const ui = readUiState();
+    setCollapsed(ui.collapsed);
+    setHidden(ui.hidden);
+    setReady(true);
   }, []);
 
-  if (dismissed) return null;
+  if (!ready || hidden) return null;
   const quote = QUOTES[index];
   const isFavorite = favorites.has(index);
 
@@ -112,12 +155,29 @@ export default function PsychologyQuotes() {
     });
   }
 
+  function minimize() {
+    setCollapsed(true);
+    writeStorage(KEY_COLLAPSED, '1');
+  }
+
+  function expand() {
+    setCollapsed(false);
+    writeStorage(KEY_COLLAPSED, null);
+  }
+
+  function dismiss() {
+    setHidden(true);
+    writeStorage(KEY_DISMISSED_ON, todayKey());
+  }
+
   if (collapsed) {
     return (
       <button
-        onClick={() => setCollapsed(false)}
-        className="fixed bottom-20 md:bottom-4 right-4 w-11 h-11 rounded-full bg-indigo-600 text-white shadow-lg flex items-center justify-center text-lg z-30"
+        key="bubble"
+        onClick={expand}
+        aria-label="Show trading mindset quote"
         title="Trading mindset"
+        className="fixed bottom-20 md:bottom-4 right-4 w-11 h-11 rounded-full bg-black/50 backdrop-blur-xl border border-neutral-700/60 text-lg flex items-center justify-center z-30 shadow-lg shadow-black/40 hover:border-indigo-400/60 hover:bg-indigo-500/20 animate-pop-in"
       >
         💭
       </button>
@@ -125,30 +185,50 @@ export default function PsychologyQuotes() {
   }
 
   return (
-    <div className="fixed bottom-20 md:bottom-4 right-4 max-w-xs bg-white dark:bg-[#15151b] border border-gray-200 dark:border-gray-800 rounded-2xl shadow-lg p-4 z-30">
-      <div className="flex items-start justify-between gap-2 mb-1">
-        <span className="text-xs font-semibold text-indigo-600">💭 Mindset</span>
-        <div className="flex gap-2">
-          <button onClick={() => setCollapsed(true)} className="text-gray-300 hover:text-gray-500 text-xs">
+    <div
+      key="card"
+      className="fixed bottom-20 md:bottom-4 right-4 w-[calc(100%-2rem)] max-w-xs bg-black/55 backdrop-blur-xl border border-neutral-800/60 rounded-2xl shadow-2xl shadow-black/40 p-4 z-30 animate-pop-in"
+    >
+      <div className="flex items-center justify-between gap-2 mb-2">
+        <span className="text-xs font-semibold text-indigo-300 flex items-center gap-1.5">
+          <span aria-hidden="true">💭</span> Mindset
+        </span>
+        <div className="flex items-center gap-1 -mr-1.5 -mt-1">
+          <button
+            onClick={minimize}
+            aria-label="Minimize"
+            title="Minimize"
+            className="w-7 h-7 rounded-lg text-neutral-500 hover:text-neutral-100 hover:bg-white/10 flex items-center justify-center text-sm"
+          >
             −
           </button>
-          <button onClick={() => setDismissed(true)} className="text-gray-300 hover:text-gray-500 text-xs">
+          <button
+            onClick={dismiss}
+            aria-label="Hide for today"
+            title="Hide for today"
+            className="w-7 h-7 rounded-lg text-neutral-500 hover:text-neutral-100 hover:bg-white/10 flex items-center justify-center text-xs"
+          >
             ✕
           </button>
         </div>
       </div>
-      <p className="text-sm text-gray-700 dark:text-gray-200 italic leading-snug mb-2">"{quote.text}"</p>
+
+      <p key={index} className="text-sm text-neutral-200 italic leading-snug mb-3 animate-fade-in-up">
+        "{quote.text}"
+      </p>
+
       <div className="flex items-center justify-between">
-        <span className="text-[10px] text-gray-400">— {quote.author}</span>
+        <span className="text-[11px] text-neutral-500">— {quote.author}</span>
         <div className="flex items-center gap-3">
           <button
             onClick={toggleFavorite}
-            className={`text-sm ${isFavorite ? 'text-yellow-500' : 'text-gray-300 hover:text-gray-400'}`}
+            aria-label={isFavorite ? 'Unfavorite' : 'Favorite'}
+            className={`text-base leading-none ${isFavorite ? 'text-amber-400' : 'text-neutral-600 hover:text-neutral-300'}`}
             title={isFavorite ? 'Unfavorite' : 'Favorite — show this one more often'}
           >
             {isFavorite ? '★' : '☆'}
           </button>
-          <button onClick={next} className="text-[10px] text-indigo-500 hover:text-indigo-400">
+          <button onClick={next} className="text-xs font-medium text-indigo-300 hover:text-indigo-200">
             Next →
           </button>
         </div>
