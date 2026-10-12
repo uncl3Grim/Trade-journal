@@ -13,7 +13,7 @@ export const WALLPAPER_KINDS = {
     urlCol: 'background_image_url',
     valCol: 'background_opacity',
     defaultValue: 0.15,
-    min: 0.05, max: 0.5, step: 0.05,
+    min: 0.1, max: 1, step: 0.05,
     sliderLabel: 'Wallpaper visibility',
     pathPrefix: 'background',
   },
