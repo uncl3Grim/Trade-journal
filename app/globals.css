@@ -397,3 +397,12 @@ button:hover > .pf-dice { transform: rotate(180deg); }
   .pf-ring::before { animation: none !important; }
   .pf-pill-bg, .pf-navicon, .pf-icon-tile, .pf-swatch, .pf-tile, .pf-reveal, .pf-savebar, .pf-seg-thumb, .pf-switch-knob { transition: none !important; }
 }
+
+/* ---- Clearer text on the dark glass UI + welcome header animation ---- */
+.text-neutral-600 { color: #8f8f8f; }
+.text-neutral-500 { color: #b5b5b5; }
+.text-neutral-400 { color: #d0d0d0; }
+
+@keyframes pfWord { from { opacity: 0; transform: translateY(10px); filter: blur(4px); } to { opacity: 1; transform: none; filter: blur(0); } }
+.pf-word { display: inline-block; animation: pfWord 520ms var(--pf-ease, cubic-bezier(0.2, 0.8, 0.2, 1)) both; }
+@media (prefers-reduced-motion: reduce) { .pf-word { animation: none !important; } }
