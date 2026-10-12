@@ -243,10 +243,10 @@ export default function JournalPage() {
         )}
 
         <div className="flex items-center justify-between mb-6 flex-wrap gap-3">
-          <div className="flex gap-2">
+          <div className="flex gap-2 overflow-x-auto -mx-1 px-1 pb-1" style={{ WebkitOverflowScrolling: 'touch' }}>
             <button
               onClick={() => setTab('calendar')}
-              className={`px-4 py-1.5 rounded-xl text-sm font-medium ${
+              className={`flex-shrink-0 whitespace-nowrap px-4 py-1.5 rounded-xl text-sm font-medium transition-colors duration-200 ${
                 tab === 'calendar'
                   ? 'bg-indigo-600 text-white'
                   : 'bg-white dark:bg-[#15151b] border border-gray-200 dark:border-gray-800 text-gray-500 hover:text-gray-800 dark:hover:text-gray-200'
@@ -256,7 +256,7 @@ export default function JournalPage() {
             </button>
             <button
               onClick={() => setTab('review')}
-              className={`px-4 py-1.5 rounded-xl text-sm font-medium ${
+              className={`flex-shrink-0 whitespace-nowrap px-4 py-1.5 rounded-xl text-sm font-medium transition-colors duration-200 ${
                 tab === 'review'
                   ? 'bg-indigo-600 text-white'
                   : 'bg-white dark:bg-[#15151b] border border-gray-200 dark:border-gray-800 text-gray-500 hover:text-gray-800 dark:hover:text-gray-200'
@@ -266,7 +266,7 @@ export default function JournalPage() {
             </button>
             <button
               onClick={() => setTab('notes')}
-              className={`px-4 py-1.5 rounded-xl text-sm font-medium ${
+              className={`flex-shrink-0 whitespace-nowrap px-4 py-1.5 rounded-xl text-sm font-medium transition-colors duration-200 ${
                 tab === 'notes'
                   ? 'bg-indigo-600 text-white'
                   : 'bg-white dark:bg-[#15151b] border border-gray-200 dark:border-gray-800 text-gray-500 hover:text-gray-800 dark:hover:text-gray-200'
@@ -276,7 +276,7 @@ export default function JournalPage() {
             </button>
             <button
               onClick={() => setTab('overview')}
-              className={`px-4 py-1.5 rounded-xl text-sm font-medium ${
+              className={`flex-shrink-0 whitespace-nowrap px-4 py-1.5 rounded-xl text-sm font-medium transition-colors duration-200 ${
                 tab === 'overview'
                   ? 'bg-indigo-600 text-white'
                   : 'bg-white dark:bg-[#15151b] border border-gray-200 dark:border-gray-800 text-gray-500 hover:text-gray-800 dark:hover:text-gray-200'
@@ -286,7 +286,7 @@ export default function JournalPage() {
             </button>
             <button
               onClick={() => setTab('propfirm')}
-              className={`px-4 py-1.5 rounded-xl text-sm font-medium ${
+              className={`flex-shrink-0 whitespace-nowrap px-4 py-1.5 rounded-xl text-sm font-medium transition-colors duration-200 ${
                 tab === 'propfirm'
                   ? 'bg-indigo-600 text-white'
                   : 'bg-white dark:bg-[#15151b] border border-gray-200 dark:border-gray-800 text-gray-500 hover:text-gray-800 dark:hover:text-gray-200'
@@ -359,7 +359,6 @@ export default function JournalPage() {
                             monthPnl >= 0 ? 'text-emerald-400' : 'text-rose-400'
                           }`}
                         >
-                          {monthPnl >= 0 ? '+' : ''}
                           {formatMoney(monthPnl)} · {monthR >= 0 ? '+' : ''}
                           {monthR.toFixed(2)}R
                         </span>
