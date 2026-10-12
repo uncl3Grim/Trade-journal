@@ -27,7 +27,10 @@ export default function BackgroundManager() {
       if (op !== undefined) setOpacity(op);
     }
     window.addEventListener('tj:background', onChange);
-      return (
+    return () => window.removeEventListener('tj:background', onChange);
+  }, []);
+
+  return (
     <div
       className="fixed inset-0 z-0 pointer-events-none bg-cover bg-center bg-no-repeat"
       style={{
