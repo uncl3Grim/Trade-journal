@@ -27,15 +27,16 @@ export default function BackgroundManager() {
       if (op !== undefined) setOpacity(op);
     }
     window.addEventListener('tj:background', onChange);
-    return () => window.removeEventListener('tj:background', onChange);
-  }, []);
-
-  return (
+      return (
     <div
-      className="fixed inset-0 z-0 pointer-events-none bg-cover bg-center"
+      className="fixed inset-0 z-0 pointer-events-none bg-cover bg-center bg-no-repeat"
       style={{
         backgroundImage: bgUrl ? `url(${bgUrl})` : 'none',
         opacity: bgUrl ? opacity : 0,
+        width: '100vw',
+        height: '100lvh',
+        left: 0,
+        top: 0,
         transition: 'opacity 600ms ease',
       }}
     />
