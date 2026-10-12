@@ -406,3 +406,18 @@ button:hover > .pf-dice { transform: rotate(180deg); }
 @keyframes pfWord { from { opacity: 0; transform: translateY(10px); filter: blur(4px); } to { opacity: 1; transform: none; filter: blur(0); } }
 .pf-word { display: inline-block; animation: pfWord 520ms var(--pf-ease, cubic-bezier(0.2, 0.8, 0.2, 1)) both; }
 @media (prefers-reduced-motion: reduce) { .pf-word { animation: none !important; } }
+  return (
+    <div
+      className="fixed inset-0 z-0 pointer-events-none bg-cover bg-center bg-no-repeat"
+      style={{
+        backgroundImage: bgUrl ? `url(${bgUrl})` : 'none',
+        opacity: bgUrl ? opacity : 0,
+        width: '100vw',
+        height: '100lvh',
+        left: 0,
+        top: 0,
+        transition: 'opacity 600ms ease',
+      }}
+    />
+  );
+}
