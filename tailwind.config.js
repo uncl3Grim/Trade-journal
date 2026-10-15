@@ -1,6 +1,9 @@
 /** @type {import('tailwindcss').Config} */
 module.exports = {
   darkMode: 'class',
+  // Only apply hover: styles on devices that really hover. Without this, iOS
+  // leaves a tapped button/calendar cell stuck in its hover state.
+  future: { hoverOnlyWhenSupported: true },
   content: [
     './app/**/*.{js,jsx}',
     './components/**/*.{js,jsx}',
