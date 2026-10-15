@@ -53,6 +53,20 @@ export async function POST(request) {
       return Response.json({ error: 'Selected account not found' }, { status: 404 });
     }
 
+    const { data: dup } = await supabase
+      .from('broker_connections')
+      .select('id')
+      .eq('user_id', userId)
+      .eq('broker_type', 'myfxbook')
+      .eq('myfxbook_account_id', String(account.id))
+      .limit(1);
+    if (dup && dup.length) {
+      return Response.json(
+        { error: 'This MyFXBook account is already connected. Use Sync on the existing connection instead.' },
+        { status: 409 }
+      );
+    }
+
     const { error: insertError } = await supabase.from('broker_connections').insert({
       user_id: userId,
       broker_type: 'myfxbook',
