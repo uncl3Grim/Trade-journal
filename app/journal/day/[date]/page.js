@@ -100,13 +100,16 @@ export default function DayEditPage() {
   // ---------- trades for this day ----------
   const loadTrades = useCallback(async () => {
     if (!user || !validDate) return;
-    const start = `${dateStr}T00:00:00`;
-    const end = `${dateStr}T23:59:59`;
+    // The calendar buckets trades by the viewer's LOCAL day, so query the
+    // same local-day window as real instants. A bare "YYYY-MM-DDT00:00:00"
+    // string is read by Postgres as UTC and drops/misplaces trades near midnight.
+    const dayStart = parseISO(dateStr); // local midnight
+    const nextDayStart = new Date(dayStart.getFullYear(), dayStart.getMonth(), dayStart.getDate() + 1);
     let query = supabase
       .from('trades')
       .select('*')
-      .gte('entry_time', start)
-      .lte('entry_time', end)
+      .gte('entry_time', dayStart.toISOString())
+      .lt('entry_time', nextDayStart.toISOString())
       .order('entry_time', { ascending: true });
     query = applyAccountFilter(query, accountFilter);
     const { data, error } = await query;
