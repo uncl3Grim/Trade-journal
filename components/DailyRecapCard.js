@@ -58,19 +58,24 @@ const DailyRecapCard = forwardRef(function DailyRecapCard(
   const suffix = mode === 'r' ? 'R' : '';
   const visibleTrades = recap.trades.slice(0, 8);
   const extraCount = recap.trades.length - visibleTrades.length;
+  const hasBg = !!backgroundUrl;
+  // With a wallpaper the panels are more see-through so the image reads across the whole card.
+  const panel = hasBg ? 'border-neutral-700/70 bg-black/35' : 'border-neutral-800 bg-neutral-900/60';
 
   return (
     <div
       ref={ref}
-      className={`relative w-full max-w-[540px] mx-auto overflow-hidden rounded-2xl border border-neutral-800 p-6 sm:p-7 ${bricolage.className}`}
-      style={
-        backgroundUrl
-          ? { backgroundImage: `url(${backgroundUrl})`, backgroundSize: 'cover', backgroundPosition: 'center' }
-          : { backgroundColor: '#0a0a0a' }
-      }
+      className={`relative w-full max-w-[540px] mx-auto overflow-hidden rounded-2xl border border-neutral-800 bg-[#0a0a0a] p-6 sm:p-7 ${bricolage.className}`}
     >
-      {backgroundUrl && (
-        <div className="pointer-events-none absolute inset-0" style={{ backgroundColor: `rgba(10,10,10,${backgroundDim})` }} />
+      {/* Wallpaper: its own full-bleed layer, so it always spans the whole card however tall it gets. */}
+      {hasBg && (
+        <>
+          <div
+            className="pointer-events-none absolute inset-0 bg-cover bg-center bg-no-repeat"
+            style={{ backgroundImage: `url("${backgroundUrl}")` }}
+          />
+          <div className="pointer-events-none absolute inset-0" style={{ backgroundColor: `rgba(10,10,10,${backgroundDim})` }} />
+        </>
       )}
 
       <div className="relative">
@@ -106,7 +111,7 @@ const DailyRecapCard = forwardRef(function DailyRecapCard(
           ].map((stat) => (
             <div
               key={stat.label}
-              className="border border-neutral-800 bg-neutral-900/60 rounded-lg p-3 transition-all duration-200 hover:border-neutral-700 hover:-translate-y-0.5"
+              className={`border rounded-lg p-3 transition-all duration-200 hover:border-neutral-600 hover:-translate-y-0.5 ${panel}`}
             >
               <div className="text-[9px] uppercase tracking-wide text-neutral-500 mb-1">{stat.label}</div>
               <div className="text-[13px] font-semibold text-neutral-100">{stat.value}</div>
@@ -116,7 +121,7 @@ const DailyRecapCard = forwardRef(function DailyRecapCard(
 
         {/* trade table */}
         {visibleTrades.length > 0 ? (
-          <div className="border border-neutral-800 rounded-lg overflow-hidden">
+          <div className={`border rounded-lg overflow-hidden ${hasBg ? 'border-neutral-700/70 bg-black/30' : 'border-neutral-800'}`}>
             <table className="w-full border-collapse">
               <thead>
                 <tr className="border-b border-neutral-800">
