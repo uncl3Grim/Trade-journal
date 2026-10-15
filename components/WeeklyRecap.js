@@ -84,7 +84,18 @@ export default function WeeklyRecap({ trades, defaultRiskAmount, onClose, appNam
 
   return (
     <div className="fixed inset-0 z-50 flex items-start sm:items-center justify-center bg-black/60 backdrop-blur-sm p-4 overflow-y-auto">
-      <div className="bg-[#0b0d1a] border border-white/10 rounded-[32px] p-4 sm:p-6 w-full max-w-xl my-8 animate-scale-in">
+      <div className="relative overflow-hidden bg-[#0b0d1a] border border-white/10 rounded-[32px] p-4 sm:p-6 w-full max-w-xl my-8 animate-scale-in">
+        {/* Wallpaper fills the whole panel (softly blurred so the sharp card on top still stands out). */}
+        {bg.url && (
+          <>
+            <div
+              className="pointer-events-none absolute inset-0 bg-cover bg-center bg-no-repeat"
+              style={{ backgroundImage: `url("${bg.url}")`, filter: 'blur(10px)', transform: 'scale(1.12)' }}
+            />
+            <div className="pointer-events-none absolute inset-0" style={{ backgroundColor: `rgba(11,13,26,${Math.min(0.9, bg.dim + 0.1)})` }} />
+          </>
+        )}
+        <div className="relative">
         <div className="flex items-center justify-between mb-4">
           <h2 className="text-white font-semibold text-sm">Weekly recap</h2>
           <button
@@ -147,6 +158,7 @@ export default function WeeklyRecap({ trades, defaultRiskAmount, onClose, appNam
           >
             Share
           </button>
+        </div>
         </div>
       </div>
     </div>
