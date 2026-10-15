@@ -45,7 +45,7 @@ async function syncMyfxbook(connection) {
   const history = await myfxbookGetHistory(session, connection.myfxbook_account_id);
 
   return (history || []).map((t) => ({
-    symbol: t.symbol,
+    symbol: (t.symbol || '').replace(/\.+$/, '').trim(),
     direction: (t.action || '').toLowerCase().includes('sell') ? 'short' : 'long',
     entry_price: t.openPrice,
     exit_price: t.closePrice,
@@ -125,7 +125,7 @@ export async function POST(request) {
     // explicit insert/update.
     const { data: existingRows, error: existingError } = await supabase
       .from('trades')
-      .select('id, symbol, entry_time, broker_ticket')
+      .select('id, symbol, direction, entry_price, pnl, entry_time, broker_ticket')
       .eq('user_id', userId)
       .eq('broker_connection_id', connectionId);
     if (existingError) {
@@ -139,12 +139,34 @@ export async function POST(request) {
       bySymbolTime.set(`${row.symbol}||${timeKey(row.entry_time)}`, row.id);
     }
 
+    // Fallback for rows imported earlier with a shifted clock (CSV parsed in the
+    // browser's timezone vs API parsed on the server): same direction, entry
+    // price and P&L, with the time off by a whole number of 15-minute steps
+    // up to 14h (the range of real UTC offsets). Each existing row is claimed once.
+    const claimed = new Set();
+    const num = (v) => (v === null || v === undefined || v === '' ? null : Number(v));
+    function fuzzyMatch(r) {
+      const rt = new Date(r.entry_time).getTime();
+      for (const row of existingRows || []) {
+        if (claimed.has(row.id)) continue;
+        if (row.direction !== r.direction) continue;
+        if (num(row.entry_price) !== num(r.entry_price)) continue;
+        if (Math.abs((num(row.pnl) ?? 0) - (num(r.pnl) ?? 0)) > 0.005) continue;
+        const diff = Math.abs(new Date(row.entry_time).getTime() - rt);
+        if (diff === 0 || diff > 14 * 3600000 || diff % (15 * 60000) !== 0) continue;
+        return row.id;
+      }
+      return null;
+    }
+
     const seen = new Map();
     for (const r of validRows) {
       const existingId =
         (r.broker_ticket && byTicket.get(r.broker_ticket)) ||
         bySymbolTime.get(`${r.symbol}||${timeKey(r.entry_time)}`) ||
+        fuzzyMatch(r) ||
         null;
+      if (existingId) claimed.add(existingId);
       const key = existingId ? `id:${existingId}` : `new:${r.broker_ticket || `${r.symbol}||${timeKey(r.entry_time)}`}`;
       seen.set(key, existingId ? { ...r, id: existingId } : r);
     }
