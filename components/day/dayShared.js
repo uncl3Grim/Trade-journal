@@ -32,6 +32,7 @@ export const emptyForm = {
   rule_adherence: '',
   setup_type: '',
   strategy_id: '',
+  checklist: [],
   outcome: 'win',
   r_multiple: '',
 };
