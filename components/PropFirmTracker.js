@@ -18,9 +18,8 @@ function Bar({ value, limit, dangerAt = 90 }) {
 
 export default function PropFirmTracker({ trades, account, ddMode = 'trailing' }) {
   if (!account?.starting_balance) return null;
-  if (!account?.is_prop_firm) return null;
 
-  const hasAnyRule = account.daily_loss_limit_pct || account.max_loss_limit_pct || account.profit_target_pct;
+  const hasAnyRule = account.daily_loss_limit_pct || account.max_loss_limit_pct || account.profit_target_pct || account.consistency_limit_pct;
   if (!hasAnyRule) return null;
 
   const compliance = computePropFirmCompliance(trades, account.starting_balance, {
@@ -55,7 +54,7 @@ export default function PropFirmTracker({ trades, account, ddMode = 'trailing' }
   return (
     <div className="bg-white border border-gray-200 rounded-2xl shadow-sm p-5 mb-6">
       <div className="flex items-center justify-between mb-3">
-        <h3 className="font-semibold text-gray-900 text-sm">Prop Firm Rules — {account.broker_server}</h3>
+        <h3 className="font-semibold text-gray-900 text-sm">{account.is_prop_firm ? 'Prop Firm Rules' : 'Account Limits'} — {account.broker_server}</h3>
         <span className={`text-xs font-semibold px-2 py-1 rounded-full ${statusColor}`}>{statusLabel}</span>
       </div>
 
