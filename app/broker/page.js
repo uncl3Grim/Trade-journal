@@ -146,31 +146,34 @@ function RulesSection({ c, onSaved, notify }) {
       })
       .eq('id', c.id);
     setSaving(false);
-    if (error) return notify('error', `Couldn't save rules: ${error.message}`);
-    notify('success', isPropFirm ? 'Prop firm rules saved.' : 'Saved. This account is not tracked as a prop firm account.');
+    if (error) return notify('error', `Couldn't save limits: ${error.message}`);
+    notify('success', 'Limits saved.');
     onSaved();
   }
 
   return (
-    <Section title="Prop firm rules">
-      <Switch
-        checked={isPropFirm}
-        onChange={setIsPropFirm}
-        label="This is a prop firm account"
-        hint="Only accounts marked this way appear on the Prop Firm Rules tab, even if limits are filled in."
-      />
-      <Collapse open={isPropFirm}>
-        <div className="pt-4">
-          <p className="text-xs text-neutral-500 mb-3">Set each limit as a percent of the starting balance. Leave a limit at None if your firm doesn't use it.</p>
-          <div className="grid grid-cols-2 gap-3">
-            <DrawdownLimitSelect label="Daily loss limit" value={daily} onChange={setDaily} />
-            <DrawdownLimitSelect label="Max drawdown" value={maxDd} onChange={setMaxDd} />
-            <DrawdownLimitSelect label="Profit target" value={target} onChange={setTarget} />
-            <DrawdownLimitSelect label="Consistency limit" value={consistency} onChange={setConsistency} />
-          </div>
-        </div>
-      </Collapse>
-      <button onClick={save} disabled={saving} className={`${ghostBtn} mt-4`}>{saving ? 'Saving…' : 'Save rules'}</button>
+    <Section
+      title="Loss limits"
+      hint="Works on any account, including manual ones. Set each limit as a percent of the starting balance and it shows up as batteries on the Journal's Limits tab and while you log trades."
+    >
+      {!(Number(c.starting_balance) > 0) && (
+        <p className="text-xs text-amber-300/90 mb-3">Add a starting balance above first, so limits can be worked out in dollars.</p>
+      )}
+      <div className="grid grid-cols-2 gap-3">
+        <DrawdownLimitSelect label="Daily loss limit" value={daily} onChange={setDaily} />
+        <DrawdownLimitSelect label="Max drawdown" value={maxDd} onChange={setMaxDd} />
+        <DrawdownLimitSelect label="Profit target" value={target} onChange={setTarget} />
+        <DrawdownLimitSelect label="Consistency limit" value={consistency} onChange={setConsistency} />
+      </div>
+      <div className="mt-4">
+        <Switch
+          checked={isPropFirm}
+          onChange={setIsPropFirm}
+          label="This is a prop firm account"
+          hint="Only adds a Prop firm badge and labels the tab. The limits above work either way."
+        />
+      </div>
+      <button onClick={save} disabled={saving} className={`${ghostBtn} mt-4`}>{saving ? 'Saving…' : 'Save limits'}</button>
     </Section>
   );
 }
