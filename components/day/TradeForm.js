@@ -3,6 +3,7 @@
 import { formatMoney } from '../../lib/format';
 import { Card, GhostButton, Inline, PrimaryButton, Segmented, inputCls } from '../profile/ui';
 import { ChipGroup, Field, RULE_OPTIONS, SelectField, emotionOptions } from './dayShared';
+import DayLimitBanner from '../DayLimitBanner';
 
 export default function TradeForm({
   form,
@@ -17,8 +18,24 @@ export default function TradeForm({
   error,
   onSubmit,
   onCancel,
+  limitStatus,
+  limitAccountName,
 }) {
   const set = (patch) => setForm({ ...form, ...patch });
+
+  // Picking a strategy loads its checklist (all unticked) onto this trade.
+  function pickStrategy(id) {
+    const s = strategies.find((x) => x.id === id);
+    const items = Array.isArray(s?.checklist) ? s.checklist : [];
+    set({ strategy_id: id, checklist: items.map((t) => ({ t, d: false })) });
+  }
+  function toggleItem(i) {
+    set({ checklist: form.checklist.map((c, idx) => (idx === i ? { ...c, d: !c.d } : c)) });
+  }
+  const checklist = Array.isArray(form.checklist) ? form.checklist : [];
+  const doneCount = checklist.filter((c) => c.d).length;
+  const allDone = checklist.length > 0 && doneCount === checklist.length;
+  const chosenStrategy = strategies.find((s) => s.id === form.strategy_id);
   const num = (key, extra = {}) => ({
     type: 'number',
     step: 'any',
@@ -45,6 +62,8 @@ export default function TradeForm({
           </button>
         </div>
       )}
+
+      <DayLimitBanner status={limitStatus} riskAmount={riskUsed} accountName={limitAccountName} />
 
       <div className="pf-stagger space-y-4">
         <Card title="Trade" hint="What you traded and how you want to record it.">
@@ -99,6 +118,79 @@ export default function TradeForm({
             </Field>
           </div>
         </Card>
+
+        {strategies.length > 0 && (
+          <Card title="Strategy & checklist" hint="Pick the playbook, then tick each rule before you take the trade.">
+            <div className="space-y-4">
+              <Field label="Strategy">
+                <SelectField value={form.strategy_id} onChange={(e) => pickStrategy(e.target.value)}>
+                  <option value="">None</option>
+                  {strategies.map((s) => (
+                    <option key={s.id} value={s.id}>
+                      {s.name}
+                    </option>
+                  ))}
+                </SelectField>
+              </Field>
+
+              {chosenStrategy && checklist.length === 0 && (
+                <p className="text-xs text-neutral-500">No checklist on this strategy yet. Add one on the Strategies page.</p>
+              )}
+
+              {checklist.length > 0 && (
+                <div>
+                  <div className="flex items-center justify-between mb-2">
+                    <span className="text-xs text-neutral-400">Checklist</span>
+                    <span className={`text-xs font-semibold tabular-nums ${allDone ? 'text-emerald-400' : 'text-neutral-300'}`}>
+                      {doneCount}/{checklist.length}
+                    </span>
+                  </div>
+                  <div className="h-1.5 rounded-full bg-white/10 overflow-hidden mb-3">
+                    <div
+                      className={`h-full rounded-full transition-all duration-300 ${allDone ? 'bg-emerald-400' : 'bg-indigo-400'}`}
+                      style={{ width: `${(doneCount / checklist.length) * 100}%` }}
+                    />
+                  </div>
+                  <ul className="space-y-1.5">
+                    {checklist.map((c, i) => (
+                      <li key={`${i}-${c.t}`}>
+                        <button
+                          type="button"
+                          role="checkbox"
+                          aria-checked={!!c.d}
+                          onClick={() => toggleItem(i)}
+                          className={`w-full flex items-center gap-3 rounded-xl border px-3 py-2.5 text-left text-sm ${
+                            c.d
+                              ? 'border-emerald-400/40 bg-emerald-500/10 text-emerald-100'
+                              : 'border-white/10 bg-white/5 text-neutral-300 hover:bg-white/10'
+                          }`}
+                        >
+                          <span
+                            className={`flex h-5 w-5 flex-shrink-0 items-center justify-center rounded-md border ${
+                              c.d ? 'border-emerald-400 bg-emerald-500 text-black' : 'border-white/25'
+                            }`}
+                          >
+                            {c.d && (
+                              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                                <path d="M5 12l5 5 9-10" />
+                              </svg>
+                            )}
+                          </span>
+                          <span className="min-w-0">{c.t}</span>
+                        </button>
+                      </li>
+                    ))}
+                  </ul>
+                  {!allDone && (
+                    <p className="text-[11px] text-amber-300/90 mt-2">
+                      {checklist.length - doneCount} rule{checklist.length - doneCount !== 1 ? 's' : ''} not ticked. Is this trade really valid?
+                    </p>
+                  )}
+                </div>
+              )}
+            </div>
+          </Card>
+        )}
 
         <Card title="Result" hint={quickMode ? 'Pick the outcome and how many R it made or lost.' : 'Prices, size and the final P&L.'}>
           {quickMode ? (
@@ -203,28 +295,14 @@ export default function TradeForm({
               <ChipGroup options={emotionOptions} value={form.emotion} onChange={(v) => set({ emotion: v })} />
             </Field>
 
-            <div className="grid sm:grid-cols-2 gap-4">
-              <Field label="Setup type">
-                <input
-                  placeholder="e.g. breakout, reversal"
-                  value={form.setup_type}
-                  onChange={(e) => set({ setup_type: e.target.value })}
-                  className={inputCls}
-                />
-              </Field>
-              {strategies.length > 0 && (
-                <Field label="Strategy">
-                  <SelectField value={form.strategy_id} onChange={(e) => set({ strategy_id: e.target.value })}>
-                    <option value="">None</option>
-                    {strategies.map((s) => (
-                      <option key={s.id} value={s.id}>
-                        {s.name}
-                      </option>
-                    ))}
-                  </SelectField>
-                </Field>
-              )}
-            </div>
+            <Field label="Setup type">
+              <input
+                placeholder="e.g. breakout, reversal"
+                value={form.setup_type}
+                onChange={(e) => set({ setup_type: e.target.value })}
+                className={inputCls}
+              />
+            </Field>
 
             <Field label="Tags" hint="Separate with commas.">
               <input
