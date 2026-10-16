@@ -125,7 +125,7 @@ export async function POST(request) {
     // explicit insert/update.
     const { data: existingRows, error: existingError } = await supabase
       .from('trades')
-      .select('id, symbol, direction, entry_price, pnl, entry_time, broker_ticket')
+      .select('id, symbol, direction, entry_price, pnl, entry_time, broker_ticket, source')
       .eq('user_id', userId)
       .eq('broker_connection_id', connectionId);
     if (existingError) {
@@ -139,21 +139,25 @@ export async function POST(request) {
       bySymbolTime.set(`${row.symbol}||${timeKey(row.entry_time)}`, row.id);
     }
 
-    // Fallback for rows imported earlier with a shifted clock (CSV parsed in the
-    // browser's timezone vs API parsed on the server): same direction, entry
-    // price and P&L, with the time off by a whole number of 15-minute steps
-    // up to 14h (the range of real UTC offsets). Each existing row is claimed once.
+    // Fallback for rows whose symbol text or clock differs from the incoming
+    // trade (e.g. CSV parsed in the browser's timezone vs API parsed on the
+    // server): same direction, entry price and P&L, with the time equal or off
+    // by a whole number of 15-minute steps up to 14h (the range of real UTC
+    // offsets). Each existing row is claimed once. Only imported rows are ever
+    // matched this way — manually logged trades are never touched.
+    const IMPORTED_SOURCES = ['myfxbook_sync', 'csv_import', 'mt5_sync'];
     const claimed = new Set();
     const num = (v) => (v === null || v === undefined || v === '' ? null : Number(v));
     function fuzzyMatch(r) {
       const rt = new Date(r.entry_time).getTime();
       for (const row of existingRows || []) {
         if (claimed.has(row.id)) continue;
+        if (!IMPORTED_SOURCES.includes(row.source)) continue;
         if (row.direction !== r.direction) continue;
         if (num(row.entry_price) !== num(r.entry_price)) continue;
         if (Math.abs((num(row.pnl) ?? 0) - (num(r.pnl) ?? 0)) > 0.005) continue;
         const diff = Math.abs(new Date(row.entry_time).getTime() - rt);
-        if (diff === 0 || diff > 14 * 3600000 || diff % (15 * 60000) !== 0) continue;
+        if (diff > 14 * 3600000 || diff % (15 * 60000) !== 0) continue;
         return row.id;
       }
       return null;
