@@ -28,6 +28,7 @@ import { applyAccountFilter, computeActiveAccountId } from '../../lib/accountFil
 import { rMultiple } from '../../lib/tradeMath';
 import { formatMoney } from '../../lib/format';
 import { fetchAllRows } from '../../lib/fetchAll';
+import { hasTrackedRules } from '../../lib/dailyLimit';
 
 const DEFAULT_ACCOUNT_FILTER = { allSelected: true, selectedIds: [], includeManual: false };
 
@@ -36,7 +37,7 @@ const TABS = [
   { key: 'review', label: 'Review' },
   { key: 'notes', label: 'Notes' },
   { key: 'overview', label: 'Overview' },
-  { key: 'propfirm', label: 'Prop Firm' },
+  { key: 'propfirm', label: 'Limits' },
 ];
 
 export default function JournalPage() {
@@ -406,13 +407,13 @@ export default function JournalPage() {
 
         {tab === 'propfirm' && (
           <>
-            {activeAccountObj?.is_prop_firm ? (
+            {hasTrackedRules(activeAccountObj) ? (
               <PropFirmTracker trades={allTrades} account={activeAccountObj} ddMode={ddMode} />
             ) : (
               <div className="bg-white/[0.04] backdrop-blur-md border border-neutral-800/60 rounded-2xl p-6 text-center text-sm text-neutral-400">
                 {activeAccountObj
-                  ? 'This account isn\'t marked as a prop firm account. Toggle it on the Broker page to see rules here.'
-                  : 'Select a single prop firm account above to see its rules here.'}
+                  ? 'Set a starting balance and at least one loss limit for this account on the Broker page to track it here.'
+                  : 'Select a single account above to see its loss limits here.'}
               </div>
             )}
           </>
