@@ -8,6 +8,8 @@ import { applyAccountFilter, computeActiveAccountId } from '../../../../lib/acco
 import { rMultiple } from '../../../../lib/tradeMath';
 import { formatMoney } from '../../../../lib/format';
 import { useDayNote } from '../../../../lib/useDayNote';
+import { fetchAllRows } from '../../../../lib/fetchAll';
+import { computeDayLimitStatus, hasTrackedRules } from '../../../../lib/dailyLimit';
 import AppShell from '../../../../components/AppShell';
 import DailyRecap from '../../../../components/DailyRecap';
 import TradeSummaryCard from '../../../../components/TradeSummaryCard';
@@ -43,6 +45,8 @@ export default function DayEditPage() {
   const [defaultRiskAmount, setDefaultRiskAmount] = useState(null);
   const [accountFilter, setAccountFilter] = useState(DEFAULT_ACCOUNT_FILTER);
   const [loadedFor, setLoadedFor] = useState(null); // which date the trades on screen belong to
+  const [limitTrades, setLimitTrades] = useState([]); // every trade of the account whose limits we show
+  const [ddMode, setDdMode] = useState('trailing');
 
   const [showDailyRecap, setShowDailyRecap] = useState(false);
   const [viewingTrade, setViewingTrade] = useState(null);
@@ -67,6 +71,8 @@ export default function DayEditPage() {
     try {
       const saved = localStorage.getItem('tj_account_filter');
       if (saved) setAccountFilter(JSON.parse(saved));
+      const mode = localStorage.getItem('tj_dd_mode');
+      if (mode === 'static' || mode === 'trailing') setDdMode(mode);
     } catch {}
   }, []);
 
@@ -81,7 +87,7 @@ export default function DayEditPage() {
     if (!user) return;
     supabase
       .from('broker_connections')
-      .select('id, broker_server, broker_type, mt5_login, starting_balance, daily_loss_limit_pct, max_loss_limit_pct, profit_target_pct, status, last_synced_at')
+      .select('id, broker_server, broker_type, mt5_login, starting_balance, is_prop_firm, daily_loss_limit_pct, max_loss_limit_pct, profit_target_pct, consistency_limit_pct, status, last_synced_at')
       .order('created_at', { ascending: true })
       .then(({ data }) => setAccounts(data || []));
     supabase
@@ -120,6 +126,36 @@ export default function DayEditPage() {
   useEffect(() => {
     loadTrades();
   }, [loadTrades]);
+
+  // ---------- loss-limit status for the account being logged into ----------
+  const limitAccountId = form.account_id || null;
+  const limitAccount = limitAccountId ? accounts.find((a) => a.id === limitAccountId) : null;
+  const limitsOn = hasTrackedRules(limitAccount) && !!(limitAccount.daily_loss_limit_pct || limitAccount.max_loss_limit_pct);
+
+  const loadLimitTrades = useCallback(async () => {
+    if (!user || !limitsOn) {
+      setLimitTrades([]);
+      return;
+    }
+    const { data } = await fetchAllRows(() =>
+      supabase
+        .from('trades')
+        .select('id, pnl, exit_price, entry_time')
+        .eq('broker_connection_id', limitAccountId)
+        .not('entry_time', 'is', null)
+        .order('id', { ascending: true })
+    );
+    setLimitTrades(data || []);
+  }, [user, limitsOn, limitAccountId]);
+
+  useEffect(() => {
+    loadLimitTrades();
+  }, [loadLimitTrades]);
+
+  const limitStatus = useMemo(
+    () => (limitsOn && validDate ? computeDayLimitStatus({ trades: limitTrades, account: limitAccount, dateStr, ddMode }) : null),
+    [limitsOn, validDate, limitTrades, limitAccount, dateStr, ddMode]
+  );
 
   // ---------- stats + screenshots ----------
   const stats = useMemo(() => {
@@ -256,6 +292,7 @@ export default function DayEditPage() {
       rule_adherence: trade.rule_adherence ?? '',
       setup_type: trade.setup_type ?? '',
       strategy_id: trade.strategy_id ?? '',
+      checklist: Array.isArray(trade.checklist) ? trade.checklist : [],
       outcome,
       r_multiple: rMultipleVal,
     });
@@ -270,6 +307,11 @@ export default function DayEditPage() {
   async function handleSubmit(e) {
     e.preventDefault();
     setFormError('');
+
+    // Soft stop: today's daily loss limit is already used up
+    if (!editingId && dateStr === format(new Date(), 'yyyy-MM-dd') && limitStatus?.daily?.level === 'breach') {
+      if (!window.confirm("You've already hit your daily loss limit today. Log this trade anyway?")) return;
+    }
 
     const tagsArray = form.tags
       .split(',')
@@ -330,6 +372,7 @@ export default function DayEditPage() {
       rule_adherence: form.rule_adherence || null,
       setup_type: form.setup_type || null,
       strategy_id: form.strategy_id || null,
+      checklist: Array.isArray(form.checklist) && form.checklist.length ? form.checklist : null,
       // Only stamp `source` for quick-entry saves so editing a CSV-imported
       // trade doesn't overwrite its existing 'csv_import' tag.
       ...(quickMode ? { source: 'quick_entry' } : {}),
@@ -349,6 +392,7 @@ export default function DayEditPage() {
     notify(editingId ? 'Trade updated' : 'Trade added');
     resetForm();
     await loadTrades();
+    await loadLimitTrades();
     select('trades');
   }
 
@@ -384,6 +428,8 @@ export default function DayEditPage() {
             error={formError}
             onSubmit={handleSubmit}
             onCancel={cancelEdit}
+            limitStatus={limitStatus}
+            limitAccountName={limitAccount?.broker_server}
           />
         );
       case 'note':
