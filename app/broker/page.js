@@ -7,9 +7,9 @@ import { supabase } from '../../lib/supabaseClient';
 import AppShell from '../../components/AppShell';
 import BrokerConnect from '../../components/BrokerConnect';
 import ShareReport from '../../components/ShareReport';
-import DrawdownLimitSelect from '../../components/DrawdownLimitSelect';
+import RulesSection from '../../components/broker/RulesSection';
 import { useToasts, ToastStack } from '../../components/Notice';
-import { Collapse, Switch, fieldClass, primaryBtn, ghostBtn, dangerBtn } from '../../components/broker/ui';
+import { Collapse, fieldClass, primaryBtn, ghostBtn, dangerBtn } from '../../components/broker/ui';
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -121,59 +121,6 @@ function BalanceSection({ c, onSaved, notify }) {
         <input aria-label="Starting balance" type="number" step="any" placeholder="e.g. 10000" value={value} onChange={(e) => setValue(e.target.value)} className={`flex-1 ${fieldClass}`} />
         <button onClick={save} disabled={saving} className={ghostBtn}>{saving ? 'Saving…' : 'Save balance'}</button>
       </div>
-    </Section>
-  );
-}
-
-function RulesSection({ c, onSaved, notify }) {
-  const [isPropFirm, setIsPropFirm] = useState(c.is_prop_firm ?? false);
-  const [daily, setDaily] = useState(c.daily_loss_limit_pct ?? null);
-  const [maxDd, setMaxDd] = useState(c.max_loss_limit_pct ?? null);
-  const [target, setTarget] = useState(c.profit_target_pct ?? null);
-  const [consistency, setConsistency] = useState(c.consistency_limit_pct ?? null);
-  const [saving, setSaving] = useState(false);
-
-  async function save() {
-    setSaving(true);
-    const { error } = await supabase
-      .from('broker_connections')
-      .update({
-        is_prop_firm: isPropFirm,
-        daily_loss_limit_pct: daily,
-        max_loss_limit_pct: maxDd,
-        profit_target_pct: target,
-        consistency_limit_pct: consistency,
-      })
-      .eq('id', c.id);
-    setSaving(false);
-    if (error) return notify('error', `Couldn't save limits: ${error.message}`);
-    notify('success', 'Limits saved.');
-    onSaved();
-  }
-
-  return (
-    <Section
-      title="Loss limits"
-      hint="Works on any account, including manual ones. Set each limit as a percent of the starting balance and it shows up as batteries on the Journal's Limits tab and while you log trades."
-    >
-      {!(Number(c.starting_balance) > 0) && (
-        <p className="text-xs text-amber-300/90 mb-3">Add a starting balance above first, so limits can be worked out in dollars.</p>
-      )}
-      <div className="grid grid-cols-2 gap-3">
-        <DrawdownLimitSelect label="Daily loss limit" value={daily} onChange={setDaily} />
-        <DrawdownLimitSelect label="Max drawdown" value={maxDd} onChange={setMaxDd} />
-        <DrawdownLimitSelect label="Profit target" value={target} onChange={setTarget} />
-        <DrawdownLimitSelect label="Consistency limit" value={consistency} onChange={setConsistency} />
-      </div>
-      <div className="mt-4">
-        <Switch
-          checked={isPropFirm}
-          onChange={setIsPropFirm}
-          label="This is a prop firm account"
-          hint="Only adds a Prop firm badge and labels the tab. The limits above work either way."
-        />
-      </div>
-      <button onClick={save} disabled={saving} className={`${ghostBtn} mt-4`}>{saving ? 'Saving…' : 'Save limits'}</button>
     </Section>
   );
 }
