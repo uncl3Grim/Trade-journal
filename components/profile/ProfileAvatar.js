@@ -1,23 +1,29 @@
 'use client';
 
 import { gradientFor } from '../../lib/profile';
-import { AvatarGlyph } from './ProfileIcons';
+import { avatarFor } from './ProfileIcons';
 
 export default function ProfileAvatar({ icon, gradient, size = 64, ring = false, className = '' }) {
   const g = gradientFor(gradient);
+  const a = avatarFor(icon);
   const inner = (
-    <div
-      className="pf-avatar-inner flex items-center justify-center text-white shadow-lg"
+    // eslint-disable-next-line @next/next/no-img-element
+    <img
+      key={a.key}
+      src={a.src}
+      alt=""
+      width={256}
+      height={256}
+      draggable={false}
+      className="pf-avatar-inner pf-icon-pop block"
       style={{
         width: '100%',
         height: '100%',
-        borderRadius: '28%',
-        background: `linear-gradient(135deg, ${g.from}, ${g.to})`,
+        borderRadius: '50%',
+        objectFit: 'cover',
         boxShadow: `0 10px 30px -10px ${g.from}99`,
       }}
-    >
-      <AvatarGlyph key={icon} name={icon} size={Math.round(size * 0.5)} className="pf-icon-pop drop-shadow" />
-    </div>
+    />
   );
   if (!ring) {
     return (
