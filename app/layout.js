@@ -1,5 +1,6 @@
 import './globals.css';
 import { Space_Grotesk } from 'next/font/google';
+import VersionGuard from '../components/VersionGuard';
 
 const spaceGrotesk = Space_Grotesk({ subsets: ['latin'], variable: '--font-heading' });
 
@@ -18,7 +19,10 @@ export const viewport = {
 export default function RootLayout({ children }) {
   return (
     <html lang="en">
-      <body className={spaceGrotesk.variable}>{children}</body>
+      <body className={spaceGrotesk.variable}>
+        {children}
+        <VersionGuard />
+      </body>
     </html>
   );
 }
