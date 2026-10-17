@@ -14,7 +14,7 @@ import DisplayModeToggle from '../../components/DisplayModeToggle';
 import PsychologyQuotes from '../../components/PsychologyQuotes';
 import PeriodStatsHeader from '../../components/PeriodStatsHeader';
 import WeeklyTotals from '../../components/WeeklyTotals';
-import PropFirmTracker from '../../components/PropFirmTracker';
+import LimitsView from '../../components/limits/LimitsView';
 import AnimatedOverview from '../../components/AnimatedOverview';
 import EquityCurveChart from '../../components/EquityCurveChart';
 import WeeklyInsights from '../../components/WeeklyInsights';
@@ -28,7 +28,6 @@ import { applyAccountFilter, computeActiveAccountId } from '../../lib/accountFil
 import { rMultiple } from '../../lib/tradeMath';
 import { formatMoney } from '../../lib/format';
 import { fetchAllRows } from '../../lib/fetchAll';
-import { hasTrackedRules } from '../../lib/dailyLimit';
 
 const DEFAULT_ACCOUNT_FILTER = { allSelected: true, selectedIds: [], includeManual: false };
 
@@ -126,7 +125,7 @@ export default function JournalPage() {
     supabase
       .from('broker_connections')
       .select(
-        'id, broker_server, broker_type, mt5_login, starting_balance, is_prop_firm, daily_loss_limit_pct, max_loss_limit_pct, profit_target_pct, consistency_limit_pct, status, last_synced_at'
+        'id, broker_server, broker_type, mt5_login, starting_balance, is_prop_firm, daily_loss_limit_pct, max_loss_limit_pct, profit_target_pct, consistency_limit_pct, weekly_loss_limit_pct, max_risk_per_trade_pct, max_trades_per_day, max_loss_streak, min_trading_days, challenge_days, status, last_synced_at'
       )
       .order('created_at', { ascending: true })
       .then(({ data }) => {
@@ -406,17 +405,14 @@ export default function JournalPage() {
         )}
 
         {tab === 'propfirm' && (
-          <>
-            {hasTrackedRules(activeAccountObj) ? (
-              <PropFirmTracker trades={allTrades} account={activeAccountObj} ddMode={ddMode} />
-            ) : (
-              <div className="bg-white/[0.04] backdrop-blur-md border border-neutral-800/60 rounded-2xl p-6 text-center text-sm text-neutral-400">
-                {activeAccountObj
-                  ? 'Set a starting balance and at least one loss limit for this account on the Broker page to track it here.'
-                  : 'Select a single account above to see its loss limits here.'}
-              </div>
-            )}
-          </>
+          <LimitsView
+            trades={allTrades}
+            account={activeAccountObj}
+            ddMode={ddMode}
+            onModeChange={setDdMode}
+            onOpenDay={(day) => router.push(`/journal/day/${day}`)}
+            onSetup={() => router.push('/broker')}
+          />
         )}
 
         {tab === 'review' && <ReviewPanel trades={allTrades} defaultRiskAmount={defaultRiskAmount} mode={mode} />}
