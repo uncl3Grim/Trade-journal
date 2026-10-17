@@ -6,7 +6,7 @@ import {
   GRADIENTS, TRADING_STYLES, validateUsername, randomUsername, suggestAlternatives,
 } from '../../lib/profile';
 import ProfileAvatar from './ProfileAvatar';
-import { AVATAR_ICONS, CheckGlyph, CrossGlyph, DiceGlyph } from './ProfileIcons';
+import { AVATARS, avatarFor, CheckGlyph, CrossGlyph, DiceGlyph } from './ProfileIcons';
 import { Card, Label, inputCls, PrimaryButton, GhostButton } from './ui';
 
 export default function AccountPanel({ userId, email, profileState, notify }) {
@@ -134,7 +134,7 @@ export default function AccountPanel({ userId, email, profileState, notify }) {
         )}
       </Card>
 
-      <Card title="Avatar" hint="Pick an icon and a colour. Shows up on your profile and shared reports.">
+      <Card title="Avatar" hint="Pick your avatar and a ring colour. Shows up on your profile and shared reports.">
         <div className="flex items-center gap-5 mb-5">
           <ProfileAvatar icon={draft.avatar_icon} gradient={draft.avatar_gradient} size={84} ring />
           <div className="min-w-0">
@@ -143,31 +143,30 @@ export default function AccountPanel({ userId, email, profileState, notify }) {
           </div>
         </div>
 
-        <Label>Icon</Label>
-        <div className="grid grid-cols-4 sm:grid-cols-8 gap-2 mb-5">
-          {AVATAR_ICONS.map((ic) => {
-            const active = draft.avatar_icon === ic.key;
+        <Label>Avatar</Label>
+        <div className="grid grid-cols-4 sm:grid-cols-8 gap-2.5 mb-5">
+          {AVATARS.map((av) => {
+            const active = avatarFor(draft.avatar_icon).key === av.key;
             return (
               <button
-                key={ic.key}
+                key={av.key}
                 type="button"
-                title={ic.label}
-                aria-label={ic.label}
+                title={av.label}
+                aria-label={av.label}
                 aria-pressed={active}
-                onClick={() => patch({ avatar_icon: ic.key })}
-                className={`pf-icon-tile aspect-square rounded-xl border flex items-center justify-center ${
-                  active
-                    ? 'is-active border-indigo-400/70 bg-indigo-500/15 text-white'
-                    : 'border-white/10 bg-white/[0.03] text-neutral-400 hover:text-neutral-100 hover:bg-white/10'
+                onClick={() => patch({ avatar_icon: av.key })}
+                className={`pf-icon-tile aspect-square rounded-full p-0.5 border-2 overflow-hidden ${
+                  active ? 'is-active border-indigo-400' : 'border-transparent opacity-80 hover:opacity-100'
                 }`}
               >
-                <svg width="24" height="24" viewBox="0 0 24 24">{ic.node}</svg>
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img src={av.src} alt="" width={96} height={96} loading="lazy" draggable={false} className="w-full h-full rounded-full object-cover" />
               </button>
             );
           })}
         </div>
 
-        <Label>Colour</Label>
+        <Label>Ring colour</Label>
         <div className="flex flex-wrap gap-2.5">
           {GRADIENTS.map((g) => {
             const active = draft.avatar_gradient === g.key;
