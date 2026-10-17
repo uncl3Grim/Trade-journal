@@ -381,7 +381,7 @@ button:hover > .pf-dice { transform: rotate(180deg); }
 .pf-reveal-inner { overflow: hidden; min-height: 0; }
 
 /* Sticky unsaved-changes bar */
-.pf-savebar { position: sticky; bottom: 5rem; z-index: 30; margin-top: 1rem; opacity: 0; transform: translateY(24px) scale(.98); pointer-events: none; transition: opacity 260ms ease, transform 420ms var(--pf-spring); }
+.pf-savebar { position: sticky; bottom: calc(5.5rem + env(safe-area-inset-bottom, 0px)); z-index: 30; margin-top: 1rem; opacity: 0; transform: translateY(24px) scale(.98); pointer-events: none; transition: opacity 260ms ease, transform 420ms var(--pf-spring); }
 .pf-savebar.is-visible { opacity: 1; transform: none; pointer-events: auto; }
 @media (min-width: 768px) { .pf-savebar { bottom: 1.5rem; } }
 
@@ -425,5 +425,30 @@ html.tj-app body {
   select,
   textarea {
     font-size: 16px !important;
+  }
+}
+
+/* ================================================================
+   Phone sizing: make every phone look like the roomy layout
+   ================================================================
+   Everything in the app is sized in rem, and a Samsung phone at its default
+   display setting lays the page out about 490px wide, while an iPhone 11 is
+   414px. Same code, so the iPhone looked ~17% "zoomed in". Scale the base
+   size down in proportion on screens narrower than 490px (100% from there up,
+   so larger phones, tablets and desktop are untouched). It's a percentage of
+   the browser's own default size, so a user's text-size setting still works.
+   Tailwind breakpoints (sm:/md:) are pixel media queries and don't move. */
+html {
+  font-size: clamp(78%, 3.265vw, 100%);
+  -webkit-text-size-adjust: 100%;
+  text-size-adjust: 100%;
+  touch-action: manipulation; /* no double-tap zoom; pinch-zoom still works */
+}
+
+/* Floating cards/sheets that sit above the phone's bottom nav: clear the nav
+   AND the iPhone home-indicator area, at any base size. */
+@media (max-width: 639px) {
+  .bottom-20 {
+    bottom: calc(5.5rem + env(safe-area-inset-bottom, 0px)) !important;
   }
 }
