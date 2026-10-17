@@ -52,7 +52,7 @@ export default function WelcomeHeader() {
       if (cancelled) return;
       const fallback = email.split('@')[0] || 'trader';
       const name = row?.display_name || row?.username || fallback;
-      setProfile({ name, icon: row?.avatar_icon || 'bull', gradient: row?.avatar_gradient || 'aurora' });
+      setProfile({ name, icon: row?.avatar_icon || 'a01', gradient: row?.avatar_gradient || 'aurora' });
       setHeading(pickHeading(name, new Date().getHours()));
       setLine(Math.floor(Math.random() * SUBLINES.length));
     });
