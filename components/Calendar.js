@@ -33,7 +33,7 @@ function signOf(stat, mode) {
   return mode === 'r' ? stat.r : stat.dollar;
 }
 
-export default function Calendar({ month, dailyStats, onDayClick, selectedDate, mode = 'dollar', accountBalance }) {
+export default function Calendar({ month, dailyStats, onDayClick, selectedDate, mode = 'dollar', accountBalance, colorBy = 'pnl', processStats = {} }) {
   const monthStart = startOfMonth(month);
   const monthEnd = endOfMonth(month);
   const gridStart = startOfWeek(monthStart);
@@ -58,10 +58,27 @@ export default function Calendar({ month, dailyStats, onDayClick, selectedDate, 
           const inMonth = isSameMonth(day, month);
           const isSelected = selectedDate && isSameDay(day, selectedDate);
           const sign = signOf(stat, mode);
+          const proc = colorBy === 'process' ? processStats[key] : null;
+          const procScore = proc && proc.score !== null && proc.score !== undefined ? proc.score : null;
+          const procTone = procScore === null ? 0 : procScore >= 80 ? 1 : procScore >= 50 ? 0.5 : -1;
 
           let bg = 'bg-white/[0.03]';
           let border = 'border-neutral-800';
-          if (stat) {
+          if (stat && colorBy === 'process') {
+            if (procTone === 1) {
+              bg = 'bg-emerald-400/[0.07]';
+              border = 'border-emerald-900/50';
+            } else if (procTone === 0.5) {
+              bg = 'bg-amber-400/[0.07]';
+              border = 'border-amber-900/50';
+            } else if (procTone === -1) {
+              bg = 'bg-rose-400/[0.07]';
+              border = 'border-rose-900/50';
+            } else {
+              bg = 'bg-white/[0.04]';
+              border = 'border-neutral-800';
+            }
+          } else if (stat) {
             if (sign > 0) {
               bg = 'bg-emerald-400/[0.07]';
               border = 'border-emerald-900/50';
@@ -87,13 +104,23 @@ export default function Calendar({ month, dailyStats, onDayClick, selectedDate, 
               <span className="text-[10px] sm:text-xs text-neutral-500 leading-none">{format(day, 'd')}</span>
               {stat && (
                 <div className="w-full min-w-0">
-                  <div
-                    className={`text-[10px] sm:text-xs font-semibold leading-tight truncate ${
-                      sign > 0 ? 'text-emerald-400' : sign < 0 ? 'text-rose-400' : 'text-neutral-400'
-                    }`}
-                  >
-                    {formatValue(stat, mode, accountBalance)}
-                  </div>
+                  {colorBy === 'process' ? (
+                    <div
+                      className={`text-[10px] sm:text-xs font-semibold leading-tight truncate ${
+                        procTone === 1 ? 'text-emerald-400' : procTone === 0.5 ? 'text-amber-300' : procTone === -1 ? 'text-rose-400' : 'text-neutral-500'
+                      }`}
+                    >
+                      {procScore === null ? 'No data' : `${Math.round(procScore)}%`}
+                    </div>
+                  ) : (
+                    <div
+                      className={`text-[10px] sm:text-xs font-semibold leading-tight truncate ${
+                        sign > 0 ? 'text-emerald-400' : sign < 0 ? 'text-rose-400' : 'text-neutral-400'
+                      }`}
+                    >
+                      {formatValue(stat, mode, accountBalance)}
+                    </div>
+                  )}
                   <div className="text-[8px] sm:text-[10px] text-neutral-500 leading-tight truncate">
                     {stat.count} trade{stat.count !== 1 ? 's' : ''}
                   </div>
@@ -108,6 +135,11 @@ export default function Calendar({ month, dailyStats, onDayClick, selectedDate, 
           );
         })}
       </div>
+      {colorBy === 'process' && (
+        <p className="mt-3 text-[11px] text-neutral-500 leading-relaxed">
+          Days are coloured by how well you followed your process (checklist, plan, stop loss, no mistakes), not by profit. A losing day with a green process is a good day.
+        </p>
+      )}
     </div>
   );
 }
