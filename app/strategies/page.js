@@ -314,6 +314,12 @@ function StrategyCard({ row, isBest, defaultOpen, onDelete, onSave, onDuplicate 
           <div className={`mt-3 rounded-xl border px-3 py-2 text-xs leading-relaxed ${insightTone}`}>{insight.text}</div>
         )}
 
+        {st.decay?.flag && !editing && (
+          <div className="mt-2 rounded-xl border border-rose-400/30 bg-rose-500/10 px-3 py-2 text-xs leading-relaxed text-rose-200">
+            Edge check: your last {st.decay.recent.n} trades on this setup average {money(st.decay.recent.exp)} per trade, versus {money(st.decay.prior.exp)} before. The setup may be losing its edge, or you may be executing it differently.
+          </div>
+        )}
+
         {open && !editing && (
           <div className="pf-fade mt-5 space-y-4">
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 rounded-xl border border-white/5 bg-black/20 p-3">
