@@ -4,6 +4,7 @@ import { formatMoney } from '../../lib/format';
 import { Card, GhostButton, Inline, PrimaryButton, Segmented, inputCls } from '../profile/ui';
 import { ChipGroup, Field, RULE_OPTIONS, SelectField, emotionOptions } from './dayShared';
 import DayLimitBanner from '../DayLimitBanner';
+import { MISTAKES, MISTAKE_PREFIX } from '../../lib/coach';
 
 export default function TradeForm({
   form,
@@ -33,6 +34,14 @@ export default function TradeForm({
     set({ checklist: form.checklist.map((c, idx) => (idx === i ? { ...c, d: !c.d } : c)) });
   }
   const checklist = Array.isArray(form.checklist) ? form.checklist : [];
+
+  // Mistakes live in the Tags box as "mistake:<key>" so no database change is needed.
+  const tagList = (form.tags || '').split(',').map((t) => t.trim()).filter(Boolean);
+  function toggleMistake(key) {
+    const tag = MISTAKE_PREFIX + key;
+    const next = tagList.includes(tag) ? tagList.filter((t) => t !== tag) : [...tagList, tag];
+    set({ tags: next.join(', ') });
+  }
   const doneCount = checklist.filter((c) => c.d).length;
   const allDone = checklist.length > 0 && doneCount === checklist.length;
   const chosenStrategy = strategies.find((s) => s.id === form.strategy_id);
@@ -311,6 +320,27 @@ export default function TradeForm({
                 onChange={(e) => set({ tags: e.target.value })}
                 className={inputCls}
               />
+            </Field>
+
+            <Field label="What went wrong?" hint="Optional. Tag any mistake so the Review tab can show what each habit costs you.">
+              <div className="flex flex-wrap gap-2">
+                {MISTAKES.map((m) => {
+                  const on = tagList.includes(MISTAKE_PREFIX + m.key);
+                  return (
+                    <button
+                      key={m.key}
+                      type="button"
+                      aria-pressed={on}
+                      onClick={() => toggleMistake(m.key)}
+                      className={`pf-chip rounded-full border px-3 py-1.5 text-xs ${
+                        on ? 'is-active border-rose-400/60 bg-rose-500/15 text-rose-100' : 'border-white/10 bg-white/[0.03] text-neutral-400 hover:text-neutral-200'
+                      }`}
+                    >
+                      {m.label}
+                    </button>
+                  );
+                })}
+              </div>
             </Field>
 
             <Field label="Trade note">
