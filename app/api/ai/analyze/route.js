@@ -1,5 +1,6 @@
 import { createClient } from '@supabase/supabase-js';
 import { buildTradeSummary } from '../../../../lib/aiSummary';
+import { fetchAllRows } from '../../../../lib/fetchAll';
 
 export async function POST(request) {
   try {
@@ -22,11 +23,14 @@ export async function POST(request) {
 
     const { defaultRiskAmount } = await request.json();
 
-    const { data: trades, error: tradesError } = await supabase
-      .from('trades')
-      .select('*')
-      .order('entry_time', { ascending: true })
-      .range(0, 49999);
+    // PostgREST caps each response at 1000 rows, so page through everything.
+    const { data: trades, error: tradesError } = await fetchAllRows(() =>
+      supabase
+        .from('trades')
+        .select('*')
+        .order('entry_time', { ascending: true })
+        .order('id', { ascending: true })
+    );
 
     if (tradesError) {
       return Response.json({ error: tradesError.message }, { status: 500 });
@@ -37,7 +41,13 @@ export async function POST(request) {
 
     const summary = buildTradeSummary(trades, defaultRiskAmount);
 
-    const prompt = `You are a trading coach reviewing a trader's journal data. Below is a statistical summary of their trades (not the raw trade list). Give specific, actionable feedback: 2-3 clear strengths, 2-3 clear weaknesses/leaks, and 3 concrete suggestions to improve. Be direct and concise, use the actual numbers given. Do not add generic disclaimers.
+    const prompt = `You are a trading coach reviewing a trader's journal data. Below is a statistical summary of their trades (not the raw trade list). Use the actual numbers given and reply in exactly this structure:
+
+1. What is working (2 short bullets)
+2. What is leaking money (2-3 short bullets, biggest first; give the dollar cost wherever the data shows it)
+3. Your one focus this week (a single, specific, measurable rule, for example "No new trade after two losses in a row". Give only one.)
+
+If there are fewer than 30 closed trades, say the sample is too small to trust and keep the advice about process rather than strategy. Never predict the market or tell them what to trade. Be direct and concise. Do not add generic disclaimers.
 
 Trading data summary:
 ${summary}`;
