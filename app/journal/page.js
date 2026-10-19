@@ -28,6 +28,8 @@ import { applyAccountFilter, computeActiveAccountId } from '../../lib/accountFil
 import { rMultiple } from '../../lib/tradeMath';
 import { formatMoney } from '../../lib/format';
 import { fetchAllRows } from '../../lib/fetchAll';
+import TodayCard from '../../components/coach/TodayCard';
+import { processDays } from '../../lib/coach';
 
 const DEFAULT_ACCOUNT_FILTER = { allSelected: true, selectedIds: [], includeManual: false };
 
@@ -56,6 +58,7 @@ export default function JournalPage() {
   const [calendarView, setCalendarView] = useState('month');
   const [accountFilter, setAccountFilter] = useState(DEFAULT_ACCOUNT_FILTER);
   const [showRecap, setShowRecap] = useState(false);
+  const [calColor, setCalColor] = useState('pnl');
 
   useEffect(() => {
     try {
@@ -104,6 +107,19 @@ export default function JournalPage() {
       localStorage.setItem('tj_month', month.toISOString());
     } catch {}
   }, [month]);
+
+  useEffect(() => {
+    try {
+      const saved = localStorage.getItem('tj_calendar_color');
+      if (saved === 'pnl' || saved === 'process') setCalColor(saved);
+    } catch {}
+  }, []);
+
+  useEffect(() => {
+    try {
+      localStorage.setItem('tj_calendar_color', calColor);
+    } catch {}
+  }, [calColor]);
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
@@ -205,6 +221,7 @@ export default function JournalPage() {
   }, [loadAllTrades]);
 
   const dailyStats = computeDailyStats(trades, defaultRiskAmount);
+  const processStats = processDays(trades);
   const activeAccountId = computeActiveAccountId(accountFilter);
   const activeAccountObj = activeAccountId ? accounts.find((a) => a.id === activeAccountId) : null;
   const manualOnly = !accountFilter.allSelected && accountFilter.includeManual && accountFilter.selectedIds.length === 0;
@@ -250,6 +267,8 @@ export default function JournalPage() {
           <WeeklyRecap trades={allTrades} defaultRiskAmount={defaultRiskAmount} onClose={() => setShowRecap(false)} userId={user?.id} />
         )}
 
+        <TodayCard trades={allTrades} account={activeAccountObj} />
+
         <div className="flex items-center justify-between mb-6 flex-wrap gap-3">
           <div className="flex gap-2 overflow-x-auto -mx-1 px-1 pb-1" style={{ WebkitOverflowScrolling: 'touch' }}>
             {TABS.map((t) => (
@@ -284,7 +303,21 @@ export default function JournalPage() {
         {tab === 'calendar' && (
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
             <div className="lg:col-span-2">
-              <div className="flex items-center justify-end mb-3">
+              <div className="flex items-center justify-between gap-2 mb-3">
+                <div className="flex gap-1 bg-black/25 backdrop-blur-md border border-neutral-800/60 rounded-lg p-0.5" role="group" aria-label="Colour days by">
+                  <button
+                    onClick={() => setCalColor('pnl')}
+                    className={`px-3 py-1 rounded-md text-xs font-medium transition-colors ${calColor === 'pnl' ? 'bg-white/10 text-neutral-100' : 'text-neutral-500'}`}
+                  >
+                    P&amp;L
+                  </button>
+                  <button
+                    onClick={() => setCalColor('process')}
+                    className={`px-3 py-1 rounded-md text-xs font-medium transition-colors ${calColor === 'process' ? 'bg-white/10 text-neutral-100' : 'text-neutral-500'}`}
+                  >
+                    Process
+                  </button>
+                </div>
                 <div className="flex gap-1 bg-black/25 backdrop-blur-md border border-neutral-800/60 rounded-lg p-0.5">
                   <button
                     onClick={() => setCalendarView('month')}
@@ -353,6 +386,8 @@ export default function JournalPage() {
                       selectedDate={null}
                       mode={mode}
                       accountBalance={startingBalance}
+                      colorBy={calColor}
+                      processStats={processStats}
                     />
                   )}
                 </>
