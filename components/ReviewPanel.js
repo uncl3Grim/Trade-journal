@@ -20,9 +20,10 @@ import BreakdownReports from './BreakdownReports';
 import AIAnalysis from './AIAnalysis';
 import InsightsCards from './InsightsCards';
 import PsychologyInsights from './PsychologyInsights';
-import TraderScoreCard from './TraderScoreCard';
 import DisciplineScoreCard from './DisciplineScoreCard';
 import MistakeCostCard from './MistakeCostCard';
+import HourHeatmapCard from './HourHeatmapCard';
+import RiskPlannerCard from './RiskPlannerCard';
 import DailyPnLBarChart from './DailyPnLBarChart';
 import AdvancedStats from './AdvancedStats';
 import WeeklyReviewPrompt from './WeeklyReviewPrompt';
@@ -219,8 +220,9 @@ export default function ReviewPanel({ trades, defaultRiskAmount, mode = 'dollar'
       <MistakeCostCard trades={trades} />
     <SetupStatsCard trades={trades} />
       <SessionStatsCard trades={trades} />
+      <HourHeatmapCard trades={trades} />
       <DisciplineScoreCard trades={trades} />
-      <TraderScoreCard trades={trades} />
+      <RiskPlannerCard trades={trades} />
       <DailyPnLBarChart trades={trades} />
       <AdvancedStats trades={trades} />
       <EquityCurve trades={trades} />
