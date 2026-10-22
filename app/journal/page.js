@@ -249,7 +249,8 @@ export default function JournalPage() {
     <AppShell>
       <div className="max-w-6xl mx-auto px-4 py-6">
         <PsychologyQuotes />
-        <WeeklyInsights trades={allTrades} />
+        {/* CHANGED: patterns box only on the Calendar tab */}
+        {tab === 'calendar' && <WeeklyInsights trades={allTrades} />}
 
         <div className="flex items-center justify-between mb-6">
           <WelcomeHeader />
@@ -267,7 +268,8 @@ export default function JournalPage() {
           <WeeklyRecap trades={allTrades} defaultRiskAmount={defaultRiskAmount} onClose={() => setShowRecap(false)} userId={user?.id} />
         )}
 
-        <TodayCard trades={allTrades} account={activeAccountObj} />
+        {/* CHANGED: Today card only on the Calendar tab */}
+        {tab === 'calendar' && <TodayCard trades={allTrades} account={activeAccountObj} />}
 
         <div className="flex items-center justify-between mb-6 flex-wrap gap-3">
           <div className="flex gap-2 overflow-x-auto -mx-1 px-1 pb-1" style={{ WebkitOverflowScrolling: 'touch' }}>
