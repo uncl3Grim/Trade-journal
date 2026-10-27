@@ -454,7 +454,7 @@ export default function JournalPage() {
           />
         )}
 
-        {tab === 'record' && <TrackRecordTab accounts={accounts} onSetup={() => router.push('/broker')} />}
+        {tab === 'record' && <TrackRecordTab accounts={accounts} defaultAccountId={activeAccountId} onSetup={() => router.push('/broker')} />}
 
         {tab === 'review' && <ReviewPanel trades={allTrades} defaultRiskAmount={defaultRiskAmount} mode={mode} />}
         {tab === 'notes' && <NotesView userId={user?.id} accountFilter={accountFilter} accounts={accounts} />}
