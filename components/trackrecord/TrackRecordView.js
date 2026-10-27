@@ -5,6 +5,7 @@ import { format } from 'date-fns';
 import { computeTrackRecord } from '../../lib/trackRecord';
 import AmbientBackground from './AmbientBackground';
 import TrackHeader from './TrackHeader';
+import AccountSummary from './AccountSummary';
 import HeadlineStrip from './HeadlineStrip';
 import TrackEquityChart from './TrackEquityChart';
 import MonthlyHeatmap from './MonthlyHeatmap';
@@ -23,6 +24,7 @@ const { Reveal } = UI;
 const REQUIRED = {
   'components/trackrecord/AmbientBackground.js': AmbientBackground,
   'components/trackrecord/TrackHeader.js': TrackHeader,
+  'components/trackrecord/AccountSummary.js': AccountSummary,
   'components/trackrecord/HeadlineStrip.js': HeadlineStrip,
   'components/trackrecord/TrackEquityChart.js': TrackEquityChart,
   'components/trackrecord/MonthlyHeatmap.js': MonthlyHeatmap,
@@ -62,6 +64,7 @@ function TrackRecordInner({ report, banner }) {
           </Reveal>
         ) : (
           <>
+            <AccountSummary tr={tr} />
             <HeadlineStrip tr={tr} />
             <TrackEquityChart tr={tr} />
             <MonthlyHeatmap tr={tr} />
