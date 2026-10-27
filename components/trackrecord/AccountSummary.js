@@ -55,7 +55,7 @@ export default function AccountSummary({ tr }) {
         </div>
       ) : (
         <div className="mb-4 rounded-xl border border-neutral-800/60 bg-white/[0.03] px-3 py-2.5 text-xs text-neutral-400">
-          Starting balance isn&apos;t shared on this report, so balances and percentage returns are hidden.
+          The trader chose to keep account balances private, so balances and percentage returns are hidden. Results are shown in dollars.
         </div>
       )}
 
