@@ -51,6 +51,9 @@ export default function TrackHeader({ name, tr }) {
           <div className="rounded-xl bg-white/[0.03] border border-neutral-800/60 px-3 py-2">
             <div className="text-neutral-500">Period</div>
             <div className="text-neutral-100 font-medium mt-0.5">{range}</div>
+            {tr.periodStart && (
+              <div className="text-neutral-500 mt-0.5">Shared from {format(tr.periodStart, 'MMM d, yyyy')}</div>
+            )}
           </div>
           <div className="rounded-xl bg-white/[0.03] border border-neutral-800/60 px-3 py-2">
             <div className="text-neutral-500">Closed trades</div>
