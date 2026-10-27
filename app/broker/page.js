@@ -6,7 +6,6 @@ import { format } from 'date-fns';
 import { supabase } from '../../lib/supabaseClient';
 import AppShell from '../../components/AppShell';
 import BrokerConnect from '../../components/BrokerConnect';
-import ShareReport from '../../components/ShareReport';
 import RulesSection from '../../components/broker/RulesSection';
 import { useToasts, ToastStack } from '../../components/Notice';
 import { Collapse, fieldClass, primaryBtn, ghostBtn, dangerBtn } from '../../components/broker/ui';
@@ -199,9 +198,6 @@ function AccountRow({ c, index, selected, flash, syncing, removing, onSelect, on
               <NameSection c={c} onSaved={onSaved} notify={notify} />
               <BalanceSection c={c} onSaved={onSaved} notify={notify} />
               <RulesSection c={c} onSaved={onSaved} notify={notify} />
-              <Section title="Share your track record" hint="Create a public, read-only link to this account's results. Revoke it any time.">
-                <ShareReport connection={c} />
-              </Section>
               <RemoveSection c={c} removing={removing} onRemove={onRemove} />
             </div>
           </div>
