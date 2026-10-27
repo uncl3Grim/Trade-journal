@@ -10,6 +10,7 @@ export default function ShareReport({ connection }) {
   const [creating, setCreating] = useState(false);
   const [label, setLabel] = useState('');
   const [startDate, setStartDate] = useState('');
+  const [showBalances, setShowBalances] = useState(true);
   const [copiedId, setCopiedId] = useState(null);
 
   const load = useCallback(async () => {
@@ -33,10 +34,12 @@ export default function ShareReport({ connection }) {
       broker_connection_id: connection.id,
       label: label || connection.broker_server,
       start_date: startDate || null,
+      show_balances: showBalances,
     });
     setCreating(false);
     setLabel('');
     setStartDate('');
+    setShowBalances(true);
     load();
   }
 
@@ -112,6 +115,23 @@ export default function ShareReport({ connection }) {
             ? 'Trades before this date stay hidden. The starting balance shown is your balance on this date.'
             : 'No date chosen: every trade on this account is shared.'}
         </p>
+
+        <label className="mt-3 flex items-start gap-2.5 cursor-pointer">
+          <input
+            type="checkbox"
+            checked={showBalances}
+            onChange={(e) => setShowBalances(e.target.checked)}
+            className="mt-0.5 h-4 w-4 accent-indigo-500"
+          />
+          <span>
+            <span className="block text-sm text-neutral-200">Show account balance</span>
+            <span className="block text-[11px] text-neutral-500">
+              {showBalances
+                ? 'Starting and current balance and percentage returns are visible.'
+                : 'Balances and percentage returns are hidden. Only dollar results are shown.'}
+            </span>
+          </span>
+        </label>
       </div>
 
       {active.length === 0 ? (
@@ -123,7 +143,7 @@ export default function ShareReport({ connection }) {
               <span className="min-w-0">
                 <span className="block text-sm text-neutral-200 truncate">{r.label || 'Untitled link'}</span>
                 <span className="block text-[11px] text-neutral-500">
-                  {r.start_date ? `From ${format(new Date(`${r.start_date}T00:00:00`), 'MMM d, yyyy')}` : 'All trades'}
+                  {[r.start_date ? `From ${format(new Date(`${r.start_date}T00:00:00`), 'MMM d, yyyy')}` : 'All trades', r.show_balances === false ? 'Balance hidden' : null].filter(Boolean).join(' · ')}
                 </span>
               </span>
               <span className="flex gap-3 flex-shrink-0 text-xs font-medium">
