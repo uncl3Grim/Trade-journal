@@ -21,6 +21,7 @@ import WeeklyInsights from '../../components/WeeklyInsights';
 import WeeklyRecap from '../../components/WeeklyRecap';
 import SyncStatusWidget from '../../components/SyncStatusWidget';
 import AppShell from '../../components/AppShell';
+import TrackRecordTab from '../../components/TrackRecordTab';
 import WelcomeHeader from '../../components/WelcomeHeader';
 import { computeDailyStats } from '../../lib/dailyStats';
 import YearCalendar from '../../components/YearCalendar';
@@ -39,6 +40,7 @@ const TABS = [
   { key: 'notes', label: 'Notes' },
   { key: 'overview', label: 'Overview' },
   { key: 'propfirm', label: 'Limits' },
+  { key: 'record', label: 'Track record' },
 ];
 
 export default function JournalPage() {
@@ -451,6 +453,8 @@ export default function JournalPage() {
             onSetup={() => router.push('/broker')}
           />
         )}
+
+        {tab === 'record' && <TrackRecordTab accounts={accounts} onSetup={() => router.push('/broker')} />}
 
         {tab === 'review' && <ReviewPanel trades={allTrades} defaultRiskAmount={defaultRiskAmount} mode={mode} />}
         {tab === 'notes' && <NotesView userId={user?.id} accountFilter={accountFilter} accounts={accounts} />}
