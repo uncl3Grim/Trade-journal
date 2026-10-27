@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
+import { format, subDays, startOfYear } from 'date-fns';
 import { supabase } from '../lib/supabaseClient';
 import { fieldClass, primaryBtn } from './broker/ui';
 
@@ -8,6 +9,7 @@ export default function ShareReport({ connection }) {
   const [reports, setReports] = useState([]);
   const [creating, setCreating] = useState(false);
   const [label, setLabel] = useState('');
+  const [startDate, setStartDate] = useState('');
   const [copiedId, setCopiedId] = useState(null);
 
   const load = useCallback(async () => {
@@ -30,9 +32,11 @@ export default function ShareReport({ connection }) {
       user_id: session.user.id,
       broker_connection_id: connection.id,
       label: label || connection.broker_server,
+      start_date: startDate || null,
     });
     setCreating(false);
     setLabel('');
+    setStartDate('');
     load();
   }
 
@@ -50,6 +54,14 @@ export default function ShareReport({ connection }) {
   }
 
   const active = reports.filter((r) => !r.revoked);
+  const today = new Date();
+  const ymd = (d) => format(d, 'yyyy-MM-dd');
+  const quick = [
+    { label: 'All time', value: '' },
+    { label: 'Last 30 days', value: ymd(subDays(today, 30)) },
+    { label: 'Last 90 days', value: ymd(subDays(today, 90)) },
+    { label: 'This year', value: ymd(startOfYear(today)) },
+  ];
 
   return (
     <div>
@@ -66,13 +78,54 @@ export default function ShareReport({ connection }) {
         </button>
       </div>
 
+      <div className="mt-3">
+        <label htmlFor="share-start" className="block text-xs font-medium text-neutral-400 mb-1.5">
+          Share results from
+        </label>
+        <div className="flex flex-wrap items-center gap-2">
+          <input
+            id="share-start"
+            type="date"
+            max={ymd(today)}
+            value={startDate}
+            onChange={(e) => setStartDate(e.target.value)}
+            style={{ colorScheme: 'dark' }}
+            className={`${fieldClass} !w-auto`}
+          />
+          {quick.map((q) => (
+            <button
+              key={q.label}
+              type="button"
+              onClick={() => setStartDate(q.value)}
+              className={`text-xs rounded-full px-3 py-1.5 border ${
+                startDate === q.value
+                  ? 'border-indigo-500/60 bg-indigo-500/15 text-indigo-200'
+                  : 'border-neutral-800 text-neutral-400 hover:border-neutral-700'
+              }`}
+            >
+              {q.label}
+            </button>
+          ))}
+        </div>
+        <p className="text-[11px] text-neutral-500 mt-1.5">
+          {startDate
+            ? 'Trades before this date stay hidden. The starting balance shown is your balance on this date.'
+            : 'No date chosen: every trade on this account is shared.'}
+        </p>
+      </div>
+
       {active.length === 0 ? (
         <p className="text-xs text-neutral-500 mt-3">No active links. Create one to share a read-only view of this account's results.</p>
       ) : (
         <ul className="mt-3 space-y-2">
           {active.map((r) => (
             <li key={r.id} className="bk-swap flex items-center justify-between gap-3 bg-white/[0.03] border border-neutral-800/60 rounded-xl px-3 py-2">
-              <span className="text-sm text-neutral-200 truncate">{r.label || 'Untitled link'}</span>
+              <span className="min-w-0">
+                <span className="block text-sm text-neutral-200 truncate">{r.label || 'Untitled link'}</span>
+                <span className="block text-[11px] text-neutral-500">
+                  {r.start_date ? `From ${format(new Date(`${r.start_date}T00:00:00`), 'MMM d, yyyy')}` : 'All trades'}
+                </span>
+              </span>
               <span className="flex gap-3 flex-shrink-0 text-xs font-medium">
                 <button onClick={() => copyLink(r)} className={copiedId === r.id ? 'text-emerald-400' : 'text-indigo-400 hover:text-indigo-300'}>
                   {copiedId === r.id ? 'Copied' : 'Copy link'}
