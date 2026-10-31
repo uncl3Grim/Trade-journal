@@ -40,6 +40,28 @@ async function syncMt5(connection) {
     }));
 }
 
+// MyFXBook reports trade times only to the minute, so several trades opened in
+// the same minute on the same pair (scale-ins, baskets) all look identical and
+// were being merged into one. Spread them out by whole seconds, in a fixed
+// order, so each trade keeps its own row and re-syncing matches the same rows.
+function spreadSameMinute(rows) {
+  const cmp = (a, b) =>
+    String(a.entry_time || '').localeCompare(String(b.entry_time || '')) ||
+    (Number(a.entry_price) || 0) - (Number(b.entry_price) || 0) ||
+    String(a.exit_time || '').localeCompare(String(b.exit_time || '')) ||
+    (Number(a.size) || 0) - (Number(b.size) || 0) ||
+    (Number(a.pnl) || 0) - (Number(b.pnl) || 0);
+  const counts = new Map();
+  return [...rows].sort(cmp).map((r) => {
+    if (!r.entry_time || !r.symbol) return r;
+    const key = `${r.symbol}||${r.entry_time}`;
+    const n = counts.get(key) || 0;
+    counts.set(key, n + 1);
+    if (!n) return r;
+    return { ...r, entry_time: new Date(new Date(r.entry_time).getTime() + n * 1000).toISOString() };
+  });
+}
+
 async function syncMyfxbook(connection) {
   const session = await myfxbookLogin(connection.myfxbook_email, connection.myfxbook_password);
   const history = await myfxbookGetHistory(session, connection.myfxbook_account_id);
@@ -77,7 +99,7 @@ async function syncMyfxbook(connection) {
   } catch {
     account = null;
   }
-  return { rows, account };
+  return { rows: spreadSameMinute(rows), account };
 }
 
 export async function POST(request) {
@@ -247,7 +269,11 @@ export async function POST(request) {
       }
     }
 
-    return Response.json({ success: true, tradesSynced: toInsert.length + toUpdate.length });
+    return Response.json({
+      success: true,
+      tradesSynced: toInsert.length + toUpdate.length,
+      tradesReceived: validRows.length,
+    });
   } catch (err) {
     return Response.json({ error: err.message || 'Unknown error' }, { status: 500 });
   }
