@@ -22,6 +22,7 @@ import WeeklyRecap from '../../components/WeeklyRecap';
 import SyncStatusWidget from '../../components/SyncStatusWidget';
 import AppShell from '../../components/AppShell';
 import TrackRecordTab from '../../components/TrackRecordTab';
+import AccountSnapshot from '../../components/AccountSnapshot';
 import WelcomeHeader from '../../components/WelcomeHeader';
 import { computeDailyStats } from '../../lib/dailyStats';
 import YearCalendar from '../../components/YearCalendar';
@@ -143,7 +144,7 @@ export default function JournalPage() {
     supabase
       .from('broker_connections')
       .select(
-        'id, broker_server, broker_type, mt5_login, starting_balance, is_prop_firm, daily_loss_limit_pct, max_loss_limit_pct, profit_target_pct, consistency_limit_pct, weekly_loss_limit_pct, max_risk_per_trade_pct, max_trades_per_day, max_loss_streak, min_trading_days, challenge_days, status, last_synced_at'
+        'id, broker_server, broker_type, mt5_login, starting_balance, is_prop_firm, daily_loss_limit_pct, max_loss_limit_pct, profit_target_pct, consistency_limit_pct, weekly_loss_limit_pct, max_risk_per_trade_pct, max_trades_per_day, max_loss_streak, min_trading_days, challenge_days, status, last_synced_at, broker_balance, broker_equity, broker_deposits, broker_withdrawals, broker_balance_at'
       )
       .order('created_at', { ascending: true })
       .then(({ data }) => {
@@ -421,6 +422,7 @@ export default function JournalPage() {
             {activeAccountObj && (
               <SyncStatusWidget account={activeAccountObj} onSynced={() => { loadTrades(); loadAllTrades(); }} />
             )}
+            <AccountSnapshot trades={allTrades} account={activeAccountObj} startingBalance={startingBalance} />
             <AnimatedOverview trades={allTrades} account={activeAccountObj} startingBalance={startingBalance} ddMode={ddMode} />
             <EquityCurveChart trades={allTrades} startingBalance={startingBalance} />
             <DrawdownStats
