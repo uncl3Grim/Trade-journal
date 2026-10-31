@@ -1,6 +1,6 @@
 import { createClient } from '@supabase/supabase-js';
 import { getAccountStatus, getHistoricalTrades } from '../../../../lib/metaapi';
-import { myfxbookLogin, myfxbookGetHistory, parseMyfxbookDate } from '../../../../lib/myfxbook';
+import { myfxbookLogin, myfxbookGetHistory, myfxbookGetAccounts, parseMyfxbookDate } from '../../../../lib/myfxbook';
 
 // Postgres returns timestamps in a different string format than what we
 // send in (e.g. "+00:00" vs ".000Z") — same instant, different text. Compare
@@ -44,7 +44,14 @@ async function syncMyfxbook(connection) {
   const session = await myfxbookLogin(connection.myfxbook_email, connection.myfxbook_password);
   const history = await myfxbookGetHistory(session, connection.myfxbook_account_id);
 
-  return (history || []).map((t) => ({
+  const rows = (history || []).map((t) => {
+    const profit = Number(t.profit) || 0;
+    const commission = Number(t.commission) || 0;
+    const swap = Number(t.interest ?? t.swap) || 0;
+    return {
+    rawProfit: profit,
+    commission,
+    swap,
     symbol: (t.symbol || '').replace(/\.+$/, '').trim(),
     direction: (t.action || '').toLowerCase().includes('sell') ? 'short' : 'long',
     entry_price: t.openPrice,
@@ -52,14 +59,25 @@ async function syncMyfxbook(connection) {
     size: parseFloat(t.sizing?.value) || null,
     entry_time: parseMyfxbookDate(t.openTime),
     exit_time: parseMyfxbookDate(t.closeTime),
-    pnl: t.profit ?? 0,
+    pnl: profit + commission + swap,
     stop_loss: t.sl || null,
     take_profit: t.tp || null,
     // MyFXBook's own trade id — verify field name against a real API
     // payload; falls back gracefully to time-based matching if absent.
     ticket: t.id ?? t.ticket ?? t.openOrderId ?? null,
     source: 'myfxbook_sync',
-  }));
+    };
+  });
+
+  // MyFXBook's own account figures (balance, deposits...), saved so the app can compare.
+  let account = null;
+  try {
+    const accounts = await myfxbookGetAccounts(session);
+    account = accounts.find((a) => String(a.id) === String(connection.myfxbook_account_id)) || null;
+  } catch {
+    account = null;
+  }
+  return { rows, account };
 }
 
 export async function POST(request) {
@@ -98,17 +116,23 @@ export async function POST(request) {
       return Response.json({ error: 'Broker connection not found' }, { status: 404 });
     }
 
-    const rawRows =
-      connection.broker_type === 'myfxbook'
-        ? await syncMyfxbook(connection)
-        : await syncMt5(connection);
+    let rawRows;
+    let mfbAccount = null;
+    if (connection.broker_type === 'myfxbook') {
+      const result = await syncMyfxbook(connection);
+      rawRows = result.rows;
+      mfbAccount = result.account;
+    } else {
+      rawRows = await syncMt5(connection);
+    }
 
     const validRows = rawRows
       .filter((r) => r.entry_time && r.symbol)
       .map((r) => {
-        const { ticket, ...rest } = r;
+        const { ticket, rawProfit, ...rest } = r;
         return {
           ...rest,
+          _gross: rawProfit,
           user_id: userId,
           broker_connection_id: connectionId,
           ...(ticket ? { broker_ticket: String(ticket) } : {}),
@@ -155,7 +179,10 @@ export async function POST(request) {
         if (!IMPORTED_SOURCES.includes(row.source)) continue;
         if (row.direction !== r.direction) continue;
         if (num(row.entry_price) !== num(r.entry_price)) continue;
-        if (Math.abs((num(row.pnl) ?? 0) - (num(r.pnl) ?? 0)) > 0.005) continue;
+        const ex = num(row.pnl) ?? 0;
+        const matchesNet = Math.abs(ex - (num(r.pnl) ?? 0)) <= 0.005;
+        const matchesGross = r._gross !== undefined && Math.abs(ex - r._gross) <= 0.005;
+        if (!matchesNet && !matchesGross) continue;
         const diff = Math.abs(new Date(row.entry_time).getTime() - rt);
         if (diff > 14 * 3600000 || diff % (15 * 60000) !== 0) continue;
         return row.id;
@@ -174,7 +201,8 @@ export async function POST(request) {
       const key = existingId ? `id:${existingId}` : `new:${r.broker_ticket || `${r.symbol}||${timeKey(r.entry_time)}`}`;
       seen.set(key, existingId ? { ...r, id: existingId } : r);
     }
-    const finalRows = Array.from(seen.values());
+    // _gross is only used for matching; it is not a database column.
+    const finalRows = Array.from(seen.values()).map(({ _gross, ...row }) => row);
     const toInsert = finalRows.filter((r) => !r.id);
     const toUpdate = finalRows.filter((r) => r.id);
 
@@ -198,6 +226,26 @@ export async function POST(request) {
       .from('broker_connections')
       .update({ status: 'connected', last_synced_at: new Date().toISOString() })
       .eq('id', connectionId);
+
+    // Save MyFXBook's own balance so the app can show and compare it.
+    // Kept separate so a problem here can never fail the trade sync itself.
+    if (mfbAccount) {
+      try {
+        const n = (v) => (v === undefined || v === null || v === '' || isNaN(Number(v)) ? null : Number(v));
+        await supabase
+          .from('broker_connections')
+          .update({
+            broker_balance: n(mfbAccount.balance),
+            broker_equity: n(mfbAccount.equity),
+            broker_deposits: n(mfbAccount.deposits),
+            broker_withdrawals: n(mfbAccount.withdrawals),
+            broker_balance_at: new Date().toISOString(),
+          })
+          .eq('id', connectionId);
+      } catch {
+        /* ignore */
+      }
+    }
 
     return Response.json({ success: true, tradesSynced: toInsert.length + toUpdate.length });
   } catch (err) {
