@@ -22,7 +22,11 @@ export default function SyncStatusWidget({ account, onSynced }) {
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || 'Sync failed');
-      setMessage(`Synced ${data.tradesSynced} trade(s)`);
+      setMessage(
+        data.tradesReceived > data.tradesSynced
+          ? `Synced ${data.tradesSynced} of ${data.tradesReceived} trade(s)`
+          : `Synced ${data.tradesSynced} trade(s)`
+      );
       onSynced?.();
     } catch (err) {
       setMessage(`Error: ${err.message}`);
