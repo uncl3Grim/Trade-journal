@@ -1,6 +1,7 @@
 import { createClient } from '@supabase/supabase-js';
 import { getAccountStatus, getHistoricalTrades } from '../../../../lib/metaapi';
 import { myfxbookLogin, myfxbookGetHistory, myfxbookGetAccounts, parseMyfxbookDate } from '../../../../lib/myfxbook';
+import { decryptSecret, isEncrypted, encryptSecret } from '../../../../lib/crypto';
 
 // Postgres returns timestamps in a different string format than what we
 // send in (e.g. "+00:00" vs ".000Z") — same instant, different text. Compare
@@ -63,7 +64,7 @@ function spreadSameMinute(rows) {
 }
 
 async function syncMyfxbook(connection) {
-  const session = await myfxbookLogin(connection.myfxbook_email, connection.myfxbook_password);
+  const session = await myfxbookLogin(connection.myfxbook_email, decryptSecret(connection.myfxbook_password));
   const history = await myfxbookGetHistory(session, connection.myfxbook_account_id);
 
   const rows = (history || []).map((t) => {
@@ -136,6 +137,20 @@ export async function POST(request) {
 
     if (connError || !connection) {
       return Response.json({ error: 'Broker connection not found' }, { status: 404 });
+    }
+
+    // Self-healing upgrade: a password saved before encryption existed is
+    // encrypted the first time its account syncs. If the key is missing this is
+    // skipped, so a setup mistake can never break trade syncing.
+    if (connection.broker_type === 'myfxbook' && connection.myfxbook_password && !isEncrypted(connection.myfxbook_password)) {
+      try {
+        await supabase
+          .from('broker_connections')
+          .update({ myfxbook_password: encryptSecret(connection.myfxbook_password) })
+          .eq('id', connectionId);
+      } catch {
+        /* ignore */
+      }
     }
 
     let rawRows;
