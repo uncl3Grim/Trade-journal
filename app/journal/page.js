@@ -216,6 +216,34 @@ export default function JournalPage() {
     if (!error) setAllTrades(data || []);
   }, [user, accountFilter]);
 
+  // Re-read account figures (balance, last synced) after a sync or on return to the tab.
+  const loadAccounts = useCallback(async () => {
+    if (!user) return;
+    const { data } = await supabase
+      .from('broker_connections')
+      .select(
+        'id, broker_server, broker_type, mt5_login, starting_balance, is_prop_firm, daily_loss_limit_pct, max_loss_limit_pct, profit_target_pct, consistency_limit_pct, weekly_loss_limit_pct, max_risk_per_trade_pct, max_trades_per_day, max_loss_streak, min_trading_days, challenge_days, status, last_synced_at, broker_balance, broker_equity, broker_deposits, broker_withdrawals, broker_balance_at'
+      )
+      .order('created_at', { ascending: true });
+    if (data) setAccounts(data);
+  }, [user]);
+
+  // Coming back to this tab (or the app) refreshes everything, so the calendar never
+  // lags behind a sync that happened elsewhere.
+  useEffect(() => {
+    let last = Date.now();
+    const onVisible = () => {
+      if (document.visibilityState !== 'visible') return;
+      if (Date.now() - last < 60 * 1000) return;
+      last = Date.now();
+      loadTrades();
+      loadAllTrades();
+      loadAccounts();
+    };
+    document.addEventListener('visibilitychange', onVisible);
+    return () => document.removeEventListener('visibilitychange', onVisible);
+  }, [loadTrades, loadAllTrades, loadAccounts]);
+
   useEffect(() => {
     loadTrades();
   }, [loadTrades]);
@@ -422,7 +450,7 @@ export default function JournalPage() {
         {tab === 'overview' && (
           <>
             {activeAccountObj && (
-              <SyncStatusWidget account={activeAccountObj} onSynced={() => { loadTrades(); loadAllTrades(); }} />
+              <SyncStatusWidget account={activeAccountObj} onSynced={() => { loadTrades(); loadAllTrades(); loadAccounts(); }} />
             )}
             <AccountSnapshot trades={allTrades} account={activeAccountObj} startingBalance={startingBalance} />
             <AnimatedOverview trades={allTrades} account={activeAccountObj} startingBalance={startingBalance} ddMode={ddMode} />
