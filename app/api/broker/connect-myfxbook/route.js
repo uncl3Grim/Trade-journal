@@ -1,5 +1,6 @@
 import { createClient } from '@supabase/supabase-js';
 import { myfxbookLogin, myfxbookGetAccounts } from '../../../../lib/myfxbook';
+import { encryptSecret } from '../../../../lib/crypto';
 
 export async function POST(request) {
   try {
@@ -73,7 +74,7 @@ export async function POST(request) {
       broker_server: account.serverName || 'MyFXBook',
       mt5_login: String(account.accountId || account.id || ''),
       myfxbook_email: email,
-      myfxbook_password: password,
+      myfxbook_password: encryptSecret(password),
       myfxbook_account_id: String(account.id),
       status: 'connected',
     });
