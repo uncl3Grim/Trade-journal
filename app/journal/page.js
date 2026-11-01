@@ -31,6 +31,7 @@ import { rMultiple } from '../../lib/tradeMath';
 import { formatMoney } from '../../lib/format';
 import { fetchAllRows } from '../../lib/fetchAll';
 import TodayCard from '../../components/coach/TodayCard';
+import JournalReminder from '../../components/coach/JournalReminder';
 import { processDays } from '../../lib/coach';
 
 const DEFAULT_ACCOUNT_FILTER = { allSelected: true, selectedIds: [], includeManual: false };
@@ -273,6 +274,7 @@ export default function JournalPage() {
 
         {/* CHANGED: Today card only on the Calendar tab */}
         {tab === 'calendar' && <TodayCard trades={allTrades} account={activeAccountObj} />}
+        {tab === 'calendar' && <JournalReminder trades={allTrades} />}
 
         <div className="flex items-center justify-between mb-6 flex-wrap gap-3">
           <div className="flex gap-2 overflow-x-auto -mx-1 px-1 pb-1" style={{ WebkitOverflowScrolling: 'touch' }}>
