@@ -20,6 +20,7 @@ import EquityCurveChart from '../../components/EquityCurveChart';
 import WeeklyInsights from '../../components/WeeklyInsights';
 import WeeklyRecap from '../../components/WeeklyRecap';
 import PostKit from '../../components/postkit/PostKit';
+import GoalTracker from '../../components/GoalTracker';
 import SyncStatusWidget from '../../components/SyncStatusWidget';
 import AppShell from '../../components/AppShell';
 import TrackRecordTab from '../../components/TrackRecordTab';
@@ -44,6 +45,7 @@ const TABS = [
   { key: 'overview', label: 'Overview' },
   { key: 'propfirm', label: 'Limits' },
   { key: 'record', label: 'Track record' },
+  { key: 'goal', label: 'Goal' },
 ];
 
 export default function JournalPage() {
@@ -495,6 +497,8 @@ export default function JournalPage() {
             onSetup={() => router.push('/broker')}
           />
         )}
+
+        {tab === 'goal' && <GoalTracker trades={allTrades} account={activeAccountObj} startingBalance={startingBalance} />}
 
         {tab === 'record' && <TrackRecordTab accounts={accounts} defaultAccountId={activeAccountId} onSetup={() => router.push('/broker')} />}
 
