@@ -20,6 +20,7 @@ import EquityCurveChart from '../../components/EquityCurveChart';
 import WeeklyInsights from '../../components/WeeklyInsights';
 import WeeklyRecap from '../../components/WeeklyRecap';
 import GoalTracker from '../../components/GoalTracker';
+import Exportable, { ExportModeProvider, ExportModeToggle } from '../../components/Exportable';
 import SyncStatusWidget from '../../components/SyncStatusWidget';
 import AppShell from '../../components/AppShell';
 import TrackRecordTab from '../../components/TrackRecordTab';
@@ -281,6 +282,7 @@ export default function JournalPage() {
 
   return (
     <AppShell>
+      <ExportModeProvider>
       <div className="max-w-6xl mx-auto px-4 py-6">
         <PsychologyQuotes />
         {/* CHANGED: patterns box only on the Calendar tab */}
@@ -324,6 +326,7 @@ export default function JournalPage() {
           </div>
 
           <div className="flex items-center gap-3">
+            {['calendar', 'overview', 'goal'].includes(tab) && <ExportModeToggle />}
             <DisplayModeToggle mode={mode} onChange={setMode} />
             {accounts.length > 0 && (
               <AccountSwitcher
@@ -416,16 +419,18 @@ export default function JournalPage() {
                   {loading ? (
                     <p className="text-neutral-500 text-sm">Loading trades…</p>
                   ) : (
-                    <Calendar
-                      month={month}
-                      dailyStats={dailyStats}
-                      onDayClick={(day) => router.push(`/journal/day/${format(day, 'yyyy-MM-dd')}`)}
-                      selectedDate={null}
-                      mode={mode}
-                      accountBalance={startingBalance}
-                      colorBy={calColor}
-                      processStats={processStats}
-                    />
+                    <Exportable title="Trading calendar" name="calendar">
+                      <Calendar
+                        month={month}
+                        dailyStats={dailyStats}
+                        onDayClick={(day) => router.push(`/journal/day/${format(day, 'yyyy-MM-dd')}`)}
+                        selectedDate={null}
+                        mode={mode}
+                        accountBalance={startingBalance}
+                        colorBy={calColor}
+                        processStats={processStats}
+                      />
+                    </Exportable>
                   )}
                 </>
               ) : (
@@ -455,8 +460,13 @@ export default function JournalPage() {
               <SyncStatusWidget account={activeAccountObj} onSynced={() => { loadTrades(); loadAllTrades(); loadAccounts(); }} />
             )}
             <AccountSnapshot trades={allTrades} account={activeAccountObj} startingBalance={startingBalance} />
-            <AnimatedOverview trades={allTrades} account={activeAccountObj} startingBalance={startingBalance} ddMode={ddMode} />
-            <EquityCurveChart trades={allTrades} startingBalance={startingBalance} />
+            <Exportable title="Drawdown and win rate" name="drawdown-winrate">
+              <AnimatedOverview trades={allTrades} account={activeAccountObj} startingBalance={startingBalance} ddMode={ddMode} />
+            </Exportable>
+            <Exportable title="Equity curve" name="equity-curve">
+              <EquityCurveChart trades={allTrades} startingBalance={startingBalance} />
+            </Exportable>
+            <Exportable title="Drawdown" name="drawdown">
             <DrawdownStats
               trades={allTrades}
               defaultRiskAmount={defaultRiskAmount}
@@ -466,14 +476,19 @@ export default function JournalPage() {
               mode={ddMode}
               onModeChange={setDdMode}
             />
-            <PeriodStatsHeader
-              trades={allTrades}
-              month={month}
-              mode={mode}
-              defaultRiskAmount={defaultRiskAmount}
-              accountBalance={startingBalance}
-            />
-            <StatsBar trades={monthClosedTrades} mode={mode} defaultRiskAmount={defaultRiskAmount} accountBalance={startingBalance} />
+            </Exportable>
+            <Exportable title="Monthly stats" name="monthly-stats">
+              <PeriodStatsHeader
+                trades={allTrades}
+                month={month}
+                mode={mode}
+                defaultRiskAmount={defaultRiskAmount}
+                accountBalance={startingBalance}
+              />
+            </Exportable>
+            <Exportable title="Month at a glance" name="month-glance">
+              <StatsBar trades={monthClosedTrades} mode={mode} defaultRiskAmount={defaultRiskAmount} accountBalance={startingBalance} />
+            </Exportable>
           </>
         )}
 
@@ -495,6 +510,7 @@ export default function JournalPage() {
         {tab === 'review' && <ReviewPanel trades={allTrades} defaultRiskAmount={defaultRiskAmount} mode={mode} />}
         {tab === 'notes' && <NotesView userId={user?.id} accountFilter={accountFilter} accounts={accounts} />}
       </div>
+      </ExportModeProvider>
     </AppShell>
   );
 }
