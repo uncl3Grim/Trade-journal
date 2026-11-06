@@ -5,6 +5,8 @@ import { addWeeks, subWeeks, format, isSameWeek } from 'date-fns';
 import { computeWeeklyRecap } from '../lib/weeklyRecap';
 import WeeklyRecapCard from './WeeklyRecapCard';
 import { supabase } from '../lib/supabaseClient';
+import { renderRecapImageSafe } from '../lib/recapExport';
+import RecapExportOptions from './RecapExportOptions';
 
 function mostRecentTradeDate(trades) {
   const closed = trades.filter((t) => t.entry_time && t.exit_price !== null && t.exit_price !== undefined);
@@ -36,6 +38,8 @@ export default function WeeklyRecap({ trades, defaultRiskAmount, onClose, appNam
   const [anchor, setAnchor] = useState(() => mostRecentTradeDate(trades));
   const [mode, setMode] = useState('dollar');
   const [exporting, setExporting] = useState(false);
+  const [quality, setQuality] = useState('hd');
+  const [layout, setLayout] = useState('story');
   const cardRef = useRef(null);
 
   const recap = useMemo(
@@ -49,12 +53,13 @@ export default function WeeklyRecap({ trades, defaultRiskAmount, onClose, appNam
     if (!cardRef.current) return;
     setExporting(true);
     try {
-      const { toPng } = await import('html-to-image');
-      const dataUrl = await toPng(cardRef.current, { pixelRatio: 2, cacheBust: true });
+      const blob = await renderRecapImageSafe(cardRef.current, { quality, layout });
+      const url = URL.createObjectURL(blob);
       const link = document.createElement('a');
       link.download = `weekly-recap-${format(recap.weekStart, 'yyyy-MM-dd')}.png`;
-      link.href = dataUrl;
+      link.href = url;
       link.click();
+      setTimeout(() => URL.revokeObjectURL(url), 10000);
     } catch (err) {
       console.error('Failed to export recap image', err);
       alert('Could not generate the image. Please try again.');
@@ -66,8 +71,7 @@ export default function WeeklyRecap({ trades, defaultRiskAmount, onClose, appNam
     if (!cardRef.current) return;
     setExporting(true);
     try {
-      const { toBlob } = await import('html-to-image');
-      const blob = await toBlob(cardRef.current, { pixelRatio: 2, cacheBust: true });
+      const blob = await renderRecapImageSafe(cardRef.current, { quality, layout });
       const file = new File([blob], 'weekly-recap.png', { type: 'image/png' });
       if (navigator.share && navigator.canShare?.({ files: [file] })) {
         await navigator.share({ files: [file], title: 'Weekly recap' });
@@ -143,7 +147,9 @@ export default function WeeklyRecap({ trades, defaultRiskAmount, onClose, appNam
 
         <WeeklyRecapCard ref={cardRef} recap={recap} mode={mode} appName={appName} backgroundUrl={bg.url} backgroundDim={bg.dim} />
 
-        <div className="flex gap-2 mt-5">
+        <RecapExportOptions quality={quality} setQuality={setQuality} layout={layout} setLayout={setLayout} />
+
+        <div className="flex gap-2 mt-4">
           <button
             onClick={handleDownload}
             disabled={exporting}
