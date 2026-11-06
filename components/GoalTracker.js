@@ -82,7 +82,8 @@ export default function GoalTracker({ trades, account, startingBalance }) {
   const withdrawn = useMemo(() => rows.reduce((s, r) => s + Number(r.amount || 0), 0), [rows]);
   const totalPnl = useMemo(() => trades.filter(closed).reduce((s, t) => s + Number(t.pnl || 0), 0), [trades]);
   const brokerBalance = account?.broker_type === 'myfxbook' && account.broker_balance !== null && account.broker_balance !== undefined ? Number(account.broker_balance) : null;
-  const balanceNow = brokerBalance ?? (Number(startingBalance) > 0 ? Number(startingBalance) + totalPnl : null);
+  // MyFXBook's balance already reflects withdrawals; otherwise subtract what you have logged.
+  const balanceNow = brokerBalance ?? (Number(startingBalance) > 0 ? Number(startingBalance) + totalPnl - withdrawn : null);
   const deadline = deadlineStr ? new Date(`${deadlineStr}T00:00:00`) : null;
 
   const g = useMemo(() => computeGoal(trades, { target: Number(target) || 0, withdrawn, deadline, balanceNow }), [trades, target, withdrawn, deadlineStr, balanceNow]); // eslint-disable-line react-hooks/exhaustive-deps
@@ -254,7 +255,7 @@ export default function GoalTracker({ trades, account, startingBalance }) {
       </div>
 
       <p className="text-[11px] text-neutral-600 leading-relaxed px-1">
-        These numbers are simple arithmetic on your own past trades. They are not predictions or financial advice, and past results don&apos;t guarantee future ones.
+        Withdrawals lower your balance but are never counted as losses, and they don&apos;t change your win rate, P&amp;L or R. These numbers are simple arithmetic on your own past trades. They are not predictions or financial advice, and past results don&apos;t guarantee future ones.
       </p>
     </div>
   );
