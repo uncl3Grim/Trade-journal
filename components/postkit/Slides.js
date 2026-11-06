@@ -28,8 +28,14 @@ const Frame = forwardRef(function Frame({ d, s, children }, ref) {
     >
       <div style={{ position: 'absolute', inset: 0, background: 'radial-gradient(circle at 50% 22%, rgba(99,102,241,0.22), rgba(99,102,241,0) 62%)' }} />
       <div style={{ position: 'relative', padding: '30px 26px 0 26px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-        <div style={{ fontSize: 11, letterSpacing: 2, color: C.muted, fontWeight: 600, textTransform: 'uppercase' }}>{s.series}</div>
-        <div style={{ ...HEAD, fontSize: 14, fontWeight: 700, color: C.indigo }}>Day {d.dayN}</div>
+        {s.series ? (
+          <>
+            <div style={{ fontSize: 11, letterSpacing: 2, color: C.muted, fontWeight: 600, textTransform: 'uppercase' }}>{s.series}</div>
+            <div style={{ ...HEAD, fontSize: 14, fontWeight: 700, color: C.indigo }}>Day {d.dayN}</div>
+          </>
+        ) : (
+          <div style={{ ...HEAD, fontSize: 14, fontWeight: 700, color: C.indigo }}>Day {d.dayN}</div>
+        )}
       </div>
       <div style={{ position: 'absolute', top: 64, bottom: 130, left: 26, right: 26, display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>{children}</div>
       <div style={{ position: 'absolute', left: 26, right: 26, bottom: 18, display: 'flex', justifyContent: 'space-between', fontSize: 10, color: C.faint }}>
