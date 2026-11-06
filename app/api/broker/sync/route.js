@@ -30,7 +30,7 @@ async function syncMt5(connection) {
       direction: t.type === 'DEAL_TYPE_BUY' ? 'long' : 'short',
       entry_price: t.openPrice ?? t.price,
       exit_price: t.closePrice ?? null,
-      size: t.volume,
+      size: t.volume ?? 0,
       entry_time: t.openTime ?? t.time,
       exit_time: t.closeTime ?? null,
       pnl: t.profit ?? 0,
@@ -79,7 +79,8 @@ async function syncMyfxbook(connection) {
     direction: (t.action || '').toLowerCase().includes('sell') ? 'short' : 'long',
     entry_price: t.openPrice,
     exit_price: t.closePrice,
-    size: parseFloat(t.sizing?.value) || null,
+    // The trades table requires a size; 0 is how the app already stores "unknown".
+    size: parseFloat(t.sizing?.value) || 0,
     entry_time: parseMyfxbookDate(t.openTime),
     exit_time: parseMyfxbookDate(t.closeTime),
     pnl: profit + commission + swap,
