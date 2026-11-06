@@ -43,7 +43,7 @@ export default function PostKit({ trades, account, startingBalance, onClose }) {
   const [anchor, setAnchor] = useState(() => latestTradeDate(trades));
   const [slideIdx, setSlideIdx] = useState(0);
   const [variant, setVariant] = useState(0);
-  const [series, setSeries] = useSetting('tj_kit_series', 'Forward test');
+  const [series, setSeries] = useSetting('tj_kit_series', '');
   const [handle, setHandle] = useSetting('tj_kit_handle', '');
   const [showBalances, setShowBalances] = useSetting('tj_kit_show_balances', true);
   const [quality, setQuality] = useSetting('tj_kit_quality', 'hd');
@@ -62,7 +62,7 @@ export default function PostKit({ trades, account, startingBalance, onClose }) {
     [trades, anchor, tpl.scope, startingBalance, day1Str, defaultDay1] // eslint-disable-line react-hooks/exhaustive-deps
   );
   const f = useMemo(() => makeFormatters(d, showBalances), [d, showBalances]);
-  const s = { series: series || 'Forward test', handle };
+  const s = { series: (series || '').trim(), handle };
   const generated = useMemo(() => buildCaption(templateKey, d, f, { series: s.series, variant }), [templateKey, d, f, s.series, variant]);
   const [captionEdit, setCaptionEdit] = useState(null);
   useEffect(() => setCaptionEdit(null), [generated]);
@@ -209,8 +209,8 @@ export default function PostKit({ trades, account, startingBalance, onClose }) {
         <div className="mt-5 rounded-2xl bg-white/[0.03] border border-white/10 p-3.5 space-y-3">
           <div className="grid grid-cols-2 gap-2.5">
             <label className="block">
-              <span className="text-[11px] text-slate-400">Series name</span>
-              <input value={series} onChange={(e) => setSeries(e.target.value)} placeholder="Forward test" className={`${field} mt-1`} />
+              <span className="text-[11px] text-slate-400">Series name (optional)</span>
+              <input value={series} onChange={(e) => setSeries(e.target.value)} placeholder="e.g. Road to $50K" className={`${field} mt-1`} />
             </label>
             <label className="block">
               <span className="text-[11px] text-slate-400">Your handle</span>
