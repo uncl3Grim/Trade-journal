@@ -4,6 +4,7 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 import { format } from 'date-fns';
 import { supabase } from '../lib/supabaseClient';
 import { computeGoal } from '../lib/goal';
+import Exportable from './Exportable';
 
 const card = 'relative bg-white/[0.04] backdrop-blur-md border border-neutral-800/60 rounded-2xl p-4 sm:p-5 overflow-hidden';
 const field = 'w-full rounded-lg bg-white/5 border border-white/10 px-3 py-2 text-sm text-neutral-100 placeholder:text-neutral-500 focus:outline-none focus:border-indigo-400/60';
@@ -115,6 +116,7 @@ export default function GoalTracker({ trades, account, startingBalance }) {
   return (
     <div className="max-w-2xl space-y-4">
       {/* Goal + progress */}
+      <Exportable title="Road to my goal" name="goal-progress">
       <div className={card}>
         <div className="text-[11px] text-neutral-500">Withdrawn profits goal</div>
         <div className="flex items-end justify-between gap-3 mt-0.5">
@@ -122,6 +124,7 @@ export default function GoalTracker({ trades, account, startingBalance }) {
             {usd(withdrawn)} <span className="text-neutral-500 text-base font-medium">of {usd(Number(target) || 0)}</span>
           </div>
           <button
+            data-export-ignore
             onClick={() => {
               setTargetInput(String(target));
               setEditing((e) => !e);
@@ -132,7 +135,7 @@ export default function GoalTracker({ trades, account, startingBalance }) {
           </button>
         </div>
         {editing && (
-          <div className="flex gap-2 mt-3">
+          <div data-export-ignore className="flex gap-2 mt-3">
             <input value={targetInput} onChange={(e) => setTargetInput(e.target.value)} inputMode="decimal" placeholder="50000" className={field} />
             <button onClick={saveTarget} className="flex-shrink-0 rounded-lg bg-gradient-to-br from-indigo-600 to-violet-600 text-white text-sm font-medium px-4">
               Save
@@ -148,8 +151,10 @@ export default function GoalTracker({ trades, account, startingBalance }) {
         </div>
         {balanceNow !== null && <div className="text-[11px] text-neutral-500 mt-3">Current balance {usd(balanceNow)}{brokerBalance !== null ? ' (from MyFXBook)' : ''}</div>}
       </div>
+      </Exportable>
 
       {/* What the data says */}
+      <Exportable title="My pace" name="goal-pace">
       <div className={card}>
         <h3 className="font-heading text-sm font-semibold text-neutral-100">What your trades say</h3>
         {g.n === 0 ? (
@@ -180,6 +185,8 @@ export default function GoalTracker({ trades, account, startingBalance }) {
           </>
         )}
       </div>
+
+      </Exportable>
 
       {/* Deadline */}
       <div className={card}>
