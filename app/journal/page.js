@@ -19,6 +19,7 @@ import AnimatedOverview from '../../components/AnimatedOverview';
 import EquityCurveChart from '../../components/EquityCurveChart';
 import WeeklyInsights from '../../components/WeeklyInsights';
 import WeeklyRecap from '../../components/WeeklyRecap';
+import PostKit from '../../components/postkit/PostKit';
 import SyncStatusWidget from '../../components/SyncStatusWidget';
 import AppShell from '../../components/AppShell';
 import TrackRecordTab from '../../components/TrackRecordTab';
@@ -62,6 +63,7 @@ export default function JournalPage() {
   const [calendarView, setCalendarView] = useState('month');
   const [accountFilter, setAccountFilter] = useState(DEFAULT_ACCOUNT_FILTER);
   const [showRecap, setShowRecap] = useState(false);
+  const [showKit, setShowKit] = useState(false);
   const [calColor, setCalColor] = useState('pnl');
 
   useEffect(() => {
@@ -293,8 +295,16 @@ export default function JournalPage() {
             >
               Weekly recap
             </button>
+            <button
+              onClick={() => setShowKit(true)}
+              className="text-xs font-medium text-indigo-100 bg-white/5 hover:bg-white/10 border border-white/10 rounded-lg px-3 py-1.5"
+            >
+              Post kit
+            </button>
           </div>
         </div>
+
+        {showKit && <PostKit trades={allTrades} account={activeAccountObj} startingBalance={startingBalance} onClose={() => setShowKit(false)} />}
 
         {showRecap && (
           <WeeklyRecap trades={allTrades} defaultRiskAmount={defaultRiskAmount} onClose={() => setShowRecap(false)} userId={user?.id} />
