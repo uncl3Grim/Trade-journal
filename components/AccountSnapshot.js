@@ -3,6 +3,7 @@
 import { format } from 'date-fns';
 import { computeAccountStats, formatHold } from '../lib/accountStats';
 import { formatMoney } from '../lib/format';
+import Exportable from './Exportable';
 
 const plain = (v) =>
   v === null || v === undefined || isNaN(v)
@@ -140,18 +141,23 @@ export default function AccountSnapshot({ trades, account, startingBalance }) {
 
   return (
     <div className="mb-6 space-y-3">
-      <BalanceCard account={account} stats={stats} startingBalance={startingBalance} />
+      <Exportable title="Account balance" name="balance">
+        <BalanceCard account={account} stats={stats} startingBalance={startingBalance} />
+      </Exportable>
 
-      <div className="grid grid-cols-2 gap-3">
-        <PairCard title="Best pair" pair={stats.bestPair} />
-        <PairCard title="Worst pair" pair={stats.worstPair} emptyText="Only one pair traded so far." />
-      </div>
-      {stats.mostTraded && stats.pairCount > 1 && stats.mostTraded.symbol !== stats.bestPair?.symbol && (
-        <div className="text-xs text-neutral-500 px-1">
-          Most traded: <span className="text-neutral-300 font-medium">{stats.mostTraded.symbol}</span> ({stats.mostTraded.n} trades, {formatMoney(stats.mostTraded.pnl)})
+      <Exportable title="Best and worst pair" name="pairs">
+        <div className="grid grid-cols-2 gap-3">
+          <PairCard title="Best pair" pair={stats.bestPair} />
+          <PairCard title="Worst pair" pair={stats.worstPair} emptyText="Only one pair traded so far." />
         </div>
-      )}
+        {stats.mostTraded && stats.pairCount > 1 && stats.mostTraded.symbol !== stats.bestPair?.symbol && (
+          <div className="text-xs text-neutral-500 px-1 mt-2">
+            Most traded: <span className="text-neutral-300 font-medium">{stats.mostTraded.symbol}</span> ({stats.mostTraded.n} trades, {formatMoney(stats.mostTraded.pnl)})
+          </div>
+        )}
+      </Exportable>
 
+      <Exportable title="My stats" name="stats">
       <div className="grid grid-cols-2 sm:grid-cols-3 gap-2.5">
         <Tile label="Net P&L" value={formatMoney(stats.totalPnl)} color={tone(stats.totalPnl)} sub={stats.returnPct !== null ? `${pct(stats.returnPct, 1)} return` : `${stats.n} trades`} />
         <Tile label="Win rate" value={pct(stats.winRate, 1)} sub={`${stats.wins}W · ${stats.losses}L`} />
@@ -167,6 +173,7 @@ export default function AccountSnapshot({ trades, account, startingBalance }) {
         <Tile label="Avg hold" value={formatHold(stats.avgHoldMs)} sub={`${stats.tradingDays} trading days`} />
         {stats.hasFees && <Tile label="Fees paid" value={formatMoney(stats.fees)} color={tone(stats.fees)} sub="commission + swap" />}
       </div>
+      </Exportable>
     </div>
   );
 }
