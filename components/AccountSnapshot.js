@@ -67,11 +67,15 @@ function BalanceCard({ account, stats, startingBalance }) {
   }
 
   const broker = Number(account.broker_balance);
-  const diff = calc !== null ? broker - calc : null;
+  // Money you put in or took out is not trading performance, so it is added to the
+  // expected balance instead of being counted as a gain or a loss.
+  const deposits = Number(account.broker_deposits) || 0;
+  const netDeposits = deposits - (Number(account.broker_withdrawals) || 0);
+  const flows = calc !== null && deposits > 0 ? netDeposits - Number(startingBalance) : 0;
+  const expected = calc !== null ? calc + flows : null;
+  const diff = expected !== null ? broker - expected : null;
   const ok = diff !== null && Math.abs(diff) < 1;
-  const netDeposits = (Number(account.broker_deposits) || 0) - (Number(account.broker_withdrawals) || 0);
-  const startGap = calc !== null ? netDeposits - Number(startingBalance) : null;
-  const tradeGap = calc !== null ? broker - netDeposits - stats.totalPnl : null;
+  const tradeGap = diff;
 
   return (
     <div className={card}>
@@ -96,20 +100,16 @@ function BalanceCard({ account, stats, startingBalance }) {
 
       {calc !== null && (
         <div className="mt-3 rounded-xl bg-white/[0.03] border border-neutral-800/60 px-3 py-2.5 text-xs space-y-1">
-          <Row label="Journal balance" value={plain(calc)} />
+          <Row label="Journal balance" value={plain(expected)} />
           <Row label="Starting balance" value={plain(Number(startingBalance))} />
           <Row label="Net trade results" value={formatMoney(stats.totalPnl)} />
+          {Math.abs(flows) >= 1 && <Row label={flows < 0 ? 'Withdrawn (net)' : 'Deposited (net)'} value={formatMoney(flows)} />}
         </div>
       )}
 
       {diff !== null && !ok && (
         <div className="mt-3 text-xs text-neutral-400 leading-relaxed space-y-1.5">
           <div className="text-neutral-300 font-medium">Why it may be off</div>
-          {Math.abs(startGap) >= 1 && (
-            <p>
-              Your starting balance is {plain(Number(startingBalance))}, but MyFXBook shows net deposits of {plain(netDeposits)} ({plain(Math.abs(startGap))} {startGap > 0 ? 'more' : 'less'}). Deposits or withdrawals made later, or a different starting figure, cause this.
-            </p>
-          )}
           {Math.abs(tradeGap) >= 1 && (
             <p>
               Trade results differ by {plain(Math.abs(tradeGap))}. Usually a trade not synced yet, or a fee not captured. Press Sync, then check again.
